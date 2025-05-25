@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -43,5 +44,4 @@ public class MenuItem {
 
     @OneToMany(mappedBy = "menuItem")
     private Set<OrderItem> orderItems = new LinkedHashSet<>();
-
 }
