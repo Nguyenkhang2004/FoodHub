@@ -36,9 +36,6 @@ public class Branch {
     private Set<ChatMessage> chatMessages = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "branch")
-    private Set<MenuItem> menuItems = new LinkedHashSet<>();
-
-    @OneToMany(mappedBy = "branch")
     private Set<Payment> payments = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "branch")
@@ -49,5 +46,8 @@ public class Branch {
 
     @OneToMany(mappedBy = "branch")
     private Set<User> users = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "branch")
+    private Set<MenuItemBranch> menuItemBranches = new LinkedHashSet<>();
 
 }

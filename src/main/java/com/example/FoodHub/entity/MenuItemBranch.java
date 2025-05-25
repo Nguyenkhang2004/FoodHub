@@ -33,7 +33,6 @@ public class MenuItemBranch {
     private BigDecimal price;
 
     @ColumnDefault("'AVAILABLE'")
-    @Lob
     @Column(name = "status")
     private String status;
 
