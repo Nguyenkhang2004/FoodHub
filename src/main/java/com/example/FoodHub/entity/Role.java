@@ -24,9 +24,6 @@ public class Role {
             inverseJoinColumns = @JoinColumn(name = "permission_name"))
     private Set<Permission> permissions = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "roleName")
-    private Set<User> users = new LinkedHashSet<>();
-
     @Size(max = 100)
     @Column(name = "description", length = 100)
     private String description;

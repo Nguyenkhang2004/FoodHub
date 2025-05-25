@@ -16,6 +16,6 @@ public class WaiterController {
     @GetMapping
     public String getWaiterPage() {
         // This method returns the view name for the waiter page
-        return "waiter"; // Assuming you have a Thymeleaf template named 'waiter.html'
+        return "waiter/index"; // Assuming you have a Thymeleaf template named 'index.html'
     }
 }

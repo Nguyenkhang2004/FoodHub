@@ -33,14 +33,14 @@ public class ApplicationInitConfig {
                         .password(passwordEncoder.encode("admin"))
                         .roleName(roleRepository.findById(Role.ADMIN.name())
                                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED)))
-                        .email("admin@foodhub.com") // REQUIRED if `@NotNull`
+                        .email("amdin@foodhub.com") // REQUIRED if `@NotNull`
                         .status("ACTIVE")           // REQUIRED if `@NotNull`
                         .registrationDate(Instant.now()) // REQUIRED if `@NotNull`
                         .isAuthUser(false)         // Optional (default is already false)
                         .build();
                 userRepository.save(user);
 
-                log.warn("User admin has been created with default password: admin, please change its password immediately.");
+                log.warn("User admin has been created with default password: gm, please change its password immediately.");
             }
         };
     }

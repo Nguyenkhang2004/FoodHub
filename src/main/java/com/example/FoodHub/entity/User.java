@@ -43,7 +43,7 @@ public class User {
     @NotNull
     @ColumnDefault("'ACTIVE'")
     @Column(name = "status", nullable = false)
-    private String status;
+    private String status = "ACTIVE";
 
     @Size(max = 255)
     @Column(name = "address")
@@ -56,7 +56,7 @@ public class User {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "registration_date", nullable = false)
-    private Instant registrationDate;
+    private Instant registrationDate = Instant.now();
 
     @NotNull
     @ColumnDefault("0")
@@ -81,8 +81,6 @@ public class User {
     @Column(name = "username", nullable = false)
     private String username;
 
-    @OneToMany(mappedBy = "user")
-    private Set<InvalidateToken> invalidateTokens = new LinkedHashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_name")

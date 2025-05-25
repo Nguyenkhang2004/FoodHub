@@ -7,6 +7,7 @@ import com.example.FoodHub.entity.User;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.UserMapper;
+import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -25,14 +27,22 @@ public class UserService {
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    RoleRepository roleRepository;
+
     public UserResponse createUser(UserCreationRequest request) {
-       if(userRepository.existsByUsername(request.getName())) {
-           throw new AppException(ErrorCode.USER_EXISTED);
-       }
-       User user = userMapper.toUser(request);
-       user.setPassword(passwordEncoder.encode(user.getPassword()));
-       userRepository.save(user);
-       return userMapper.toUserResponse(user);
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USER_EXISTED);
+        }
+        log.info("In method createUser with password: {}", request.getPassword());
+        User user = userMapper.toUser(request);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRoleName(roleRepository.findById(request.getRoleName())
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED)));
+        user.setStatus("ACTIVE");
+        user.setRegistrationDate(Instant.now());
+        user.setIsAuthUser(false);
+        userRepository.save(user);
+        return userMapper.toUserResponse(user);
     }
 
     public List<UserResponse> getAllUsers() {
@@ -42,7 +52,7 @@ public class UserService {
                 .toList();
     }
 
-    public UserResponse getUserById(Integer id){
+    public UserResponse getUserById(Integer id) {
         return userMapper.toUserResponse(userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 

@@ -11,10 +11,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserCreationRequest {
-    String name;
+    String username;
     String password;
     String email;
-    String phoneNumber;
-    String firstName;
-    String lastName;
+    String phone;
+    String address;
+    String roleName;
 }
