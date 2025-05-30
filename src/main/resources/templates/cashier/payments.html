@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Cashier - Thanh toán đơn hàng</title>
+</head>
+<body>
+<h1>Thanh toán đơn hàng</h1>
+<h2>Danh sách thanh toán chờ xử lý</h2>
+<table border="1">
+  <tr>
+    <th>ID</th>
+    <th>Order ID</th>
+    <th>Amount</th>
+    <th>Status</th>
+    <th>Action</th>
+  </tr>
+  <tr th:each="payment : ${payments}">
+    <td th:text="${payment.id}"></td>
+    <td th:text="${payment.order.id}"></td>
+    <td th:text="${payment.amount}"></td>
+    <td th:text="${payment.status}"></td>
+    <td>
+      <form th:action="@{/cashier/payments/process}" method="post">
+        <input type="hidden" name="id" th:value="${payment.id}">
+        <input type="hidden" name="order" th:value="${payment.order}">
+        <input type="hidden" name="amount" th:value="${payment.amount}">
+        <select name="paymentMethod">
+          <option value="CASH">Tiền mặt</option>
+          <option value="VNPAY">VNPAY</option>
+        </select>
+        <button type="submit">Xác nhận thanh toán</button>
+      </form>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
