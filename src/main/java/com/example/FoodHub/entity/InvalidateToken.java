@@ -23,6 +23,12 @@ public class InvalidateToken {
     private String token;
 
     @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @NotNull
     @Column(name = "expiry_time", nullable = false)
     private Instant expiryTime;
 

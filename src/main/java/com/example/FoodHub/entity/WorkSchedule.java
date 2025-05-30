@@ -2,20 +2,20 @@ package com.example.FoodHub.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "chat_message")
-public class ChatMessage {
+@Table(name = "work_schedule")
+public class WorkSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -24,21 +24,26 @@ public class ChatMessage {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "table_id", nullable = false)
-    private RestaurantTable table;
-
-    @Size(max = 255)
-    @NotNull
-    @Column(name = "sender", nullable = false)
-    private String sender;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @NotNull
-    @Column(name = "content", nullable = false)
-    private String content;
+    @Column(name = "work_date", nullable = false)
+    private LocalDate workDate;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "timestamp", nullable = false)
-    private Instant timestamp;
+    @Column(name = "start_time", nullable = false)
+    private LocalTime startTime;
+
+    @NotNull
+    @Column(name = "end_time", nullable = false)
+    private LocalTime endTime;
+
+    @ColumnDefault("'FULL_DAY'")
+    @Column(name = "shift_type")
+    private String shiftType;
+
+    @Column(name = "note")
+    private String note;
 
 }

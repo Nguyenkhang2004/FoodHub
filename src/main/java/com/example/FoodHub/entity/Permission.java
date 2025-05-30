@@ -18,14 +18,14 @@ public class Permission {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
+    @Size(max = 100)
+    @Column(name = "description", length = 100)
+    private String description;
+
     @ManyToMany
     @JoinTable(name = "role_permission",
             joinColumns = @JoinColumn(name = "permission_name"),
             inverseJoinColumns = @JoinColumn(name = "role_name"))
     private Set<Role> roles = new LinkedHashSet<>();
-
-    @Size(max = 100)
-    @Column(name = "description", length = 100)
-    private String description;
 
 }

@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -27,6 +25,11 @@ public class User {
 
     @Size(max = 255)
     @NotNull
+    @Column(name = "username", nullable = false)
+    private String username;
+
+    @Size(max = 255)
+    @NotNull
     @Column(name = "email", nullable = false)
     private String email;
 
@@ -35,15 +38,15 @@ public class User {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "branch_id")
-    private Branch branch;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "role_name", nullable = false)
+    private Role roleName;
 
     @NotNull
     @ColumnDefault("'ACTIVE'")
     @Column(name = "status", nullable = false)
-    private String status = "ACTIVE";
+    private String status;
 
     @Size(max = 255)
     @Column(name = "address")
@@ -56,7 +59,7 @@ public class User {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "registration_date", nullable = false)
-    private Instant registrationDate = Instant.now();
+    private Instant registrationDate;
 
     @NotNull
     @ColumnDefault("0")
@@ -71,19 +74,12 @@ public class User {
     private Instant lastLogin;
 
     @OneToMany(mappedBy = "user")
-    private Set<Booking> bookings = new LinkedHashSet<>();
+    private Set<InvalidateToken> invalidateTokens = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "user")
     private Set<RestaurantOrder> restaurantOrders = new LinkedHashSet<>();
 
-    @Size(max = 255)
-    @NotNull
-    @Column(name = "username", nullable = false)
-    private String username;
-
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_name")
-    private Role roleName;
+    @OneToMany(mappedBy = "user")
+    private Set<WorkSchedule> workSchedules = new LinkedHashSet<>();
 
 }

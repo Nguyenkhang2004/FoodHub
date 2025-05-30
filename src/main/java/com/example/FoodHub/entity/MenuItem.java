@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
@@ -33,15 +34,18 @@ public class MenuItem {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @OneToMany(mappedBy = "menuItem")
-    private Set<MenuItemBranch> menuItemBranches = new LinkedHashSet<>();
+    @NotNull
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
-    @ManyToMany
-    @JoinTable(name = "menu_item_category",
-            joinColumns = @JoinColumn(name = "menu_item_id"),
-            inverseJoinColumns = @JoinColumn(name = "category_id"))
+    @ColumnDefault("'AVAILABLE'")
+    @Column(name = "status")
+    private String status;
+
+    @ManyToMany(mappedBy = "menuItems")
     private Set<Category> categories = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "menuItem")
     private Set<OrderItem> orderItems = new LinkedHashSet<>();
+
 }

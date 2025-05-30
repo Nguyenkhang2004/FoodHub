@@ -25,12 +25,6 @@ public class Payment {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "branch_id", nullable = false)
-    private Branch branch;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "order_id", nullable = false)
     private RestaurantOrder order;
 
@@ -39,23 +33,22 @@ public class Payment {
     private BigDecimal amount;
 
     @NotNull
-    @ColumnDefault("'UNPAID'")
+    @Column(name = "payment_method", nullable = false)
+    private String paymentMethod;
+
+    @NotNull
+    @ColumnDefault("'PENDING'")
     @Column(name = "status", nullable = false)
     private String status;
+
+    @Size(max = 255)
+    @Column(name = "transaction_id")
+    private String transactionId;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
-
-    @NotNull
-    @Lob
-    @Column(name = "payment_method", nullable = false)
-    private String paymentMethod;
-
-    @Size(max = 255)
-    @Column(name = "transaction_id")
-    private String transactionId;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")

@@ -25,12 +25,6 @@ public class RestaurantOrder {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "branch_id", nullable = false)
-    private Branch branch;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "table_id", nullable = false)
     private RestaurantTable table;
 
@@ -44,9 +38,13 @@ public class RestaurantOrder {
     @Column(name = "status", nullable = false)
     private String status;
 
-    @Lob
-    @Column(name = "note", columnDefinition = "TEXT")
+    @Column(name = "note")
     private String note;
+
+    @NotNull
+    @ColumnDefault("'DINE_IN'")
+    @Column(name = "order_type", nullable = false)
+    private String orderType;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
@@ -58,10 +56,5 @@ public class RestaurantOrder {
 
     @OneToMany(mappedBy = "order")
     private Set<Payment> payments = new LinkedHashSet<>();
-
-    @NotNull
-    @ColumnDefault("'DINE_IN'")
-    @Column(name = "order_type", nullable = false)
-    private String orderType;
 
 }
