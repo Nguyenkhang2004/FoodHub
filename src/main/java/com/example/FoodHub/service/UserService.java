@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -53,7 +54,8 @@ public class UserService {
     }
 
     public UserResponse getUserById(Integer id) {
-        return userMapper.toUserResponse(userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+        return userMapper.toUserResponse(userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 
     public UserResponse updateUser(Integer id, UserUpdateRequest request) {
@@ -70,8 +72,9 @@ public class UserService {
     }
 
     public UserResponse myInfo() {
-        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        return userMapper.toUserResponse(userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+        return userMapper.toUserResponse(userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 }

@@ -20,6 +20,11 @@ public class RestaurantTable {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @Size(max = 10)
+    @NotNull
+    @Column(name = "area", nullable = false, length = 10)
+    private String area;
+
     @Size(max = 50)
     @NotNull
     @Column(name = "table_number", nullable = false, length = 50)
