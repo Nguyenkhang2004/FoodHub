@@ -74,9 +74,6 @@ public class User {
     private Instant lastLogin;
 
     @OneToMany(mappedBy = "user")
-    private Set<InvalidateToken> invalidateTokens = new LinkedHashSet<>();
-
-    @OneToMany(mappedBy = "user")
     private Set<RestaurantOrder> restaurantOrders = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "user")

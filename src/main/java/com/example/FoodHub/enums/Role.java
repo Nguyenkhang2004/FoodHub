@@ -5,7 +5,6 @@ public enum Role {
     WAITER,
     CHEF,
     CASHIER,
-    MANAGER,
     ADMIN
     ;
 }

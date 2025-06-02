@@ -8,8 +8,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,30 +24,26 @@ public class SecurityConfig {
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
+            "/menu",
+            "/login.html",
+            "/index.html",
+            "/admin.html",
+            "/waiter.html"
     };
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-//        httpSecurity.authorizeHttpRequests(requests -> requests
-//                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-//                .anyRequest().authenticated());
-//        httpSecurity.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer
-//                .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-//                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-//        );
-//        httpSecurity.csrf(AbstractHttpConfigurer::disable);
-//        return httpSecurity.build();
-//    }
     @Bean
-    public SecurityFilterChain permitAllFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .authorizeHttpRequests(requests -> requests
-                        .anyRequest().permitAll())
-                .csrf(AbstractHttpConfigurer::disable)
-                .oauth2ResourceServer(oauth2 -> oauth2.disable());
-
+    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.authorizeHttpRequests(requests -> requests
+                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                .requestMatchers("/js/**", "/css/**", "/images/**").permitAll()
+                .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
+                .anyRequest().authenticated());
+        httpSecurity.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer
+                .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+        );
+        httpSecurity.csrf(AbstractHttpConfigurer::disable);
         return httpSecurity.build();
     }
-
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -58,10 +52,5 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return converter;
     }
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
-    }
-
 
 }
