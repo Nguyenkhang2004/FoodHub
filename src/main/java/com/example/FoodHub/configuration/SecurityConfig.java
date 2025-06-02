@@ -25,16 +25,14 @@ public class SecurityConfig {
             "/auth/logout",
             "/auth/refresh",
             "/menu",
-            "/login.html",
-            "/index.html",
-            "/admin.html",
-            "/waiter.html"
+            "/public/**",
+
     };
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(requests -> requests
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                .requestMatchers("/js/**", "/css/**", "/images/**").permitAll()
+                .requestMatchers("/js/**", "/css/**", "/images/**", "/scss/**", "/lib/**").permitAll()
                 .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
                 .anyRequest().authenticated());
         httpSecurity.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer
