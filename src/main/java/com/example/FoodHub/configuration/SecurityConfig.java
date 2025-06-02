@@ -29,7 +29,8 @@ public class SecurityConfig {
     };
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(requests -> requests
+        httpSecurity.authorizeHttpRequests(requests -> requests.requestMatchers("/menu-items/**").permitAll().
+                requestMatchers("/menu-manager/**","/js/**","/css/**","/categories","/dish-images/**","/images/**").permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                 .anyRequest().authenticated());
         httpSecurity.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer
