@@ -27,18 +27,29 @@ public class SecurityConfig {
             "/auth/logout",
             "/auth/refresh",
     };
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+//        httpSecurity.authorizeHttpRequests(requests -> requests
+//                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+//                .anyRequest().authenticated());
+//        httpSecurity.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer
+//                .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))
+//                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+//        );
+//        httpSecurity.csrf(AbstractHttpConfigurer::disable);
+//        return httpSecurity.build();
+//    }
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(requests -> requests
-                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                .anyRequest().authenticated());
-        httpSecurity.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer
-                .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-        );
-        httpSecurity.csrf(AbstractHttpConfigurer::disable);
+    public SecurityFilterChain permitAllFilterChain(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity
+                .authorizeHttpRequests(requests -> requests
+                        .anyRequest().permitAll())
+                .csrf(AbstractHttpConfigurer::disable)
+                .oauth2ResourceServer(oauth2 -> oauth2.disable());
+
         return httpSecurity.build();
     }
+
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
