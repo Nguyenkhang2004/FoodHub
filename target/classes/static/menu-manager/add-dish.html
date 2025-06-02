@@ -2,220 +2,60 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm món ăn mới</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/foodhub/css/add-dish-styles.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <style>
-        #imagePreview { max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 8px; margin-top: 10px; }
-        .error-message { color: red; font-size: 0.9em; display: none; margin-top: 5px; }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .notification-enter { animation: slideInRight 0.3s ease-out; }
-        .btn:hover { transform: translateY(-1px); transition: transform 0.2s ease; }
-    </style>
+    <script src="/foodhub/js/add-dish-scripts.js" defer></script>
 </head>
 <body>
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1><i class="fas fa-utensils me-2"></i>Thêm món ăn mới</h1>
-                <a href="/foodhub/menu-manager/menu.html" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Quay lại danh sách
-                </a>
-            </div>
+<div class="container">
+    <header class="header">
+        <h1><i class="fas fa-utensils"></i> Thêm món ăn mới</h1>
+        <a href="/foodhub/menu-manager/menu.html" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </header>
 
-            <div class="card">
-                <div class="card-body">
-                    <form id="addDishForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="dishName" class="form-label">Tên món ăn <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="dishName" required>
-                                <div id="nameError" class="error-message">Tên món ăn không được để trống!</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="dishPrice" class="form-label">Giá (VND) <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="dishPrice" step="0.01" required>
-                                <div id="priceError" class="error-message">Giá phải lớn hơn 1000 và không được để trống!</div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="dishDescription" class="form-label">Mô tả</label>
-                            <textarea class="form-control" id="dishDescription" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="dishImage" class="form-label">Ảnh món ăn</label>
-                            <input type="file" class="form-control" id="dishImage" accept="image/*">
-                            <img id="imagePreview" src="#" alt="Preview ảnh" style="display: none;">
-                        </div>
-                        <div class="mb-3">
-                            <label for="dishCategories" class="form-label">Danh mục <span class="text-danger">*</span></label>
-                            <select id="dishCategories" class="form-select" multiple required>
-                                <!-- Danh mục sẽ được load động -->
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-plus me-1"></i>Tạo món ăn
-                        </button>
-                    </form>
+    <div class="form-card">
+        <form id="addDishForm">
+            <div class="form-group">
+                <label for="dishName">Tên món ăn <span class="required">*</span></label>
+                <input type="text" id="dishName" placeholder="Nhập tên món ăn" required>
+                <span class="error-message" id="nameError">Tên món ăn không được để trống!</span>
+            </div>
+            <div class="form-group">
+                <label for="dishPrice">Giá (VND) <span class="required">*</span></label>
+                <input type="number" id="dishPrice" step="0.01" placeholder="Nhập giá món ăn" required>
+                <span class="error-message" id="priceError">Giá phải lớn hơn 1000 và không được để trống!</span>
+            </div>
+            <div class="form-group">
+                <label for="dishDescription">Mô tả</label>
+                <textarea id="dishDescription" rows="3" placeholder="Nhập mô tả món ăn (không bắt buộc)"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="dishImage">Ảnh món ăn</label>
+                <input type="file" id="dishImage" accept="image/*">
+                <small>Chọn ảnh (tối đa 5MB)</small>
+                <div id="imageContainer">
+                    <img id="imagePreview" src="#" alt="Preview ảnh" style="display: none;">
                 </div>
             </div>
-        </div>
+            <div class="form-group">
+                <label for="dishCategories">Danh mục <span class="required">*</span></label>
+                <select id="dishCategories" multiple required>
+                    <!-- Danh mục sẽ được load động -->
+                </select>
+                <small>Giữ Ctrl và click để chọn nhiều danh mục</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Tạo món ăn
+                </button>
+            </div>
+        </form>
     </div>
 </div>
-
-<script>
-    const apiMenuUrl = '/foodhub/menu-items';
-    const apiCategoryUrl = '/foodhub/categories';
-    let selectedImageBase64 = null;
-
-    // Lấy danh mục
-    function fetchCategories() {
-        axios.get(apiCategoryUrl)
-            .then(res => {
-                const select = document.getElementById('dishCategories');
-                res.data.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat.id;
-                    option.textContent = cat.name;
-                    select.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Lỗi khi tải danh mục:', error);
-                showNotification('Không thể tải danh mục. Vui lòng thử lại!', 'error');
-            });
-    }
-
-    // Chuyển file thành base64
-    function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
-
-    // Preview ảnh và lưu base64
-    document.getElementById('dishImage').addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                // Kiểm tra kích thước file (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    showNotification('Kích thước ảnh không được vượt quá 5MB!', 'error');
-                    return;
-                }
-
-                selectedImageBase64 = await fileToBase64(file);
-
-                // Hiển thị preview
-                document.getElementById('imagePreview').src = selectedImageBase64;
-                document.getElementById('imagePreview').style.display = 'block';
-            } catch (error) {
-                console.error('Lỗi khi xử lý ảnh:', error);
-                showNotification('Không thể xử lý ảnh. Vui lòng thử lại!', 'error');
-            }
-        } else {
-            selectedImageBase64 = null;
-            document.getElementById('imagePreview').style.display = 'none';
-        }
-    });
-
-    // Tạo món ăn mới
-    document.getElementById('addDishForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        // Lấy giá trị
-        const name = document.getElementById('dishName').value.trim();
-        const price = parseFloat(document.getElementById('dishPrice').value);
-        const description = document.getElementById('dishDescription').value.trim();
-        const categoryIds = Array.from(document.getElementById('dishCategories').selectedOptions).map(opt => parseInt(opt.value));
-
-        // Xóa thông báo lỗi cũ
-        document.getElementById('nameError').style.display = 'none';
-        document.getElementById('priceError').style.display = 'none';
-
-        // Validation
-        let isValid = true;
-        if (!name) {
-            document.getElementById('nameError').style.display = 'block';
-            isValid = false;
-        }
-        if (!price || price <= 1000) {
-            document.getElementById('priceError').style.display = 'block';
-            isValid = false;
-        }
-        if (categoryIds.length === 0) {
-            showNotification('Vui lòng chọn ít nhất một danh mục!', 'error');
-            isValid = false;
-        }
-
-        if (!isValid) {
-            return;
-        }
-
-        // Tạo JSON payload
-        const payload = {
-            name: name,
-            description: description || null,
-            price: price,
-            imageUrl: selectedImageBase64,
-            categoryIds: categoryIds
-        };
-
-        console.log('Sending JSON payload:', payload);
-
-        // Gửi request
-        axios.post(apiMenuUrl, payload, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            console.log('Success response:', response.data);
-            showNotification(response.data.message, 'success');
-
-            // Reset form
-            document.getElementById('addDishForm').reset();
-            document.getElementById('imagePreview').style.display = 'none';
-            selectedImageBase64 = null;
-
-            // Redirect sau 1.5s
-            setTimeout(() => {
-                window.location.href = '/foodhub/menu-manager/menu.html';
-            }, 1500);
-        }).catch(error => {
-            console.error('Error details:', error.response?.data);
-            const errorMessage = error.response?.data?.message || 'Không thể tạo món ăn. Vui lòng thử lại!';
-            showNotification(errorMessage, 'error');
-        });
-    });
-
-    // Hiển thị thông báo
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed notification-enter`;
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        notification.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
-    }
-
-    // Khởi tạo
-    fetchCategories();
-</script>
 </body>
 </html>

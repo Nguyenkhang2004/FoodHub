@@ -51,6 +51,11 @@ Page<MenuItem> findMenuItems(
         @Param("keyword") String keyword,
         Pageable pageable
 );
+    @Query("SELECT COUNT(m) > 0 FROM MenuItem m WHERE LOWER(TRIM(m.name)) = LOWER(TRIM(:name))")
+    boolean existsByNameIgnoreCase(@Param("name") String name);
+
+    @Query("SELECT COUNT(m) > 0 FROM MenuItem m WHERE LOWER(TRIM(m.name)) = LOWER(TRIM(:name)) AND m.id != :id")
+    boolean existsByNameIgnoreCaseAndIdNot(@Param("name") String name, @Param("id") Integer id);
 
     @Modifying
     @Transactional

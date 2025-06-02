@@ -1,7 +1,10 @@
 package com.example.FoodHub.controller;
 
-import com.example.FoodHub.entity.Category;
-import com.example.FoodHub.repository.CategoryRepository;
+import com.example.FoodHub.dto.response.ApiResponse;
+import com.example.FoodHub.dto.response.CategoryResponse;
+import com.example.FoodHub.exception.AppException;
+import com.example.FoodHub.exception.ErrorCode;
+import com.example.FoodHub.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,11 +18,18 @@ import java.util.List;
 public class CategoryController {
 
     @Autowired
-    private CategoryRepository categoryRepository;
+    private CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
-        List<Category> categories = categoryRepository.findAll();
-        return ResponseEntity.ok(categories);
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
+        List<CategoryResponse> categories = categoryService.getAllCategories();
+
+        ApiResponse<List<CategoryResponse>> response = ApiResponse.<List<CategoryResponse>>builder()
+                .code(1000)
+                .message("Lấy danh sách danh mục thành công")
+                .result(categories)
+                .build();
+
+        return ResponseEntity.ok().body(response);
     }
 }

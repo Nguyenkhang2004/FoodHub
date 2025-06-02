@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
-public class MenuItemreponse {
+public class MenuItemResponse {
     private Integer id;
     private String name;
     private String description;
@@ -20,7 +20,7 @@ public class MenuItemreponse {
     private Set<String> categoryNames;
     private List<Integer> categoryIds;
 
-    public MenuItemreponse(MenuItem menuItem) {
+    public MenuItemResponse(MenuItem menuItem) {
         this.id = menuItem.getId();
         this.name = menuItem.getName();
         this.description = menuItem.getDescription();

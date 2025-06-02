@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.expression.AccessException;
 
+import java.io.IOException;
 import java.util.Map;
 
 @ControllerAdvice
@@ -63,5 +64,16 @@ public class GlobalExceptionHandler {
         }
         return message;
     }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ApiResponse<Object>> handleIOException(IOException ex) {
+        ApiResponse<Object> response = ApiResponse.<Object>builder()
+                .code(ErrorCode.IMAGE_UPLOAD_FAILED.getCode())
+                .message(ErrorCode.IMAGE_UPLOAD_FAILED.getMessage() + ": " + ex.getMessage())
+                .result(null)
+                .build();
+        return new ResponseEntity<>(response, ErrorCode.IMAGE_UPLOAD_FAILED.getStatusCode());
+    }
+
 
 }

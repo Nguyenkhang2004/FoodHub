@@ -2,322 +2,92 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chỉnh sửa món ăn</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/foodhub/css/edit-dish-styles.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <style>
-        #imagePreview { max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 8px; margin-top: 10px; }
-        .error-message { color: red; font-size: 0.9em; display: none; margin-top: 5px; }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .notification-enter { animation: slideInRight 0.3s ease-out; }
-        .btn:hover { transform: translateY(-1px); transition: transform 0.2s ease; }
-        /* CSS cho modal xác nhận */
-        .modal-dialog-centered {
-            display: flex;
-            align-items: center;
-            min-height: calc(100% - 1rem);
-        }
-        .confirm-modal .modal-content {
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border: none;
-        }
-        .confirm-modal .modal-body {
-            padding: 1.5rem;
-            text-align: center;
-            font-size: 1.1rem;
-            color: #333;
-        }
-        .confirm-modal .modal-footer {
-            border-top: none;
-            justify-content: center;
-            padding-bottom: 1.5rem;
-        }
-        .confirm-modal .btn {
-            border-radius: 8px;
-            font-weight: 500;
-            padding: 0.5rem 1.5rem;
-        }
-        .confirm-modal .btn-primary {
-            background-color: #007bff;
-            border: none;
-        }
-        .confirm-modal .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        .confirm-modal .btn-secondary {
-            background-color: #6c757d;
-            border: none;
-        }
-        .confirm-modal .btn-secondary:hover {
-            background-color: #5a6268;
-        }
-    </style>
+    <script src="/foodhub/js/edit-dish-scripts.js" defer></script>
 </head>
 <body>
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1><i class="fas fa-utensils me-2"></i>Chỉnh sửa món ăn</h1>
-                <a href="/foodhub/menu-manager/menu.html" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Quay lại danh sách
-                </a>
-            </div>
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Đang tải thông tin món ăn...</div>
+</div>
 
-            <div class="card">
-                <div class="card-body">
-                    <form id="editDishForm">
-                        <input type="hidden" id="dishId">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="dishName" class="form-label">Tên món ăn <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="dishName" required>
-                                <div id="nameError" class="error-message">Tên món ăn không được để trống!</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="dishPrice" class="form-label">Giá (VND) <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="dishPrice" step="0.01" required>
-                                <div id="priceError" class="error-message">Giá phải lớn hơn 1000 và không được để trống!</div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="dishDescription" class="form-label">Mô tả</label>
-                            <textarea class="form-control" id="dishDescription" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="dishImage" class="form-label">Ảnh món ăn</label>
-                            <input type="file" class="form-control" id="dishImage" accept="image/*">
-                            <img id="imagePreview" src="#" alt="Preview ảnh" style="display: none;">
-                        </div>
-                        <div class="mb-3">
-                            <label for="dishCategories" class="form-label">Danh mục <span class="text-danger">*</span></label>
-                            <select id="dishCategories" class="form-select" multiple required>
-                                <!-- Danh mục sẽ được load động -->
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Lưu thay đổi
-                        </button>
-                    </form>
+<div class="container">
+    <header class="header">
+        <h1><i class="fas fa-utensils"></i> Chỉnh sửa món ăn</h1>
+        <a href="/foodhub/menu-manager/menu.html" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </header>
+
+    <!-- Thông tin hiện tại -->
+    <div class="info-card" id="currentInfoCard" style="display: none;">
+        <h3><i class="fas fa-info-circle"></i> Thông tin hiện tại</h3>
+        <div id="currentInfoDisplay"></div>
+    </div>
+
+    <div class="form-card">
+        <form id="editDishForm">
+            <input type="hidden" id="dishId">
+            <div class="form-group">
+                <label for="dishName">Tên món ăn <span class="required">*</span></label>
+                <input type="text" id="dishName" placeholder="Nhập tên món ăn" required>
+                <span class="error-message" id="nameError">Tên món ăn không được để trống!</span>
+            </div>
+            <div class="form-group">
+                <label for="dishPrice">Giá (VND) <span class="required">*</span></label>
+                <input type="number" id="dishPrice" step="0.01" placeholder="Nhập giá món ăn" required>
+                <span class="error-message" id="priceError">Giá phải lớn hơn 1000 và không được để trống!</span>
+            </div>
+            <div class="form-group">
+                <label for="dishDescription">Mô tả</label>
+                <textarea id="dishDescription" rows="3" placeholder="Nhập mô tả món ăn (không bắt buộc)"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="dishImage">Ảnh món ăn</label>
+                <input type="file" id="dishImage" accept="image/*">
+                <small>Chọn ảnh mới nếu muốn thay đổi (tối đa 5MB)</small>
+                <div id="imageContainer">
+                    <img id="imagePreview" src="#" alt="Preview ảnh" style="display: none;">
+                    <div id="currentImageInfo" class="image-info" style="display: none;">
+                        <small><i class="fas fa-image"></i> Ảnh hiện tại</small>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div class="form-group">
+                <label for="dishCategories">Danh mục <span class="required">*</span></label>
+                <select id="dishCategories" multiple required>
+                    <!-- Danh mục sẽ được load động -->
+                </select>
+                <small>Giữ Ctrl và click để chọn nhiều danh mục</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Lưu thay đổi
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                    <i class="fas fa-undo"></i> Khôi phục
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 <!-- Modal xác nhận -->
-<div class="modal fade confirm-modal" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body">
-                Bạn có chắc chắn muốn lưu các thay đổi này?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="confirmSaveBtn">Xác nhận</button>
-            </div>
+<div class="modal" id="confirmModal">
+    <div class="modal-content">
+        <div class="modal-body">
+            Bạn có chắc chắn muốn lưu các thay đổi này?
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+            <button type="button" class="btn btn-primary" id="confirmSaveBtn">Xác nhận</button>
         </div>
     </div>
 </div>
-
-<script>
-    const apiMenuUrl = '/foodhub/menu-items';
-    const apiCategoryUrl = '/foodhub/categories';
-    let selectedImageBase64 = null;
-    let formDataToSubmit = null; // Lưu trữ dữ liệu form để sử dụng sau khi xác nhận
-
-    // Lấy ID món ăn từ query parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const dishId = urlParams.get('id');
-
-    if (!dishId) {
-        showNotification('Không tìm thấy ID món ăn!', 'error');
-        setTimeout(() => window.location.href = '/foodhub/menu-manager/menu.html', 1500);
-    }
-
-    // Lấy danh mục
-    function fetchCategories() {
-        axios.get(apiCategoryUrl)
-            .then(res => {
-                const select = document.getElementById('dishCategories');
-                res.data.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat.id;
-                    option.textContent = cat.name;
-                    select.appendChild(option);
-                });
-                // Sau khi load danh mục, lấy thông tin món ăn
-                fetchDishDetails();
-            })
-            .catch(error => {
-                console.error('Lỗi khi tải danh mục:', error);
-                showNotification('Không thể tải danh mục. Vui lòng thử lại!', 'error');
-            });
-    }
-
-    // Lấy thông tin món ăn
-    function fetchDishDetails() {
-        axios.get(`${apiMenuUrl}/${dishId}`)
-            .then(response => {
-                const dish = response.data;
-                document.getElementById('dishId').value = dish.id;
-                document.getElementById('dishName').value = dish.name;
-                document.getElementById('dishPrice').value = dish.price;
-                document.getElementById('dishDescription').value = dish.description || '';
-                if (dish.imageUrl) {
-                    selectedImageBase64 = dish.imageUrl;
-                    document.getElementById('imagePreview').src = dish.imageUrl;
-                    document.getElementById('imagePreview').style.display = 'block';
-                }
-                const select = document.getElementById('dishCategories');
-                Array.from(select.options).forEach(option => {
-                    if (dish.categoryIds && dish.categoryIds.includes(parseInt(option.value))) {
-                        option.selected = true;
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Lỗi khi tải thông tin món ăn:', error);
-                showNotification('Không thể tải thông tin món ăn. Vui lòng thử lại!', 'error');
-                setTimeout(() => window.location.href = '/foodhub/menu-manager/menu.html', 1500);
-            });
-    }
-
-    // Chuyển file thành base64
-    function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
-
-    // Preview ảnh và lưu base64
-    document.getElementById('dishImage').addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                // Kiểm tra kích thước file (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    showNotification('Kích thước ảnh không được vượt quá 5MB!', 'error');
-                    return;
-                }
-
-                selectedImageBase64 = await fileToBase64(file);
-
-                // Hiển thị preview
-                document.getElementById('imagePreview').src = selectedImageBase64;
-                document.getElementById('imagePreview').style.display = 'block';
-            } catch (error) {
-                console.error('Lỗi khi xử lý ảnh:', error);
-                showNotification('Không thể xử lý ảnh. Vui lòng thử lại!', 'error');
-            }
-        } else {
-            selectedImageBase64 = null;
-            document.getElementById('imagePreview').style.display = 'none';
-        }
-    });
-
-    // Xử lý submit form
-    document.getElementById('editDishForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        // Lấy giá trị
-        const name = document.getElementById('dishName').value.trim();
-        const price = parseFloat(document.getElementById('dishPrice').value);
-        const description = document.getElementById('dishDescription').value.trim();
-        const categoryIds = Array.from(document.getElementById('dishCategories').selectedOptions).map(opt => parseInt(opt.value));
-
-        // Xóa thông báo lỗi cũ
-        document.getElementById('nameError').style.display = 'none';
-        document.getElementById('priceError').style.display = 'none';
-
-        // Validation
-        let isValid = true;
-        if (!name) {
-            document.getElementById('nameError').style.display = 'block';
-            isValid = false;
-        }
-        if (!price || price <= 1000) {
-            document.getElementById('priceError').style.display = 'block';
-            isValid = false;
-        }
-        if (categoryIds.length === 0) {
-            showNotification('Vui lòng chọn ít nhất một danh mục!', 'error');
-            isValid = false;
-        }
-
-        if (!isValid) {
-            return;
-        }
-
-        // Tạo JSON payload
-        formDataToSubmit = {
-            name: name,
-            description: description || null,
-            price: price,
-            imageUrl: selectedImageBase64,
-            categoryIds: categoryIds
-        };
-
-        // Mở modal xác nhận
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-        confirmModal.show();
-    });
-
-    // Xử lý khi nhấn "Xác nhận" trong modal
-    document.getElementById('confirmSaveBtn').addEventListener('click', function() {
-        const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
-        confirmModal.hide();
-
-        console.log('Sending JSON payload:', formDataToSubmit);
-
-        // Gửi request cập nhật
-        axios.put(`${apiMenuUrl}/${dishId}`, formDataToSubmit, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            console.log('Success response:', response.data);
-            showNotification(response.data.message, 'success');
-
-            // Redirect sau 1.5s
-            setTimeout(() => {
-                window.location.href = '/foodhub/menu-manager/menu.html';
-            }, 1500);
-        }).catch(error => {
-            console.error('Error details:', error.response?.data);
-            const errorMessage = error.response?.data?.message || 'Không thể cập nhật món ăn. Vui lòng thử lại!';
-            showNotification(errorMessage, 'error');
-        });
-    });
-
-    // Hiển thị thông báo
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed notification-enter`;
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        notification.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
-    }
-
-    // Khởi tạo
-    fetchCategories();
-</script>
 </body>
 </html>
