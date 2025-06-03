@@ -1,51 +1,51 @@
 package com.example.FoodHub.controller;
 
-import com.example.FoodHub.entity.Payment;
-import com.example.FoodHub.service.PaymentService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import com.example.FoodHub.dto.request.PaymentRequest;
+import com.example.FoodHub.dto.response.PaymentResponse;
+import com.example.FoodHub.service.CashierService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping("/cashier")
-@PreAuthorize("hasRole('CASHIER')")
-@RequiredArgsConstructor
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/cashier")
 public class CashierController {
 
-    private final PaymentService paymentService;
+    @Autowired
+    private CashierService cashierService;
 
-
-
-    @GetMapping("/payments")
-    public String showPayments(Model model) {
-        model.addAttribute("payments", paymentService.getPendingPayments());
-        model.addAttribute("newPayment", new Payment());
-        return "cashier/payments";
+    // Thanh toán đơn hàng
+    @PostMapping("/payment")
+    public ResponseEntity<PaymentResponse> processPayment(@RequestBody PaymentRequest request) {
+        PaymentResponse response = cashierService.processPayment(request);
+        return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/payments/process")
-    public String processPayment(@ModelAttribute Payment payment, Model model) {
-        paymentService.processPayment(payment);
-        model.addAttribute("payments", paymentService.getPendingPayments());
-        return "redirect:/cashier/payments";
+    // Hoàn/Hủy đơn hàng
+    @PostMapping("/cancel-or-refund/{orderId}")
+    public ResponseEntity<String> cancelOrRefundOrder(@PathVariable Integer orderId) {
+        cashierService.cancelOrRefundOrder(orderId);
+        return ResponseEntity.ok("Order cancelled or refunded successfully");
     }
 
+    // Quản lý giao dịch theo ngày
     @GetMapping("/transactions")
-    public String showTransactions(Model model) {
-        model.addAttribute("transactions", paymentService.getAllTransactions());
-        return "cashier/transactions";
+    public ResponseEntity<List<PaymentResponse>> getTransactionsByDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant date) {
+        List<PaymentResponse> transactions = cashierService.getTransactionsByDate(date);
+        return ResponseEntity.ok(transactions);
     }
 
-    @PostMapping("/transactions/{paymentId}/refund")
-    public String refundTransaction(@PathVariable Integer paymentId, Model model) {
-        paymentService.refundPayment(paymentId);
-        model.addAttribute("transactions", paymentService.getAllTransactions());
-        return "redirect:/cashier/transactions";
+    // Tổng doanh thu theo ngày
+    @GetMapping("/revenue")
+    public ResponseEntity<BigDecimal> getTotalRevenueByDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant date) {
+        BigDecimal totalRevenue = cashierService.getTotalRevenueByDate(date);
+        return ResponseEntity.ok(totalRevenue);
     }
 }

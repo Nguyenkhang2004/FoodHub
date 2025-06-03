@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cashier Dashboard</title>
+  <style>
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background-color: #1a1a1a;
+        margin: 0;
+        padding: 20px;
+        color: #ffffff;
+    }
+
+    h1 {
+        text-align: center;
+        color: #ffffff;
+        margin-bottom: 20px;
+        font-size: 2.5em;
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .nav-buttons button {
+        padding: 12px 25px;
+        background-color: #3498db;
+        border: none;
+        color: #ffffff;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    .nav-buttons button:hover {
+        background-color: #2980b9;
+    }
+
+    .nav-buttons button.active {
+        background-color: #f1c40f;
+        color: #1a1a1a;
+    }
+
+    .section {
+        display: none;
+        background-color: #2c2c2c;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    .section:hover {
+        transform: translateY(-5px);
+    }
+
+    .section h2 {
+        margin-top: 0;
+        color: #f1c40f;
+        font-size: 1.5em;
+    }
+
+    label {
+        display: block;
+        margin: 10px 0;
+        color: #ecf0f1;
+    }
+
+    input[type="number"],
+    input[type="datetime-local"],
+    select {
+        padding: 10px;
+        border: 1px solid #444;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 300px;
+        background-color: #333;
+        color: #ffffff;
+    }
+
+    button {
+        margin-top: 15px;
+        padding: 12px 25px;
+        background-color: #3498db;
+        border: none;
+        color: #ffffff;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #2980b9;
+    }
+
+    .error {
+        color: #e74c3c;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .success {
+        color: #27ae60;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 15px;
+        background-color: #333;
+    }
+
+    th, td {
+        border: 1px solid #555;
+        padding: 12px;
+        text-align: left;
+        color: #ecf0f1;
+    }
+
+    th {
+        background-color: #444;
+    }
+
+    #paymentResult p,
+    #revenueResult h3 {
+        margin: 10px 0;
+        color: #ffffff;
+    }
+
+    @media (max-width: 600px) {
+        input, select, button {
+            width: 100%;
+        }
+        .nav-buttons {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+  </style>
+</head>
+<body>
+<h1>Cashier Dashboard</h1>
+
+<!-- Navigation Buttons -->
+<div class="nav-buttons">
+  <button onclick="showSection('payment')" id="paymentBtn">Process Payment</button>
+  <button onclick="showSection('cancel')" id="cancelBtn">Cancel/Refund</button>
+  <button onclick="showSection('transactions')" id="transactionsBtn">Transactions</button>
+  <button onclick="showSection('revenue')" id="revenueBtn">Revenue</button>
+</div>
+
+<!-- Messages -->
+<div id="message" class="success"></div>
+<div id="error" class="error"></div>
+
+<!-- Payment -->
+<div class="section" id="paymentSection">
+  <h2>Process Payment</h2>
+  <form id="paymentForm">
+    <label>Order ID: <input type="number" id="paymentOrderId" required></label>
+    <label>Payment Method:
+      <select id="paymentMethod" required>
+        <option value="CASH">CASH</option>
+        <option value="VNPAY">VNPAY</option>
+      </select>
+    </label>
+    <button type="button" onclick="processPayment()">Pay</button>
+  </form>
+  <div id="paymentResult"></div>
+</div>
+
+<!-- Cancel/Refund -->
+<div class="section" id="cancelSection">
+  <h2>Cancel or Refund Order</h2>
+  <form id="cancelForm">
+    <label>Order ID: <input type="number" id="cancelOrderId" required></label>
+    <button type="button" onclick="cancelOrRefund()">Cancel/Refund</button>
+  </form>
+</div>
+
+<!-- Transactions -->
+<div class="section" id="transactionsSection">
+  <h2>Transactions by Date</h2>
+  <form id="transactionsForm">
+    <label>Date: <input type="datetime-local" id="transactionsDate" required></label>
+    <button type="button" onclick="getTransactions()">View Transactions</button>
+  </form>
+  <div id="transactionsResult">
+    <table id="transactionsTable" style="display: none;">
+      <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Amount</th>
+        <th>Payment Method</th>
+        <th>Status</th>
+        <th>Created At</th>
+        <th>Updated At</th>
+      </tr>
+      </thead>
+      <tbody id="transactionsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Revenue -->
+<div class="section" id="revenueSection">
+  <h2>Total Revenue by Date</h2>
+  <form id="revenueForm">
+    <label>Date: <input type="datetime-local" id="revenueDate" required></label>
+    <button type="button" onclick="getRevenue()">View Revenue</button>
+  </form>
+  <div id="revenueResult"></div>
+</div>
+
+<script>
+  const API_BASE_URL = "http://localhost:8080/foodhub/api/cashier";
+
+  function clearMessages() {
+      document.getElementById("message").innerText = "";
+      document.getElementById("error").innerText = "";
+  }
+
+  function showSection(sectionId) {
+      // Ẩn tất cả các section
+      const sections = document.querySelectorAll('.section');
+      sections.forEach(section => {
+          section.classList.remove('active');
+      });
+
+      // Xóa trạng thái active của tất cả các nút
+      const buttons = document.querySelectorAll('.nav-buttons button');
+      buttons.forEach(button => {
+          button.classList.remove('active');
+      });
+
+      // Hiển thị section tương ứng và thêm trạng thái active cho nút
+      document.getElementById(`${sectionId}Section`).classList.add('active');
+      document.getElementById(`${sectionId}Btn`).classList.add('active');
+
+      clearMessages();
+  }
+
+ async function processPayment() {
+    clearMessages();
+    const orderId = document.getElementById("paymentOrderId").value;
+    const paymentMethod = document.getElementById("paymentMethod").value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: parseInt(orderId), paymentMethod })
+        });
+        const text = await response.text(); // Lấy phản hồi dưới dạng text trước
+        console.log("Response from server:", text); // In ra console để kiểm tra
+        const data = JSON.parse(text); // Thử parse JSON
+        if (response.ok) {
+            document.getElementById("message").innerText = "Payment successful!";
+            document.getElementById("paymentResult").innerHTML = `
+                <h3>Payment Result:</h3>
+                <p>Order ID: ${data.orderId}</p>
+                <p>Amount: ${data.amount}</p>
+                <p>Status: ${data.status}</p>
+            `;
+        } else {
+            throw new Error(data.message || "Payment failed");
+        }
+    } catch (error) {
+        document.getElementById("error").innerText = error.message;
+    }
+}
+
+  async function cancelOrRefund() {
+      clearMessages();
+      const orderId = document.getElementById("cancelOrderId").value;
+
+      try {
+          const response = await fetch(`${API_BASE_URL}/cancel-or-refund/${orderId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" }
+          });
+          const data = await response.text();
+          if (response.ok) {
+              document.getElementById("message").innerText = data;
+          } else {
+              throw new Error(data.message || "Cancel/Refund failed");
+          }
+      } catch (error) {
+          document.getElementById("error").innerText = error.message;
+      }
+  }
+
+  async function getTransactions() {
+      clearMessages();
+      const date = document.getElementById("transactionsDate").value;
+      const formattedDate = new Date(date).toISOString();
+
+      try {
+          const response = await fetch(`${API_BASE_URL}/transactions?date=${formattedDate}`);
+          const transactions = await response.json();
+          if (response.ok) {
+              const tbody = document.getElementById("transactionsBody");
+              tbody.innerHTML = "";
+              transactions.forEach(tx => {
+                  const row = document.createElement("tr");
+                  row.innerHTML = `
+                      <td>${tx.orderId}</td>
+                      <td>${tx.amount}</td>
+                      <td>${tx.paymentMethod}</td>
+                      <td>${tx.status}</td>
+                      <td>${tx.createdAt}</td>
+                      <td>${tx.updatedAt}</td>
+                  `;
+                  tbody.appendChild(row);
+              });
+              document.getElementById("transactionsTable").style.display = "table";
+          } else {
+              throw new Error("Failed to fetch transactions");
+          }
+      } catch (error) {
+          document.getElementById("error").innerText = error.message;
+      }
+  }
+
+  async function getRevenue() {
+      clearMessages();
+      const date = document.getElementById("revenueDate").value;
+      const formattedDate = new Date(date).toISOString();
+
+      try {
+          const response = await fetch(`${API_BASE_URL}/revenue?date=${formattedDate}`);
+          const revenue = await response.text();
+          if (response.ok) {
+              document.getElementById("revenueResult").innerHTML = `<h3>Total Revenue: ${revenue}</h3>`;
+          } else {
+              throw new Error("Failed to fetch revenue");
+          }
+      } catch (error) {
+          document.getElementById("error").innerText = error.message;
+      }
+  }
+
+  // Mặc định hiển thị section đầu tiên khi tải trang
+  showSection('payment');
+</script>
+</body>
+</html>

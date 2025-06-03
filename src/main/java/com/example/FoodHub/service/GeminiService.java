@@ -18,18 +18,18 @@ public class GeminiService {
         try {
             HttpClient client = HttpClient.newHttpClient();
             String json = """
-            {
-              "contents": [
-                {
-                  "parts": [
                     {
-                      "text": "%s"
+                      "contents": [
+                        {
+                          "parts": [
+                            {
+                              "text": "%s"
+                            }
+                          ]
+                        }
+                      ]
                     }
-                  ]
-                }
-              ]
-            }
-            """.formatted(userMessage);
+                    """.formatted(userMessage);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(ENDPOINT))
