@@ -22,6 +22,6 @@ public class OrderItemRequest {
     @Min(value = 1, message = "Quantity must be at least 1")
     Integer quantity;
 
-    // Optional: cho phép client gửi giá hoặc để backend tự tính
-    BigDecimal price;
+    String status = "PENDING";
+
 }

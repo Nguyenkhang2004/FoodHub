@@ -26,7 +26,9 @@ public class SecurityConfig {
             "/auth/refresh",
             "/menu",
             "/public/**",
-
+            "/admin/**",
+            "/waiter/**",
+            "/orders/**"
     };
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
