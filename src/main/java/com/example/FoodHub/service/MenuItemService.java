@@ -443,4 +443,8 @@ public class MenuItemService {
         if (keyword == null) return null;
         return keyword.toLowerCase().replaceAll("\\s+", " ");
     }
+
+    public long countMenuItems() {
+        return menuItemRepository.count();
+    }
 }

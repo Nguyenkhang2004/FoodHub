@@ -243,4 +243,13 @@ public class MenuItemController {
 
         return ResponseEntity.ok().body(response);
     }
+    @GetMapping("/count")
+    public ApiResponse<Long> getMenuItemCount() {
+        Long totalItems = menuItemService.countMenuItems();
+        return ApiResponse.<Long>builder()
+                .code(1000)
+                .message("Thành công")
+                .result(totalItems)
+                .build();
+    }
 }
