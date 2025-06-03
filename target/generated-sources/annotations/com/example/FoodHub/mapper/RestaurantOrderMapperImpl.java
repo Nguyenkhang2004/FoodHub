@@ -6,6 +6,8 @@ import com.example.FoodHub.dto.response.OrderItemResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.OrderItem;
 import com.example.FoodHub.entity.RestaurantOrder;
+import com.example.FoodHub.entity.RestaurantTable;
+import com.example.FoodHub.entity.User;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.annotation.processing.Generated;
@@ -13,26 +15,30 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-02T11:01:04+0700",
+    date = "2025-06-03T08:25:07+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
 public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
 
     @Override
-    public RestaurantOrderResponse toRestaurantOrderResponse(RestaurantOrder restaurantOrder) {
-        if ( restaurantOrder == null ) {
+    public RestaurantOrderResponse toRestaurantOrderResponse(RestaurantOrder order) {
+        if ( order == null ) {
             return null;
         }
 
         RestaurantOrderResponse.RestaurantOrderResponseBuilder restaurantOrderResponse = RestaurantOrderResponse.builder();
 
-        restaurantOrderResponse.id( restaurantOrder.getId() );
-        restaurantOrderResponse.status( restaurantOrder.getStatus() );
-        restaurantOrderResponse.orderType( restaurantOrder.getOrderType() );
-        restaurantOrderResponse.createdAt( restaurantOrder.getCreatedAt() );
-        restaurantOrderResponse.note( restaurantOrder.getNote() );
-        restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( restaurantOrder.getOrderItems() ) );
+        restaurantOrderResponse.tableId( orderTableId( order ) );
+        restaurantOrderResponse.tableNumber( orderTableTableNumber( order ) );
+        restaurantOrderResponse.userId( orderUserId( order ) );
+        restaurantOrderResponse.username( orderUserUsername( order ) );
+        restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
+        restaurantOrderResponse.id( order.getId() );
+        restaurantOrderResponse.status( order.getStatus() );
+        restaurantOrderResponse.orderType( order.getOrderType() );
+        restaurantOrderResponse.createdAt( order.getCreatedAt() );
+        restaurantOrderResponse.note( order.getNote() );
 
         return restaurantOrderResponse.build();
     }
@@ -48,9 +54,67 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrder.setStatus( restaurantOrderRequest.getStatus() );
         restaurantOrder.setNote( restaurantOrderRequest.getNote() );
         restaurantOrder.setOrderType( restaurantOrderRequest.getOrderType() );
-        restaurantOrder.setOrderItems( orderItemRequestSetToOrderItemSet( restaurantOrderRequest.getOrderItems() ) );
 
         return restaurantOrder;
+    }
+
+    @Override
+    public void updateOrder(RestaurantOrder order, RestaurantOrderRequest request) {
+        if ( request == null ) {
+            return;
+        }
+
+        order.setStatus( request.getStatus() );
+        order.setNote( request.getNote() );
+        order.setOrderType( request.getOrderType() );
+        if ( order.getOrderItems() != null ) {
+            Set<OrderItem> set = orderItemRequestSetToOrderItemSet( request.getOrderItems() );
+            if ( set != null ) {
+                order.getOrderItems().clear();
+                order.getOrderItems().addAll( set );
+            }
+            else {
+                order.setOrderItems( null );
+            }
+        }
+        else {
+            Set<OrderItem> set = orderItemRequestSetToOrderItemSet( request.getOrderItems() );
+            if ( set != null ) {
+                order.setOrderItems( set );
+            }
+        }
+    }
+
+    private Integer orderTableId(RestaurantOrder restaurantOrder) {
+        RestaurantTable table = restaurantOrder.getTable();
+        if ( table == null ) {
+            return null;
+        }
+        return table.getId();
+    }
+
+    private String orderTableTableNumber(RestaurantOrder restaurantOrder) {
+        RestaurantTable table = restaurantOrder.getTable();
+        if ( table == null ) {
+            return null;
+        }
+        return table.getTableNumber();
+    }
+
+    private Integer orderUserId(RestaurantOrder restaurantOrder) {
+        User user = restaurantOrder.getUser();
+        if ( user == null ) {
+            return null;
+        }
+        return user.getId();
+    }
+
+    private String orderUserUsername(RestaurantOrder restaurantOrder) {
+        User user = restaurantOrder.getUser();
+        if ( user == null ) {
+            return null;
+        }
+        return user.getUsername();
     }
 
     protected OrderItemResponse orderItemToOrderItemResponse(OrderItem orderItem) {
@@ -89,7 +153,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         OrderItem orderItem = new OrderItem();
 
         orderItem.setQuantity( orderItemRequest.getQuantity() );
-        orderItem.setPrice( orderItemRequest.getPrice() );
+        orderItem.setStatus( orderItemRequest.getStatus() );
 
         return orderItem;
     }

@@ -17,7 +17,8 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(1009, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
     ROLE_NOT_EXISTED(1010, "Role not found", HttpStatus.NOT_FOUND),
     TABLE_NOT_EXISTED(2001, "Table not found", HttpStatus.NOT_FOUND),
-    ORDER_NOT_EXISTED(2002, "Order not found", HttpStatus.NOT_FOUND)
+    ORDER_NOT_EXISTED(2002, "Order not found", HttpStatus.NOT_FOUND),
+    MENU_ITEM_NOT_EXISTED(2003, "Menu item not found", HttpStatus.NOT_FOUND),
     ;
     private int code;
     private String message;

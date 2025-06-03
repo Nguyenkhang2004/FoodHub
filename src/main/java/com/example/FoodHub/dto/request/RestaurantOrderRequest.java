@@ -24,7 +24,7 @@ public class RestaurantOrderRequest {
 
     String orderType;
 
-    String status;
+    String status = "PENDING";
 
     @NotNull
     Set<OrderItemRequest> orderItems;
