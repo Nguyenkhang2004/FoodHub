@@ -13,8 +13,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     Optional<Payment> findByOrderId(Integer orderId);
     List<Payment> findByStatus(String status);
 
-    @Query("SELECT p FROM Payment p WHERE DATE(p.createdAt) = :date")
-    List<Payment> findByCreatedAtDate(Instant date);
+    @Query("SELECT p FROM Payment p WHERE p.createdAt BETWEEN :start AND :end")
+
+    List<Payment> findByCreatedAtBetween(Instant start, Instant end);
 
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'PAID' AND DATE(p.createdAt) = :date")
     BigDecimal calculateTotalRevenueByDate(Instant date);

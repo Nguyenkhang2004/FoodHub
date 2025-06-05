@@ -52,7 +52,6 @@ public class Payment {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, updatable = false) // Ngăn JPA cập nhật cột này
     private Instant updatedAt;
-
 }

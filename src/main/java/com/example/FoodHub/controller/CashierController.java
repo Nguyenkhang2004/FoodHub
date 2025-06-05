@@ -2,9 +2,11 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.response.PaymentResponse;
+import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.service.CashierService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +16,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cashier")
+
+
 public class CashierController {
 
     @Autowired
@@ -36,16 +40,45 @@ public class CashierController {
     // Quản lý giao dịch theo ngày
     @GetMapping("/transactions")
     public ResponseEntity<List<PaymentResponse>> getTransactionsByDate(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant date) {
-        List<PaymentResponse> transactions = cashierService.getTransactionsByDate(date);
-        return ResponseEntity.ok(transactions);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant end) {
+        try {
+            List<PaymentResponse> transactions = cashierService.getTransactionsByDate(start, end);
+            return ResponseEntity.ok(transactions);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
-    // Tổng doanh thu theo ngày
     @GetMapping("/revenue")
     public ResponseEntity<BigDecimal> getTotalRevenueByDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant date) {
         BigDecimal totalRevenue = cashierService.getTotalRevenueByDate(date);
         return ResponseEntity.ok(totalRevenue);
+    }
+
+    @GetMapping("/revenue-stats")
+    public ResponseEntity<RevenueStatsResponseForCashier> getRevenueStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant end) {
+        try {
+            RevenueStatsResponseForCashier stats;
+            if (date != null) {
+                // Tương thích với kiểu cũ: Chỉ nhận date
+                stats = cashierService.getRevenueStatsByDate(date);
+            } else if (start != null && end != null) {
+                // Kiểu mới: Nhận start và end
+                if (end.isBefore(start)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                }
+                stats = cashierService.getRevenueStatsByDateRange(start, end);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 }

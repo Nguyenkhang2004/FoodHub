@@ -2,6 +2,7 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.response.PaymentResponse;
+import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.OrderItem;
 import com.example.FoodHub.entity.Payment;
 import com.example.FoodHub.entity.RestaurantOrder;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,10 +53,19 @@ public class CashierService {
         payment.setAmount(totalAmount);
         payment.setPaymentMethod(request.getPaymentMethod());
         payment.setStatus("PAID");
-        payment.setUpdatedAt(Instant.now());
+        // Không set updated_at, để MySQL tự động cập nhật
         paymentRepository.save(payment);
 
+        // Cập nhật trạng thái của order_item
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(request.getOrderId());
+        orderItems.forEach(item -> {
+            item.setStatus("COMPLETED");
+            // Không set updated_at, để MySQL tự động cập nhật
+            orderItemRepository.save(item);
+        });
+
         order.setStatus("COMPLETED");
+        // Không set updated_at, để MySQL tự động cập nhật
         orderRepository.save(order);
 
         return mapToPaymentResponse(payment);
@@ -77,31 +89,80 @@ public class CashierService {
         } else {
             payment.setStatus("CANCELLED");
         }
-        payment.setUpdatedAt(Instant.now());
+        // Không set updated_at, để MySQL tự động cập nhật
         paymentRepository.save(payment);
 
         order.setStatus("CANCELLED");
+        // Không set updated_at, để MySQL tự động cập nhật
         orderRepository.save(order);
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
         orderItems.forEach(item -> {
             item.setStatus("CANCELLED");
+            // Không set updated_at, để MySQL tự động cập nhật
             orderItemRepository.save(item);
         });
     }
 
     // Quản lý giao dịch (lấy danh sách giao dịch theo ngày)
-    public List<PaymentResponse> getTransactionsByDate(Instant date) {
-        List<Payment> payments = paymentRepository.findByCreatedAtDate(date);
+    public List<PaymentResponse> getTransactionsByDate(Instant start, Instant end) {
+        List<Payment> payments = paymentRepository.findByCreatedAtBetween(start, end);
         return payments.stream()
                 .map(this::mapToPaymentResponse)
                 .collect(Collectors.toList());
     }
 
-    // Tính tổng doanh thu theo ngày
     public BigDecimal getTotalRevenueByDate(Instant date) {
         BigDecimal totalRevenue = paymentRepository.calculateTotalRevenueByDate(date);
         return totalRevenue != null ? totalRevenue : BigDecimal.ZERO;
+    }
+
+    public RevenueStatsResponseForCashier getRevenueStatsByDate(Instant date) {
+        Instant startOfDay = date.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate()
+                .atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+        Instant endOfDay = date.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate()
+                .plusDays(1).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).minusSeconds(1).toInstant();
+
+        return calculateRevenueStats(startOfDay, endOfDay);
+    }
+
+    public RevenueStatsResponseForCashier getRevenueStatsByDateRange(Instant start, Instant end) {
+        return calculateRevenueStats(start, end);
+    }
+
+    // Phương thức phụ để tái sử dụng logic tính toán doanh thu
+    private RevenueStatsResponseForCashier calculateRevenueStats(Instant start, Instant end) {
+        List<Payment> payments = paymentRepository.findByCreatedAtBetween(start, end);
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        BigDecimal cashRevenue = BigDecimal.ZERO;
+        BigDecimal vnpayRevenue = BigDecimal.ZERO;
+        BigDecimal pendingRevenue = BigDecimal.ZERO;
+        BigDecimal paidRevenue = BigDecimal.ZERO;
+        BigDecimal cancelledRevenue = BigDecimal.ZERO;
+
+        for (Payment payment : payments) {
+            BigDecimal amount = payment.getAmount() != null ? payment.getAmount() : BigDecimal.ZERO;
+
+            // Chỉ tính totalRevenue cho các giao dịch PAID
+            if ("PAID".equals(payment.getStatus())) {
+                totalRevenue = totalRevenue.add(amount);
+                paidRevenue = paidRevenue.add(amount);
+
+                if ("CASH".equals(payment.getPaymentMethod())) {
+                    cashRevenue = cashRevenue.add(amount);
+                } else if ("VNPAY".equals(payment.getPaymentMethod())) {
+                    vnpayRevenue = vnpayRevenue.add(amount);
+                }
+            } else if ("PENDING".equals(payment.getStatus())) {
+                pendingRevenue = pendingRevenue.add(amount);
+            } else if ("CANCELLED".equals(payment.getStatus())) {
+                cancelledRevenue = cancelledRevenue.add(amount);
+            }
+        }
+
+        return new RevenueStatsResponseForCashier(totalRevenue, cashRevenue, vnpayRevenue,
+                pendingRevenue, paidRevenue, cancelledRevenue);
     }
 
     private PaymentResponse mapToPaymentResponse(Payment payment) {
@@ -110,6 +171,7 @@ public class CashierService {
         response.setAmount(payment.getAmount());
         response.setPaymentMethod(payment.getPaymentMethod());
         response.setStatus(payment.getStatus());
+        response.setTransactionId(payment.getTransactionId());
         response.setCreatedAt(payment.getCreatedAt());
         response.setUpdatedAt(payment.getUpdatedAt());
         return response;
