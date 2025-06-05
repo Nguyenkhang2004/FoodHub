@@ -65,6 +65,7 @@ function fetchCategories() {
     });
 }
 
+
 function fetchDishDetails() {
     return new Promise((resolve, reject) => {
         axios.get(`${apiMenuUrl}/${dishId}`)
@@ -143,6 +144,7 @@ function displayCurrentInfo(dish) {
 function resetForm() {
     if (originalDishData) {
         populateForm(originalDishData);
+        clearErrors();
         showNotification('Đã khôi phục dữ liệu gốc!', 'info');
     }
 }
@@ -154,6 +156,21 @@ function fileToBase64(file) {
         reader.onload = () => resolve(reader.result);
         reader.onerror = error => reject(error);
     });
+}
+
+function clearErrors() {
+    // Xóa lỗi và màu đỏ của label
+    document.getElementById('nameError').style.display = 'none';
+    document.getElementById('nameError').textContent = '';
+    document.querySelector('label[for="dishName"]').classList.remove('error');
+
+    document.getElementById('priceError').style.display = 'none';
+    document.getElementById('priceError').textContent = '';
+    document.querySelector('label[for="dishPrice"]').classList.remove('error');
+
+    document.getElementById('categoryError').style.display = 'none';
+    document.getElementById('categoryError').textContent = '';
+    document.querySelector('label[for="dishCategories"]').classList.remove('error');
 }
 
 document.getElementById('dishImage').addEventListener('change', async function(e) {
@@ -180,28 +197,41 @@ document.getElementById('dishImage').addEventListener('change', async function(e
 document.getElementById('editDishForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    // Xóa lỗi cũ
+    clearErrors();
+
     const name = document.getElementById('dishName').value.trim();
     const price = parseFloat(document.getElementById('dishPrice').value);
     const description = document.getElementById('dishDescription').value.trim();
     const categoryIds = Array.from(document.getElementById('dishCategories').selectedOptions).map(opt => parseInt(opt.value));
 
-    document.getElementById('nameError').style.display = 'none';
-    document.getElementById('priceError').style.display = 'none';
-
+    // Xác thực phía client
     let isValid = true;
     if (!name) {
         document.getElementById('nameError').style.display = 'block';
+        document.getElementById('nameError').textContent = 'Tên món ăn không được để trống!';
+        document.querySelector('label[for="dishName"]').classList.add('error');
+        showNotification('Tên món ăn không được để trống!', 'error');
         isValid = false;
     }
     if (name.length < 2) {
+        document.getElementById('nameError').style.display = 'block';
+        document.getElementById('nameError').textContent = 'Tên món ăn phải có ít nhất 2 ký tự!';
+        document.querySelector('label[for="dishName"]').classList.add('error');
         showNotification('Tên món ăn phải có ít nhất 2 ký tự!', 'error');
         isValid = false;
     }
-    if (!price || price <= 1000) {
+    if (!price || price <= 0) {
         document.getElementById('priceError').style.display = 'block';
+        document.getElementById('priceError').textContent = 'Giá phải lớn hơn 0!';
+        document.querySelector('label[for="dishPrice"]').classList.add('error');
+        showNotification('Giá phải lớn hơn 0!', 'error');
         isValid = false;
     }
     if (categoryIds.length === 0) {
+        document.getElementById('categoryError').style.display = 'block';
+        document.getElementById('categoryError').textContent = 'Vui lòng chọn ít nhất một danh mục!';
+        document.querySelector('label[for="dishCategories"]').classList.add('error');
         showNotification('Vui lòng chọn ít nhất một danh mục!', 'error');
         isValid = false;
     }
@@ -236,8 +266,27 @@ document.getElementById('confirmSaveBtn').addEventListener('click', function() {
         }
     }).catch(error => {
         console.error('Error details:', error.response?.data);
-        const errorMessage = error.response?.data?.message || 'Không thể cập nhật món ăn. Vui lòng thử lại!';
-        showNotification(errorMessage, 'error');
+        const responseData = error.response?.data;
+
+        // Xử lý lỗi xác thực từ backend (code 1005)
+        if (responseData?.code === 1005 && responseData.result) {
+            const errors = responseData.result;
+            if (errors.name) {
+                document.getElementById('nameError').style.display = 'block';
+                document.getElementById('nameError').textContent = errors.name;
+                document.querySelector('label[for="dishName"]').classList.add('error');
+                showNotification(errors.name, 'error');
+            }
+            if (errors.price) {
+                document.getElementById('priceError').style.display = 'block';
+                document.getElementById('priceError').textContent = errors.price;
+                document.querySelector('label[for="dishPrice"]').classList.add('error');
+                showNotification(errors.price, 'error');
+            }
+        } else {
+            const errorMessage = responseData?.message || 'Không thể cập nhật món ăn. Vui lòng thử lại!';
+            showNotification(errorMessage, 'error');
+        }
     }).finally(() => {
         this.disabled = false;
         this.innerHTML = '<i class="fas fa-check"></i> Xác nhận';

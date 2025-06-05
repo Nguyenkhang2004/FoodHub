@@ -11,12 +11,12 @@ import java.math.BigDecimal;
 import java.util.List;
 @Data
 public class MenuItemRequest {
-    @NotBlank(message = "Tên món ăn không được để trống")
-    @Size(min = 2, message = "Tên món ăn phải có ít nhất 2 ký tự")
+    @NotBlank(message = "MENU_NAME_NOT_BLANK")
+    @Size(min = 2, message = "MENU_NAME_SIZE")
     private String name;
     private String description;
-    @NotNull(message = "Giá không được để trống")
-    @Positive(message = "Giá phải lớn hơn 0")
+    @NotNull(message = "PRICE_NOT_NULL")
+    @Positive(message = "PRICE_POSITIVE")
     private BigDecimal price;
     private String imageUrl;
     private List<Integer> categoryIds;

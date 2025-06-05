@@ -14,9 +14,12 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserResponse {
+    Integer id;
     String username;
     String email;
-    String phoneNumber;
+    String phone;
     RoleResponse roleName;
+    String status;
+    String address;
     Instant registrationDate;
 }

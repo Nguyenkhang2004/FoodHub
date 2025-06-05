@@ -3,12 +3,14 @@ package com.example.FoodHub.exception;
 import com.example.FoodHub.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.expression.AccessException;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
@@ -45,7 +47,7 @@ public class GlobalExceptionHandler {
         String enumKey = e.getFieldError().getDefaultMessage();
         ErrorCode errorCode = ErrorCode.INVALID_KEY;
         Map<String, Object> attributes = null;
-        try{
+        try {
             errorCode = ErrorCode.valueOf(enumKey);
             var constraintViolation = e.getBindingResult().getAllErrors().getFirst().unwrap(ConstraintViolation.class);
             attributes = constraintViolation.getConstraintDescriptor().getAttributes();

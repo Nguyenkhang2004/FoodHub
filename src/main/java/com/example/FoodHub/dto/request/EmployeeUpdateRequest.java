@@ -1,19 +1,13 @@
 package com.example.FoodHub.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.example.FoodHub.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.Data;
 
 @Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserUpdateRequest {
+public class EmployeeUpdateRequest {
     @NotBlank
     @Size(max = 255)
     private String username;
@@ -39,3 +33,4 @@ public class UserUpdateRequest {
 
     private String oauthProvider;
 }
+

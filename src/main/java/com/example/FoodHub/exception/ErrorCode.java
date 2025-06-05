@@ -21,8 +21,11 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND(1012, "One or more categories not found", HttpStatus.NOT_FOUND),
     IMAGE_UPLOAD_FAILED(1013, "Failed to upload image", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_IMAGE_URL(1014, "Invalid image URL format", HttpStatus.BAD_REQUEST),
-    MENU_ITEM_EXISTED(1015, "Menu item already exists", HttpStatus.BAD_REQUEST);
-
+    MENU_ITEM_EXISTED(1015, "Menu item already exists", HttpStatus.BAD_REQUEST),
+    MENU_NAME_NOT_BLANK(1016, "Menu name must not be blank", HttpStatus.BAD_REQUEST),
+    MENU_NAME_SIZE(1017, "Menu name must be at least 2 characters", HttpStatus.BAD_REQUEST),
+    PRICE_NOT_NULL(1018, "Price must not be null", HttpStatus.BAD_REQUEST),
+    PRICE_POSITIVE(1019, "Price must be a positive number", HttpStatus.BAD_REQUEST);
     private int code;
     private String message;
     private HttpStatusCode statusCode;
