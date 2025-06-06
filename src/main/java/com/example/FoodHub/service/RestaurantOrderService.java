@@ -9,6 +9,7 @@ import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.RestaurantOrderMapper;
 import com.example.FoodHub.repository.*;
+import com.example.FoodHub.specification.OrderSpecifications;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -39,8 +40,9 @@ public class RestaurantOrderService {
     UserRepository userRepository;
     private final MenuItemRepository menuItemRepository;
 
-    public Page<RestaurantOrderResponse> getAllOrders(Pageable pageable) {
-        Page<RestaurantOrder> orders = orderRepository.findAll(pageable);
+    public Page<RestaurantOrderResponse> getAllOrders(
+            String status, Integer tableId, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+        Page<RestaurantOrder> orders = orderRepository.findAll(OrderSpecifications.filterOrders(status, tableId, minPrice, maxPrice), pageable);
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
