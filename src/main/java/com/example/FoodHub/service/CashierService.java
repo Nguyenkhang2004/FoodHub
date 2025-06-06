@@ -32,6 +32,11 @@ public class CashierService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+
+
+
+
+
     // Thanh toán đơn hàng
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request) {
