@@ -37,7 +37,6 @@ public class ChatMessage {
     private String content;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp;
 

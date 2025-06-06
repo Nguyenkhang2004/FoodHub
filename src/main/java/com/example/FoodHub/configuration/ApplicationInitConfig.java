@@ -33,7 +33,7 @@ public class ApplicationInitConfig {
                         .password(passwordEncoder.encode("admin"))
                         .roleName(roleRepository.findById(Role.ADMIN.name())
                                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED)))
-                        .email("amdin@foodhub.com") // REQUIRED if `@NotNull`
+                        .email("admin@foodhub.com") // REQUIRED if `@NotNull`
                         .status("ACTIVE")           // REQUIRED if `@NotNull`
                         .registrationDate(Instant.now()) // REQUIRED if `@NotNull`
                         .isAuthUser(false)         // Optional (default is already false)

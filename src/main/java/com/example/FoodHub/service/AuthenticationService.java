@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -42,6 +43,7 @@ import java.util.UUID;
 public class AuthenticationService {
     UserRepository userRepository;
     InvalidateTokenRepository invalidateTokenRepository;
+    PasswordEncoder passwordEncoder;
     @NonFinal
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
@@ -52,7 +54,7 @@ public class AuthenticationService {
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
 
-    public String generateToken(User user){
+    public String generateToken(User user) {
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getEmail())
@@ -64,7 +66,7 @@ public class AuthenticationService {
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toString());
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
-        try{
+        try {
             jwsObject.sign(new MACSigner(SIGNER_KEY));
             return jwsObject.serialize();
         } catch (JOSEException e) {
@@ -75,9 +77,8 @@ public class AuthenticationService {
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
-        if(!authenticated) {
+        if (!authenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
         String token = generateToken(user);
@@ -90,7 +91,7 @@ public class AuthenticationService {
     public IntrospectResponse introspect(IntrospectRequest request) throws ParseException, JOSEException {
         String token = request.getToken();
         boolean isValid = true;
-        try{
+        try {
             verifyToken(token, false);
         } catch (AppException e) {
             isValid = false;
@@ -107,28 +108,28 @@ public class AuthenticationService {
                 ? new Date(signedJWT.getJWTClaimsSet().getIssueTime().toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
         boolean verified = signedJWT.verify(verifier);
-        if(!(verified && expiryTime.after(new Date()))
+        if (!(verified && expiryTime.after(new Date()))
                 && invalidateTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         return signedJWT;
     }
 
-        public AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException {
-            SignedJWT signedJWT = verifyToken(request.getToken(), true);
-            String jti = signedJWT.getJWTClaimsSet().getJWTID();
-            Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-            InvalidateToken invalidateToken = InvalidateToken.builder()
-                    .token(jti)
-                    .expiryTime(expiryTime.toInstant())
-                    .build();
-            invalidateTokenRepository.save(invalidateToken);
-            User user = userRepository.findByEmail(signedJWT.getJWTClaimsSet().getSubject()).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
-            String token = generateToken(user);
-            return AuthenticationResponse.builder()
-                    .token(token)
-                    .isAuthenticated(true)
-                    .build();
-        }
+    public AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException {
+        SignedJWT signedJWT = verifyToken(request.getToken(), true);
+        String jti = signedJWT.getJWTClaimsSet().getJWTID();
+        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        InvalidateToken invalidateToken = InvalidateToken.builder()
+                .token(jti)
+                .expiryTime(expiryTime.toInstant())
+                .build();
+        invalidateTokenRepository.save(invalidateToken);
+        User user = userRepository.findByEmail(signedJWT.getJWTClaimsSet().getSubject()).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        String token = generateToken(user);
+        return AuthenticationResponse.builder()
+                .token(token)
+                .isAuthenticated(true)
+                .build();
+    }
 
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
         try {
@@ -140,7 +141,7 @@ public class AuthenticationService {
                     .expiryTime(expiryTime.toInstant())
                     .build();
             invalidateTokenRepository.save(invalidateToken);
-        } catch (AppException e){
+        } catch (AppException e) {
             log.info("Token already expired", e);
         }
     }
@@ -148,7 +149,7 @@ public class AuthenticationService {
     private String buildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
         Role role = user.getRoleName();
-        if(role != null) {
+        if (role != null) {
             stringJoiner.add("ROLE_" + role.getName());
             role.getPermissions().forEach(permission -> {
                 stringJoiner.add(permission.getName());
