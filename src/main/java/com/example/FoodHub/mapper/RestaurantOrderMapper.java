@@ -16,31 +16,31 @@ public interface RestaurantOrderMapper {
     @Mapping(source = "table.tableNumber", target = "tableNumber")
     @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "user.username", target = "username")
-    @Mapping(source = "status", target = "status")
-    @Mapping(source = "orderType", target = "orderType")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "note", target = "note")
-    @Mapping(source = "orderItems", target = "orderItems")
     RestaurantOrderResponse toRestaurantOrderResponse(RestaurantOrder order);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "table", ignore = true)
     @Mapping(target = "orderItems", ignore = true)
-    @Mapping(source = "status", target = "status")
-    @Mapping(source = "orderType", target = "orderType")
-    @Mapping(source = "note", target = "note")
     RestaurantOrder toRestaurantOrder(RestaurantOrderRequest restaurantOrderRequest);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "table", ignore = true)
     @Mapping(target = "orderItems", ignore = true)
-    @Mapping(source = "status", target = "status")
-    @Mapping(source = "orderType", target = "orderType")
-    @Mapping(source = "note", target = "note")
     void updateOrder(@MappingTarget RestaurantOrder order, RestaurantOrderRequest request);
 
-    @Mapping(source = "quantity", target = "quantity")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "order", ignore = true)  // Sẽ được set trong service
+    @Mapping(target = "menuItem", ignore = true)  // Sẽ được set trong service
+    OrderItem toOrderItem(OrderItemRequest orderItemRequest);
+    // Mapping từ OrderItem → OrderItemResponse
+    @Mapping(source = "menuItem.id", target = "menuItemId")
+    @Mapping(source = "menuItem.name", target = "menuItemName")
     OrderItemResponse toOrderItemResponse(OrderItem orderItem);
+    // Mapping từ OrderItemRequest → OrderItem
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "order", ignore = true)  // Sẽ được set trong service
+    @Mapping(target = "menuItem", ignore = true)  // Sẽ được set trong service
+    void updateOrderItem(@MappingTarget OrderItem orderItem, OrderItemRequest orderItemRequest);
 }

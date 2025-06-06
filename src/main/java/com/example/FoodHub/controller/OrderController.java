@@ -4,12 +4,19 @@ import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.service.RestaurantOrderService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -20,7 +27,7 @@ public class OrderController {
     RestaurantOrderService orderService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@RequestBody RestaurantOrderRequest request) {
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@Valid @RequestBody RestaurantOrderRequest request) {
         RestaurantOrderResponse orderResponse = orderService.createOrder(request);
         ApiResponse response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponse)
@@ -29,58 +36,85 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<RestaurantOrderResponse>>> getAllOrders() {
-        List<RestaurantOrderResponse> orderResponses = orderService.getAllOrders();
-        ApiResponse<List<RestaurantOrderResponse>> response = ApiResponse.<List<RestaurantOrderResponse>>builder()
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String SorderBy,
+            @RequestParam(defaultValue = "ASC") String sort
+    ) {
+        Sort.Direction direction = Sort.Direction.fromString(sort);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, SorderBy));
+        Page<RestaurantOrderResponse> orderResponses = orderService.getAllOrders(pageable);
+        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)
                 .build();
         return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getOrdersByOrderId(@PathVariable Integer orderId) {
-        RestaurantOrderResponse orderResponse = orderService.getOrdersByOrderId(orderId);
-        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
-                .result(orderResponse)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
-
-    @GetMapping("/table/{tableNumber}")
-    public ResponseEntity<ApiResponse<List<RestaurantOrderResponse>>> getOrdersByTableNumber(@PathVariable String tableNumber) {
-        List<RestaurantOrderResponse> orderResponses = orderService.getOrderByTableNumber(tableNumber);
-        ApiResponse<List<RestaurantOrderResponse>> response = ApiResponse.<List<RestaurantOrderResponse>>builder()
-                .result(orderResponses)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
-
-    @GetMapping("/status/{status}")
-    public ResponseEntity<ApiResponse<List<RestaurantOrderResponse>>> getOrdersByStatus(@PathVariable String status) {
-        List<RestaurantOrderResponse> orderResponses = orderService.getOrdersByStatus(status);
-        ApiResponse<List<RestaurantOrderResponse>> response = ApiResponse.<List<RestaurantOrderResponse>>builder()
-                .result(orderResponses)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
-
-    @GetMapping("/table/{tableNumber}/status/{status}")
-    public ResponseEntity<ApiResponse<List<RestaurantOrderResponse>>> getOrdersByTableNumberAndStatus(@PathVariable String tableNumber, @PathVariable String status) {
-        List<RestaurantOrderResponse> orderResponses = orderService.getOrdersByTableNumberAndStatus(tableNumber, status);
-        ApiResponse<List<RestaurantOrderResponse>> response = ApiResponse.<List<RestaurantOrderResponse>>builder()
-                .result(orderResponses)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
 
 
     @PutMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrder(@PathVariable Integer orderId, @RequestBody RestaurantOrderRequest request) {
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrder(
+            @PathVariable Integer orderId, @Valid @RequestBody RestaurantOrderRequest request) {
         RestaurantOrderResponse updatedOrder = orderService.updateOrder(orderId, request);
         ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(updatedOrder)
                 .build();
         return ResponseEntity.ok().body(response);
     }
+
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderStatus(
+            @PathVariable Integer orderId, @RequestParam String status) {
+        RestaurantOrderResponse updatedOrder = orderService.updateOrderStatus(orderId, status);
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
+                .result(updatedOrder)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+//    @PutMapping("/items/{orderItemId}")
+//    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderItem(
+//            @PathVariable Integer orderItemId, @Valid @RequestBody RestaurantOrderRequest request) {
+//        RestaurantOrderResponse updatedOrder = orderService.updateOrderItem(orderItemId, request);
+//        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
+//                .result(updatedOrder)
+//                .build();
+//        return ResponseEntity.ok().body(response);
+//    }
+
+    @GetMapping("/table/{tableId}/current")
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getOrdersByTableId(
+            @PathVariable Integer tableId
+    ) {
+        RestaurantOrderResponse orderResponses = orderService.getCurrentOrdersByTableId(tableId);
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
+                .result(orderResponses)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+//    @GetMapping("/area/{area}/current")
+//    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCurrentOrders(
+//            @PathVariable String area,
+//            @RequestParam(required = false) String status,
+//            @RequestParam(required = false) Integer tableId,
+//            @RequestParam(required = false) BigDecimal minPrice,
+//            @RequestParam(required = false) BigDecimal maxPrice,
+//            @RequestParam(required = false) Instant startTime,
+//            @RequestParam(required = false) Instant endTime,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "createdAt") String SorderBy,
+//            @RequestParam(defaultValue = "ASC") String sort
+//    ) {
+//        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), SorderBy));
+//        Page<RestaurantOrderResponse> orderResponses = orderService.getCurrentWorkShiftOrders(area, status, tableId, minPrice, maxPrice, startTime, pageable);
+//        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+//                .result(orderResponses)
+//                .build();
+//        return ResponseEntity.ok().body(response);
+//    }
+
 
 }

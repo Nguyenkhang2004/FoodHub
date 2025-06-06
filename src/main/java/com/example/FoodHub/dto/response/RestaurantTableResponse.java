@@ -13,5 +13,7 @@ import lombok.experimental.FieldDefaults;
 public class RestaurantTableResponse {
     Integer id;
     String tableNumber;
+    String qrCode;
     String status;
+    String area;
 }

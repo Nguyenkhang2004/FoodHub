@@ -8,6 +8,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -21,12 +22,6 @@ public class RestaurantOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "table_id", nullable = false)
-    private RestaurantTable table;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -56,5 +51,15 @@ public class RestaurantOrder {
 
     @OneToMany(mappedBy = "order")
     private Set<Payment> payments = new LinkedHashSet<>();
+
+    @NotNull
+    @ColumnDefault("0.00")
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "table_id")
+    private RestaurantTable table;
 
 }
