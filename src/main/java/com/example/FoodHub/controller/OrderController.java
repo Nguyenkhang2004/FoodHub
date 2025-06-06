@@ -37,6 +37,10 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getAllOrders(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer tableId,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String SorderBy,
@@ -44,7 +48,7 @@ public class OrderController {
     ) {
         Sort.Direction direction = Sort.Direction.fromString(sort);
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, SorderBy));
-        Page<RestaurantOrderResponse> orderResponses = orderService.getAllOrders(pageable);
+        Page<RestaurantOrderResponse> orderResponses = orderService.getAllOrders(status, tableId, minPrice, maxPrice, pageable);
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)
                 .build();
@@ -90,6 +94,15 @@ public class OrderController {
         RestaurantOrderResponse orderResponses = orderService.getCurrentOrdersByTableId(tableId);
         ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponses)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getOrderById(@PathVariable Integer orderId) {
+        RestaurantOrderResponse orderResponse = orderService.getOrdersByOrderId(orderId);
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
+                .result(orderResponse)
                 .build();
         return ResponseEntity.ok().body(response);
     }

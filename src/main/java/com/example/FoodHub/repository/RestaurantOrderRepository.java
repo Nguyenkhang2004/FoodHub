@@ -4,7 +4,9 @@ import com.example.FoodHub.entity.RestaurantOrder;
 import com.example.FoodHub.enums.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -16,8 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder, Integer> {
-    Page<RestaurantOrder> findAll(Pageable pageable);
+public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder, Integer>, JpaSpecificationExecutor<RestaurantOrder> {
     Page<RestaurantOrder> findByTableId(Integer tableId, Pageable pageable);
     List<RestaurantOrder> findByStatus(String status);
     Optional<RestaurantOrder> findFirstByTableIdAndStatusInOrderByCreatedAtDesc(Integer tableId, List<String> statuses);
