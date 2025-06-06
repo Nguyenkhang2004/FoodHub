@@ -1,7 +1,8 @@
 package com.example.FoodHub.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -14,19 +15,25 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RestaurantOrderRequest {
-    @NotNull
-    Integer tableId;
+    @Positive(message = "TABLE_ID_INVALID")
+    private Integer tableId;
 
-    @NotNull
-    Integer userId;
+    @NotNull(message = "USER_ID_REQUIRED")
+    @Positive(message = "USER_ID_INVALID")
+    private Integer userId;
 
-    String note;
+    @Size(max = 500, message = "NOTE_TOO_LONG")
+    private String note;
 
-    String orderType;
+    @Pattern(regexp = "DINE_IN|TAKEAWAY|DELIVERY", message = "ORDER_TYPE_INVALID")
+    private String orderType;
 
-    String status = "PENDING";
+    @Pattern(regexp = "PENDING|CONFIRMED|READY|CANCELLED|COMPLETED", message = "ORDER_STATUS_INVALID")
+    private String status = "PENDING";
 
-    @NotNull
-    Set<OrderItemRequest> orderItems;
+    @NotNull(message = "ORDER_ITEMS_REQUIRED")
+    @NotEmpty(message = "ORDER_ITEMS_REQUIRED")
+    @Valid
+    private Set<OrderItemRequest> orderItems;
 }
 

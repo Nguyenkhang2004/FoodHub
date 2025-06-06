@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-02T20:26:03+0700",
+    date = "2025-06-04T08:37:27+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
@@ -24,7 +24,9 @@ public class RestaurantTableMapperImpl implements RestaurantTableMapper {
 
         restaurantTableResponse.id( restaurantTable.getId() );
         restaurantTableResponse.tableNumber( restaurantTable.getTableNumber() );
+        restaurantTableResponse.qrCode( restaurantTable.getQrCode() );
         restaurantTableResponse.status( restaurantTable.getStatus() );
+        restaurantTableResponse.area( restaurantTable.getArea() );
 
         return restaurantTableResponse.build();
     }
@@ -37,6 +39,7 @@ public class RestaurantTableMapperImpl implements RestaurantTableMapper {
 
         RestaurantTable restaurantTable = new RestaurantTable();
 
+        restaurantTable.setArea( restaurantTableRequest.getArea() );
         restaurantTable.setTableNumber( restaurantTableRequest.getTableNumber() );
         restaurantTable.setQrCode( restaurantTableRequest.getQrCode() );
         restaurantTable.setStatus( restaurantTableRequest.getStatus() );
@@ -45,11 +48,12 @@ public class RestaurantTableMapperImpl implements RestaurantTableMapper {
     }
 
     @Override
-    public void updateRestaurantTable(RestaurantTable restaurantTable, RestaurantTableRequest restaurantTableRequest) {
+    public void updateTable(RestaurantTable restaurantTable, RestaurantTableRequest restaurantTableRequest) {
         if ( restaurantTableRequest == null ) {
             return;
         }
 
+        restaurantTable.setArea( restaurantTableRequest.getArea() );
         restaurantTable.setTableNumber( restaurantTableRequest.getTableNumber() );
         restaurantTable.setQrCode( restaurantTableRequest.getQrCode() );
         restaurantTable.setStatus( restaurantTableRequest.getStatus() );

@@ -10,5 +10,5 @@ import org.mapstruct.MappingTarget;
 public interface RestaurantTableMapper {
     RestaurantTableResponse toRestaurantTableResponse(RestaurantTable restaurantTable);
     RestaurantTable toRestaurantTable(RestaurantTableRequest restaurantTableRequest);
-    void updateRestaurantTable(@MappingTarget RestaurantTable restaurantTable, RestaurantTableRequest restaurantTableRequest);
+    void updateTable(@MappingTarget RestaurantTable restaurantTable, RestaurantTableRequest restaurantTableRequest);
 }

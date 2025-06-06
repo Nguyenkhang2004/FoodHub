@@ -2,6 +2,7 @@ package com.example.FoodHub.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -45,5 +46,9 @@ public class WorkSchedule {
 
     @Column(name = "note")
     private String note;
+
+    @Size(max = 10)
+    @Column(name = "area", length = 10)
+    private String area;
 
 }

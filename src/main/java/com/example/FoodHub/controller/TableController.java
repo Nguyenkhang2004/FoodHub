@@ -4,6 +4,7 @@ import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
 import com.example.FoodHub.service.RestaurantTableService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -46,21 +47,28 @@ public class TableController {
         return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/area/{area}/status/{status}")
-    public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getTablesByAreaAndStatus(@PathVariable String area, @PathVariable String status) {
-        List<RestaurantTableResponse> tables = tableService.getTablesByAreaAndStatus(area, status);
-        ApiResponse<List<RestaurantTableResponse>> response = ApiResponse.<List<RestaurantTableResponse>>builder()
-                .result(tables)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
+
 
     @PutMapping("/{tableId}")
-    public ResponseEntity<ApiResponse<RestaurantTableResponse>> updateTableStatus(@PathVariable Integer tableId,@RequestBody RestaurantTableRequest request) {
+    public ResponseEntity<ApiResponse<RestaurantTableResponse>> updateTableStatus(
+            @PathVariable Integer tableId, @Valid @RequestBody RestaurantTableRequest request) {
         RestaurantTableResponse updatedTable = tableService.updateTable(tableId, request);
         ApiResponse<RestaurantTableResponse> response = ApiResponse.<RestaurantTableResponse>builder()
                 .result(updatedTable)
                 .build();
         return ResponseEntity.ok().body(response);
     }
+
+    @PutMapping("/status/{tableId}")
+    public ResponseEntity<ApiResponse<RestaurantTableResponse>> updateTableStatus(
+            @PathVariable Integer tableId, @RequestParam String status) {
+        RestaurantTableResponse updatedTable = tableService.updateTableStatus(tableId, status);
+        ApiResponse<RestaurantTableResponse> response = ApiResponse.<RestaurantTableResponse>builder()
+                .result(updatedTable)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+
+
 }

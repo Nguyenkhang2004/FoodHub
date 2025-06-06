@@ -13,13 +13,42 @@ public enum ErrorCode {
     INVALID_KEY(1005, "invalid key", HttpStatus.BAD_REQUEST),
     UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "Unauthorized", HttpStatus.FORBIDDEN),
-    INVALID_DOB(1008, "Your age must be at least {min} years old", HttpStatus.BAD_REQUEST),
-    INTERNAL_SERVER_ERROR(1009, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
-    ROLE_NOT_EXISTED(1010, "Role not found", HttpStatus.NOT_FOUND),
-    TABLE_NOT_EXISTED(2001, "Table not found", HttpStatus.NOT_FOUND),
-    ORDER_NOT_EXISTED(2002, "Order not found", HttpStatus.NOT_FOUND),
-    MENU_ITEM_NOT_EXISTED(2003, "Menu item not found", HttpStatus.NOT_FOUND),
+    INTERNAL_SERVER_ERROR(1008, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
+    ROLE_NOT_EXISTED(1009, "Role not found", HttpStatus.NOT_FOUND),
+    TABLE_NOT_EXISTED(1010, "Table not found", HttpStatus.NOT_FOUND),
+    ORDER_NOT_EXISTED(1011, "Order not found", HttpStatus.NOT_FOUND),
+    MENU_ITEM_NOT_EXISTED(1012, "Menu item not found", HttpStatus.NOT_FOUND),
+    ORDER_ITEMS_REQUIRED(1013, "Order items are required", HttpStatus.BAD_REQUEST),
+    ORDER_ITEM_NOT_EXISTED(1014, "Order item not found", HttpStatus.NOT_FOUND),
+    ORDER_CANNOT_BE_UPDATED(1015, "Order cannot be updated", HttpStatus.BAD_REQUEST),
+    TABLE_NOT_AVAILABLE(1016, "Table is not available", HttpStatus.BAD_REQUEST),
+    MENU_ITEM_NOT_AVAILABLE(1017, "Menu item is not available", HttpStatus.BAD_REQUEST),
+    INVALID_STATUS_TRANSITION(1018, "Invalid status transition", HttpStatus.BAD_REQUEST),
+    INVALID_REQUEST(1019, "Invalid request", HttpStatus.BAD_REQUEST),
+    INVALID_TABLE_STATUS(1020, "Invalid table status", HttpStatus.BAD_REQUEST),
+    TABLE_NUMBER_INVALID(1021, "Table number must not be null", HttpStatus.BAD_REQUEST),
+    QR_CODE_INVALID(1022, "QR code must not be null", HttpStatus.BAD_REQUEST),
+    AREA_INVALID(1023, "Area must be an alphabet and not be null", HttpStatus.BAD_REQUEST),
+
+
+    TABLE_ID_REQUIRED(1024, "Table ID is required", HttpStatus.BAD_REQUEST),
+    TABLE_ID_INVALID(1025, "Table ID must be a positive number", HttpStatus.BAD_REQUEST),
+    USER_ID_REQUIRED(1026, "User ID is required", HttpStatus.BAD_REQUEST),
+    USER_ID_INVALID(1027, "User ID must be a positive number", HttpStatus.BAD_REQUEST),
+    NOTE_TOO_LONG(1028, "Note must not exceed 500 characters", HttpStatus.BAD_REQUEST),
+    ORDER_TYPE_INVALID(1029, "Order type must be DINE_IN, TAKEAWAY, or DELIVERY", HttpStatus.BAD_REQUEST),
+    ORDER_STATUS_INVALID(1030, "Invalid order status", HttpStatus.BAD_REQUEST),
+    MENU_ITEM_ID_REQUIRED(1031, "Menu item ID is required", HttpStatus.BAD_REQUEST),
+    MENU_ITEM_ID_INVALID(1032, "Menu item ID must be a positive number", HttpStatus.BAD_REQUEST),
+    QUANTITY_REQUIRED(1033, "Quantity is required", HttpStatus.BAD_REQUEST),
+    QUANTITY_INVALID(1034, "Quantity must be at least 1", HttpStatus.BAD_REQUEST),
+    QUANTITY_TOO_LARGE(1035, "Quantity cannot exceed 99", HttpStatus.BAD_REQUEST),
+    PRICE_REQUIRED(1036, "Price is required", HttpStatus.BAD_REQUEST),
+    PRICE_INVALID(1037, "Price must be greater than 0", HttpStatus.BAD_REQUEST),
+    PRICE_FORMAT_INVALID(1038, "Price format is invalid", HttpStatus.BAD_REQUEST),
+    ORDER_ITEM_STATUS_INVALID(1039, "Order item status must be PENDING, CONFIRMED, READY, CANCELLED, or COMPLETED", HttpStatus.BAD_REQUEST)
     ;
+
     private int code;
     private String message;
     private HttpStatusCode statusCode;
