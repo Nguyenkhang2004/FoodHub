@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TableRepository extends JpaRepository<RestaurantTable, Integer> {
-    // Custom query methods can be defined here if needed
+
 }
