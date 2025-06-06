@@ -1,50 +1,59 @@
 package com.example.FoodHub.controller;
 
-import com.example.FoodHub.dto.request.UserCreationRequest;
-import com.example.FoodHub.dto.request.UserUpdateRequest;
-import com.example.FoodHub.dto.response.UserResponse;
+
+import com.example.FoodHub.dto.response.UserDTO;
 import com.example.FoodHub.service.UserService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+//    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        List<UserDTO> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Integer id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Integer id) {
+        UserDTO user = userService.getUserById(id);
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserCreationRequest request) {
-        return ResponseEntity.ok(userService.createUser(request));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> createUser(@Valid @RequestBody UserDTO userDTO) {
+        UserDTO createdUser = userService.createUser(userDTO);
+        return ResponseEntity.ok(createdUser);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@PathVariable Integer id, @Valid @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(userService.updateUser(id, request));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Integer id, @Valid @RequestBody UserDTO userDTO) {
+        UserDTO updatedUser = userService.updateUser(id, userDTO);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @PutMapping("/{id}/deactivate")
-    public ResponseEntity<UserResponse> deactivateUser(@PathVariable Integer id) {
-        return ResponseEntity.ok(userService.deactivateUser(id));
-    }
-
-    @GetMapping("/my-info")
-    public ResponseEntity<UserResponse> getMyInfo() {
-        return ResponseEntity.ok(userService.myInfo());
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deactivateUser(@PathVariable Integer id) {
+        userService.deactivateUser(id);
+        return ResponseEntity.ok().build();
     }
 }

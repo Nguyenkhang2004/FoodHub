@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -444,20 +445,21 @@
                         <input type="hidden" id="userId">
                         <div class="mb-3">
                             <label for="username" class="form-label">Tên người dùng</label>
-                            <input type="text" class="form-control" id="username" required>
+                            <input type="text" class="form-control" id="username" required maxlength="255">
                         </div>
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" required>
+                            <input type="email" class="form-control" id="email" required maxlength="255">
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Mật khẩu</label>
-                            <input type="password" class="form-control" id="password">
+                            <input type="password" class="form-control" id="password" maxlength="255">
                         </div>
                         <div class="mb-3">
                             <label for="roleName" class="form-label">Vai trò</label>
                             <select class="form-control" id="roleName" required>
-                                <option value="USER">Khách hàng</option>
+                                <option value="CUSTOMER">Khách hàng</option>
+                                <option value="WAITER">Nhân viên phục vụ</option>
                                 <option value="ADMIN">Quản trị viên</option>
                             </select>
                         </div>
@@ -470,11 +472,11 @@
                         </div>
                         <div class="mb-3">
                             <label for="address" class="form-label">Địa chỉ</label>
-                            <input type="text" class="form-control" id="address">
+                            <input type="text" class="form-control" id="address" maxlength="255">
                         </div>
                         <div class="mb-3">
                             <label for="phone" class="form-label">Số điện thoại</label>
-                            <input type="text" class="form-control" id="phone">
+                            <input type="text" class="form-control" id="phone" maxlength="20">
                         </div>
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="isAuthUser">
@@ -482,7 +484,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="oauthProvider" class="form-label">Nhà cung cấp OAuth</label>
-                            <input type="text" class="form-control" id="oauthProvider">
+                            <input type="text" class="form-control" id="oauthProvider" maxlength="50">
                         </div>
                     </form>
                 </div>
@@ -516,8 +518,7 @@
                 alert('Đã đăng xuất thành công!');
                 document.body.style.opacity = '1';
                 localStorage.removeItem('token');
-                // Redirect to login page
-                // window.location.href = '/login';
+                // window.location.href = '/login'; // Uncomment for actual redirect
             }, 1000);
         }
     }
@@ -547,13 +548,12 @@
             const token = localStorage.getItem('token');
             const headers = {
                 'Accept': 'application/json',
-                ...(token && { 'Authorization': `Bearer ${token}` }) // Add token if available
+                ...(token && { 'Authorization': `Bearer ${token}` })
             };
-            const response = await fetch('/foodhub/api/users', { headers }); // Adjust context path if needed
+            const response = await fetch('/foodhub/api/users', { headers });
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('API error:', response.status, errorText);
-                throw new Error(`Không thể tải danh sách khách hàng: ${response.status} ${errorText}`);
+                throw new Error(`Không thể tải danh sách người dùng: ${response.status} ${errorText}`);
             }
             const users = await response.json();
             console.log('Fetched users:', users);
@@ -562,25 +562,31 @@
                 throw new Error('Dữ liệu trả về không phải là mảng');
             }
 
+            if (users.length === 0) {
+                errorMessage.textContent = 'Không có người dùng nào để hiển thị';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
             users.forEach(user => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                        <td>${user.id}</td>
-                        <td>${user.username || ''}</td>
-                        <td>${user.email || ''}</td>
-                        <td>${user.roleName || ''}</td>
-                        <td>${user.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'}</td>
-                        <td>${user.address || ''}</td>
-                        <td>${user.phone || ''}</td>
-                        <td>
-                            <button class="btn btn-edit me-2" onclick="openUserForm(${user.id})">
-                                <i class="fas fa-edit"></i> Sửa
-                            </button>
-                            <button class="btn btn-deactivate" onclick="deactivateUser(${user.id})">
-                                <i class="fas fa-ban"></i> Vô hiệu hóa
-                            </button>
-                        </td>
-                    `;
+                    <td>${user.id || 'N/A'}</td>
+                    <td>${user.username || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>${formatRole(user.roleName) || 'N/A'}</td>
+                    <td>${user.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'}</td>
+                    <td>${user.address || 'N/A'}</td>
+                    <td>${user.phone || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-edit me-2" onclick="openUserForm(${user.id})">
+                            <i class="fas fa-edit"></i> Sửa
+                        </button>
+                        <button class="btn btn-deactivate" onclick="deactivateUser(${user.id})">
+                            <i class="fas fa-ban"></i> Vô hiệu hóa
+                        </button>
+                    </td>
+                `;
                 tbody.appendChild(row);
             });
 
@@ -594,9 +600,20 @@
         }
     }
 
+    function formatRole(roleName) {
+        switch (roleName) {
+            case 'CUSTOMER': return 'Khách hàng';
+            case 'WAITER': return 'Nhân viên phục vụ';
+            case 'ADMIN': return 'Quản trị viên';
+            case 'CASHIER': return 'Nhân viên thu ngân';
+            case 'CHEF': return 'Đầu bếp';
+            default: return roleName || 'N/A';
+        }
+    }
+
     async function openUserForm(id = null) {
         currentUserId = id;
-        document.getElementById('userModalLabel').textContent = id ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng';
+        document.getElementById('userModalLabel').textContent = id ? 'Chỉnh sửa người dùng' : 'Thêm người dùng';
         document.getElementById('userForm').reset();
         document.getElementById('userId').value = '';
         document.getElementById('password').required = !id;
@@ -605,8 +622,10 @@
             await fetchUser(id);
         } else {
             document.getElementById('status').value = 'ACTIVE';
-            document.getElementById('roleName').value = 'USER';
+            document.getElementById('roleName').value = 'CUSTOMER';
             document.getElementById('isAuthUser').checked = false;
+            document.getElementById('oauthProvider').value = '';
+            document.getElementById('password').value = ''; // Reset password field for new user
         }
     }
 
@@ -620,16 +639,15 @@
             const response = await fetch(`/foodhub/api/users/${id}`, { headers });
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Fetch user error:', response.status, errorText);
-                throw new Error('Không thể tải thông tin khách hàng');
+                throw new Error(`Không thể tải thông tin người dùng: ${response.status} ${errorText}`);
             }
             const user = await response.json();
             console.log('Fetched user:', user);
 
-            document.getElementById('userId').value = user.id;
+            document.getElementById('userId').value = user.id || '';
             document.getElementById('username').value = user.username || '';
             document.getElementById('email').value = user.email || '';
-            document.getElementById('roleName').value = user.roleName || 'USER';
+            document.getElementById('roleName').value = user.roleName || 'CUSTOMER';
             document.getElementById('status').value = user.status || 'ACTIVE';
             document.getElementById('address').value = user.address || '';
             document.getElementById('phone').value = user.phone || '';
@@ -644,16 +662,36 @@
     async function saveUser() {
         const id = document.getElementById('userId').value;
         const userData = {
-            username: document.getElementById('username').value,
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value || undefined,
+            id: id ? parseInt(id) : undefined,
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value.trim() || undefined,
             roleName: document.getElementById('roleName').value,
             status: document.getElementById('status').value,
-            address: document.getElementById('address').value || null,
-            phone: document.getElementById('phone').value || null,
+            address: document.getElementById('address').value.trim() || null,
+            phone: document.getElementById('phone').value.trim() || null,
             isAuthUser: document.getElementById('isAuthUser').checked,
-            oauthProvider: document.getElementById('oauthProvider').value || null
+            oauthProvider: document.getElementById('oauthProvider').value.trim() || null
         };
+
+        // Validate required fields
+        if (!userData.username || !userData.email || (!id && !userData.password)) {
+            alert('Vui lòng điền đầy đủ các trường bắt buộc (Tên người dùng, Email, Mật khẩu)');
+            return;
+        }
+
+        // Validate roleName
+        const validRoles = ['CUSTOMER', 'WAITER', 'ADMIN', 'CASHIER', 'CHEF'];
+        if (!validRoles.includes(userData.roleName)) {
+            alert('Vai trò không hợp lệ');
+            return;
+        }
+
+        // Validate status
+        if (!['ACTIVE', 'INACTIVE'].includes(userData.status)) {
+            alert('Trạng thái không hợp lệ');
+            return;
+        }
 
         try {
             const token = localStorage.getItem('token');
@@ -671,13 +709,12 @@
             });
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Save user error:', response.status, errorText);
-                throw new Error(id ? 'Không thể cập nhật khách hàng' : 'Không thể tạo khách hàng');
+                throw new Error(id ? `Không thể cập nhật người dùng: ${response.status} ${errorText}` : `Không thể tạo người dùng: ${response.status} ${errorText}`);
             }
             const userModal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
             userModal.hide();
             loadUsers();
-            alert(id ? 'Cập nhật khách hàng thành công!' : 'Thêm khách hàng thành công!');
+            alert(id ? 'Cập nhật người dùng thành công!' : 'Thêm người dùng thành công!');
         } catch (error) {
             console.error('Save user error:', error);
             alert('Lỗi: ' + error.message);
@@ -685,7 +722,7 @@
     }
 
     async function deactivateUser(id) {
-        if (confirm('Bạn có chắc chắn muốn vô hiệu hóa khách hàng này?')) {
+        if (confirm('Bạn có chắc chắn muốn vô hiệu hóa người dùng này?')) {
             try {
                 const token = localStorage.getItem('token');
                 const headers = {
@@ -698,11 +735,10 @@
                 });
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('Deactivate user error:', response.status, errorText);
-                    throw new Error('Không thể vô hiệu hóa khách hàng');
+                    throw new Error(`Không thể vô hiệu hóa người dùng: ${response.status} ${errorText}`);
                 }
                 loadUsers();
-                alert('Vô hiệu hóa khách hàng thành công!');
+                alert('Vô hiệu hóa người dùng thành công!');
             } catch (error) {
                 console.error('Deactivate user error:', error);
                 alert('Lỗi: ' + error.message);
