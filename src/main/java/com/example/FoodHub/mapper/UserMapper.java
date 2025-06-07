@@ -20,6 +20,8 @@ public interface UserMapper {
     UserResponse toUserResponse(User user);
 
     @Mapping(target = "password", ignore = true) // <- thêm dòng này
+    void updateStaff(@MappingTarget User user, EmployeeUpdateRequest request);
+
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
 
     default Role map(String roleName) {

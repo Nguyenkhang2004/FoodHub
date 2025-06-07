@@ -1,5 +1,6 @@
 package com.example.FoodHub.mapper;
 
+import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
 import com.example.FoodHub.dto.request.UserCreationRequest;
 import com.example.FoodHub.dto.request.UserUpdateRequest;
 import com.example.FoodHub.dto.response.UserResponse;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-05T21:46:17+0700",
+    date = "2025-06-06T20:13:04+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.3 (Oracle Corporation)"
 )
 @Component
@@ -54,7 +55,7 @@ public class UserMapperImpl implements UserMapper {
     }
 
     @Override
-    public void updateUser(User user, UserUpdateRequest request) {
+    public void updateStaff(User user, EmployeeUpdateRequest request) {
         if ( request == null ) {
             return;
         }
@@ -66,5 +67,16 @@ public class UserMapperImpl implements UserMapper {
         user.setAddress( request.getAddress() );
         user.setPhone( request.getPhone() );
         user.setOauthProvider( request.getOauthProvider() );
+    }
+
+    @Override
+    public void updateUser(User user, UserUpdateRequest request) {
+        if ( request == null ) {
+            return;
+        }
+
+        user.setEmail( request.getEmail() );
+        user.setPassword( request.getPassword() );
+        user.setAddress( request.getAddress() );
     }
 }

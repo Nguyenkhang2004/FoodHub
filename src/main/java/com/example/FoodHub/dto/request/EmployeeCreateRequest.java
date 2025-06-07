@@ -10,11 +10,11 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserUpdateRequest {
+public class EmployeeCreateRequest {
+    String username;
     String password;
     String email;
-    String phoneNumber;
+    String phone;
     String address;
-
-
+    String roleName;
 }

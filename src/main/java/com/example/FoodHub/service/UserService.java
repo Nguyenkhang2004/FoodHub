@@ -124,12 +124,12 @@ public class UserService {
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
-    public void updateUser(Integer id, UserUpdateRequest request) {
+    public void updateUser(Integer id, EmployeeUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         // Cập nhật các field trừ password
-        userMapper.updateUser(user, request);
+        userMapper.updateStaff(user, request);
 
         // Mã hóa mật khẩu mới
         if (request.getPassword() != null && !request.getPassword().isBlank()) {

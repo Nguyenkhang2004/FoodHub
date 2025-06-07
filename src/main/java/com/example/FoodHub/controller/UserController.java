@@ -117,7 +117,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> updateUser(
             @PathVariable Integer id,
-            @Valid @RequestBody UserUpdateRequest request) {
+            @Valid @RequestBody EmployeeUpdateRequest request) {
 
         userService.updateUser(id, request);
 

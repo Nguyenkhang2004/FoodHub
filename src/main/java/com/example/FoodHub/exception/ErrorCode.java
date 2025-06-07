@@ -25,7 +25,15 @@ public enum ErrorCode {
     MENU_NAME_NOT_BLANK(1016, "Menu name must not be blank", HttpStatus.BAD_REQUEST),
     MENU_NAME_SIZE(1017, "Menu name must be at least 2 characters", HttpStatus.BAD_REQUEST),
     PRICE_NOT_NULL(1018, "Price must not be null", HttpStatus.BAD_REQUEST),
-    PRICE_POSITIVE(1019, "Price must be a positive number", HttpStatus.BAD_REQUEST);
+    PRICE_POSITIVE(1019, "Price must be a positive number", HttpStatus.BAD_REQUEST),
+    USERNAME_NOT_BLANK(1020, "Username must not be blank", HttpStatus.BAD_REQUEST),
+    ROLE_NOT_BLANK(1021, "Role must not be blank", HttpStatus.BAD_REQUEST),
+    ADDRESS_NOT_BLANK(1022, "Address must not be blank", HttpStatus.BAD_REQUEST),
+    PHONE_NOT_BLANK(1023, "Phone number must not be blank", HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_BLANK(1024, "Email must not be blank", HttpStatus.BAD_REQUEST),
+    PASSWORD_NOT_BLANK(1025, "Password must not be blank", HttpStatus.BAD_REQUEST),
+    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST);
+
     private int code;
     private String message;
     private HttpStatusCode statusCode;
