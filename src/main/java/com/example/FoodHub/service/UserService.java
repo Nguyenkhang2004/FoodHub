@@ -2,8 +2,6 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
 import com.example.FoodHub.dto.request.UserCreationRequest;
-import com.example.FoodHub.dto.request.UserUpdateRequest;
-import com.example.FoodHub.dto.response.RoleResponse;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
@@ -16,7 +14,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -143,6 +140,8 @@ public class UserService {
 
         userRepository.save(user);
     }
-
+    public long countUser() {
+        return userRepository.count();
+    }
 }
 
