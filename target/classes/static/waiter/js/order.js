@@ -838,10 +838,6 @@ function serveOrder(orderId) {
     }
 }
 
-// Hàm làm mới danh sách đơn hàng
-function refreshOrders() {
-    showOrders();
-}
 
 // Hàm nhận đơn mới
 function takeNewOrder() {

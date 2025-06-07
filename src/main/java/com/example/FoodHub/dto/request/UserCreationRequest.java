@@ -1,5 +1,6 @@
 package com.example.FoodHub.dto.request;
 
+import com.example.FoodHub.entity.Role;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -16,5 +17,5 @@ public class UserCreationRequest {
     String email;
     String phone;
     String address;
-    String roleName;
+    Role roleName;
 }
