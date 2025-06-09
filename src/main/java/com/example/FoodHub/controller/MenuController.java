@@ -6,6 +6,9 @@ import com.example.FoodHub.service.MenuService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,30 +22,31 @@ public class MenuController {
     MenuService menuService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<MenuItemResponse>>> getMenu() {
-        List<MenuItemResponse> menuItems = menuService.getAllMenuItems();
-        ApiResponse<List<MenuItemResponse>> response = ApiResponse.<List<MenuItemResponse>>builder()
+    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenu(
+            @PageableDefault(size = 10, page = 0) Pageable pageable) {
+        Page<MenuItemResponse> menuItems = menuService.getAllMenuItems(pageable);
+        return ResponseEntity.ok(ApiResponse.<Page<MenuItemResponse>>builder()
                 .result(menuItems)
-                .build();
-        return ResponseEntity.ok().body(response);
+                .build());
     }
 
     @GetMapping("/by-category")
-    public ResponseEntity<ApiResponse<List<MenuItemResponse>>> getMenuByCategory(@RequestParam("name") String categoryName) {
-        List<MenuItemResponse> menuItems = menuService.getMenuItemsByCategory(categoryName);
-        ApiResponse<List<MenuItemResponse>> response = ApiResponse.<List<MenuItemResponse>>builder()
+    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuByCategory(
+            @RequestParam("name") String categoryName,
+            @PageableDefault(size = 10) Pageable pageable) {
+        Page<MenuItemResponse> menuItems = menuService.getMenuItemsByCategory(categoryName, pageable);
+        return ResponseEntity.ok(ApiResponse.<Page<MenuItemResponse>>builder()
                 .result(menuItems)
-                .build();
-        return ResponseEntity.ok().body(response);
+                .build());
     }
 
     @GetMapping("/available")
-    public ResponseEntity<ApiResponse<List<MenuItemResponse>>> getAvailableMenuItems() {
-        List<MenuItemResponse> menuItems = menuService.getAvailableMenuItems();
-        ApiResponse<List<MenuItemResponse>> response = ApiResponse.<List<MenuItemResponse>>builder()
+    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getAvailableMenuItems(
+            @PageableDefault(size = 10) Pageable pageable) {
+        Page<MenuItemResponse> menuItems = menuService.getAvailableMenuItems(pageable);
+        return ResponseEntity.ok(ApiResponse.<Page<MenuItemResponse>>builder()
                 .result(menuItems)
-                .build();
-        return ResponseEntity.ok().body(response);
+                .build());
     }
 
 

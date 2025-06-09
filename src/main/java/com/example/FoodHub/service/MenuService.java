@@ -7,10 +7,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.query.Page;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.awt.print.Pageable;
 import java.util.List;
 
 @Slf4j
@@ -21,31 +21,21 @@ public class MenuService {
     MenuItemRepository menuItemRepository;
     MenuItemMapper menuItemMapper;
 
-    public List<MenuItemResponse> getAllMenuItems() {
-        log.info("Fetching all menu items");
-        return menuItemRepository.findAll().stream()
-                .map(menuItemMapper::toMenuItemResponse)
-                .toList();
+    public Page<MenuItemResponse> getAllMenuItems(Pageable pageable) {
+        log.info("Fetching paginated menu items");
+        return menuItemRepository.findAll(pageable).map(menuItemMapper::toMenuItemResponse);
     }
 
-    public List<MenuItemResponse> getMenuItemsByCategory(String categoryName) {
-        log.info("Fetching menu items for category: {}", categoryName);
-        return menuItemRepository.findByCategoriesNameIgnoreCase(categoryName).stream()
-                .map(menuItemMapper::toMenuItemResponse)
-                .toList();
+    public Page<MenuItemResponse> getMenuItemsByCategory(String categoryName, Pageable pageable) {
+        log.info("Fetching paginated menu items for category: {}", categoryName);
+        return menuItemRepository.findByCategoriesNameIgnoreCase(categoryName, pageable)
+                .map(menuItemMapper::toMenuItemResponse);
     }
 
-    public List<MenuItemResponse> getAvailableMenuItems() {
-        log.info("Fetching AVAILABLE menu items");
-        return menuItemRepository.findByStatusIgnoreCase("AVAILABLE").stream()
-                .map(menuItemMapper::toMenuItemResponse)
-                .toList();
-    }
-
-    public MenuItemResponse getMenuItemById(Integer id) {
-        return menuItemRepository.findById(id)
-                .map(menuItemMapper::toMenuItemResponse)
-                .orElse(null);
+    public Page<MenuItemResponse> getAvailableMenuItems(Pageable pageable) {
+        log.info("Fetching paginated AVAILABLE menu items");
+        return menuItemRepository.findByStatusIgnoreCase("AVAILABLE", pageable)
+                .map(menuItemMapper::toMenuItemResponse);
     }
 
 

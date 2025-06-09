@@ -76,7 +76,9 @@ async function apiFetch(endpoint, options = {}) {
 
     if (contentType.includes('application/json')) {
         return await response.json();
+    } else if (contentType.includes('text/html') || contentType.includes('text/plain')) {
+        return await response.text(); // Return text for HTML or plain text
     } else {
-        throw new Error('Phản hồi không phải JSON hợp lệ');
+        throw new Error('Phản hồi không được hỗ trợ: ' + contentType);
     }
 }

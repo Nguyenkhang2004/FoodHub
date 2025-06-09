@@ -16,7 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-
+import java.time.Instant;
+import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
@@ -37,7 +38,7 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getAllOrders(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Integer tableId,
+            @RequestParam(required = false) String tableNumber,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,
@@ -47,14 +48,12 @@ public class OrderController {
     ) {
         Sort.Direction direction = Sort.Direction.fromString(sort);
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, SorderBy));
-        Page<RestaurantOrderResponse> orderResponses = orderService.getAllOrders(status, tableId, minPrice, maxPrice, pageable);
+        Page<RestaurantOrderResponse> orderResponses = orderService.getAllOrders(status, tableNumber, minPrice, maxPrice, pageable);
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)
                 .build();
         return ResponseEntity.ok().body(response);
     }
-
-
 
     @PutMapping("/{orderId}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrder(

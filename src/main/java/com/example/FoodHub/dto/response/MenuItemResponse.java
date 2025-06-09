@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MenuItemResponse {
+    private Integer id;
     private String name;
     private String description;
     private String imageUrl;

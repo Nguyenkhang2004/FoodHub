@@ -371,9 +371,12 @@ async function assignTable(tableId) {
 // Hàm xem đơn hàng của bàn
 async function viewTableOrders(tableId) {
     try {
+<<<<<<< HEAD
         // Hiển thị loading notification
         showNotification('Đang tải dữ liệu đơn hàng...', 'info');
 
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
         // Gọi API để lấy đơn hàng hiện tại của bàn
         const data = await apiFetch(`/orders/table/${tableId}/current`,{
             method: 'GET'
@@ -395,8 +398,11 @@ async function viewTableOrders(tableId) {
         // Hiển thị thông tin đơn hàng
         displayTableOrder(order, tableId);
 
+<<<<<<< HEAD
         showNotification('Tải dữ liệu đơn hàng thành công!', 'success');
 
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
     } catch (error) {
         console.error('Error fetching table orders:', error);
         showNotification('Có lỗi xảy ra khi tải đơn hàng: ' + error.message, 'error');
@@ -405,6 +411,7 @@ async function viewTableOrders(tableId) {
 
 // Hàm hiển thị thông tin đơn hàng (đã được sửa để xử lý một đơn hàng duy nhất)
 // Hàm hiển thị thông tin đơn hàng (đã được cập nhật với CSS mới)
+<<<<<<< HEAD
 function displayTableOrder(order, tableId) {
     const statusText = getStatusText(order.status);
     const formattedDate = new Date(order.createdAt).toLocaleString('vi-VN');
@@ -498,6 +505,8 @@ function closeOrderModal() {
         }, 300);
     }
 }
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 
 // Thêm CSS animation cho fade out
 const fadeOutStyle = document.createElement('style');
@@ -509,6 +518,7 @@ fadeOutStyle.textContent = `
 `;
 document.head.appendChild(fadeOutStyle);
 
+<<<<<<< HEAD
 // Hàm helper để lấy text trạng thái (nếu chưa có)
 function getStatusText(status) {
     const statusMap = {
@@ -529,6 +539,10 @@ function formatCurrency(amount) {
         currency: 'VND'
     }).format(amount);
 }
+=======
+
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 
 // Đóng modal khi nhấn ESC
 document.addEventListener('keydown', function(event) {
@@ -588,6 +602,7 @@ function createModalContainer() {
     return modal;
 }
 
+<<<<<<< HEAD
 // Hàm đóng modal
 function closeOrderModal() {
     const modal = document.getElementById('orderModal');
@@ -595,6 +610,9 @@ function closeOrderModal() {
         modal.style.display = 'none';
     }
 }
+=======
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 
 // Hàm thanh toán bàn
 function checkoutTable(tableId) {
@@ -659,6 +677,7 @@ function refreshTables() {
     showTables();
 }
 
+<<<<<<< HEAD
 // Add CSS animations and responsive styles
 const style = document.createElement('style');
 style.textContent = `
@@ -677,6 +696,10 @@ style.textContent = `
         to { transform: rotate(360deg); }
     }
     
+=======
+const style = document.createElement('style');
+style.textContent = `    
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
     .tables-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -802,10 +825,13 @@ style.textContent = `
         animation: float 6s ease-in-out infinite;
     }
     
+<<<<<<< HEAD
     @keyframes float {
         0%, 100% { transform: translateY(0px) rotate(0deg); }
         50% { transform: translateY(-20px) rotate(180deg); }
     }
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
     
     .table-overlay {
         position: absolute;

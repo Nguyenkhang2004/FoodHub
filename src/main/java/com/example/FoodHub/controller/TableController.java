@@ -3,7 +3,6 @@ package com.example.FoodHub.controller;
 import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
-import com.example.FoodHub.enums.TableStatus;
 import com.example.FoodHub.service.RestaurantTableService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -22,8 +21,11 @@ public class TableController {
     RestaurantTableService tableService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getAllTables() {
-        List<RestaurantTableResponse> tables = tableService.getAllTables();
+    public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getAllTables(
+            @RequestParam(required = false) String tableNumber,
+            @RequestParam(required = false) String status
+    ) {
+        List<RestaurantTableResponse> tables = tableService.getAllTables(tableNumber, status);
         ApiResponse<List<RestaurantTableResponse>> response = ApiResponse.<List<RestaurantTableResponse>>builder()
                 .result(tables)
                 .build();

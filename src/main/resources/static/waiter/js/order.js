@@ -1,4 +1,5 @@
 async function showOrders() {
+<<<<<<< HEAD
     // Update page title and toggle visibility
     document.getElementById('pageTitle').textContent = 'Quản lý đơn hàng';
     document.getElementById('dashboardContent').style.display = 'none';
@@ -208,6 +209,83 @@ async function showOrders() {
 
     // Update navigation active state
     updateActiveNavigation('showOrders()');
+=======
+    try {
+        // Update page title and toggle visibility
+        document.getElementById('pageTitle').textContent = 'Quản lý đơn hàng';
+        document.getElementById('dashboardContent').style.display = 'none';
+        document.getElementById('dynamicContent').style.display = 'block';
+
+        // Load HTML from external file
+        const htmlContent = await apiFetch('/waiter/order.html',{
+            method: 'GET'
+        });
+
+        document.getElementById('dynamicContent').innerHTML = htmlContent;
+
+        // Extract and render the template
+        renderOrdersTemplate();
+
+        // Initialize and load orders after HTML is loaded
+        await loadOrders();
+
+        // Update navigation active state
+        updateActiveNavigation('showOrders()');
+
+        // Setup event listeners after HTML is loaded
+        setupEventListeners();
+
+        // Bắt đầu auto refresh khi vào trang orders
+        startAutoRefresh();
+
+    } catch (error) {
+        console.error('Error loading orders page:', error);
+        document.getElementById('dynamicContent').innerHTML = `
+            <div class="alert alert-danger">
+                <h4>Không thể tải trang quản lý đơn hàng</h4>
+                <p>Lỗi: ${error.message}</p>
+                <button class="btn btn-primary" onclick="showOrders()">Thử lại</button>
+            </div>
+        `;
+    }
+}
+
+// Render the orders template from HTML template
+function renderOrdersTemplate() {
+    const template = document.getElementById('ordersPageTemplate');
+    if (template) {
+        const dynamicContent = document.getElementById('dynamicContent');
+        if (dynamicContent) {
+            dynamicContent.innerHTML = template.innerHTML;
+        }
+    }
+}
+
+// Setup event listeners after HTML is loaded
+function setupEventListeners() {
+    // Setup jump to page input event listener
+    const jumpInput = document.getElementById('jumpToPage');
+    if (jumpInput) {
+        jumpInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                jumpToPage();
+            }
+        });
+    }
+
+    // Setup filter change listeners
+    const filterElements = [
+        'statusFilter', 'tableNumberFilter', 'minPriceFilter',
+        'maxPriceFilter', 'sortByFilter', 'sortDirectionFilter', 'pageSizeFilter'
+    ];
+
+    filterElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', applyFilters);
+        }
+    });
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 }
 
 // Global variables for pagination
@@ -218,6 +296,7 @@ let totalElements = 0;
 // Load orders from API with filters and pagination
 async function loadOrders() {
     try {
+<<<<<<< HEAD
         // Get filter values
         const status = document.getElementById('statusFilter')?.value || '';
         const tableId = document.getElementById('tableIdFilter')?.value || '';
@@ -226,11 +305,33 @@ async function loadOrders() {
         const sortBy = document.getElementById('sortByFilter')?.value || 'createdAt';
         const sortDirection = document.getElementById('sortDirectionFilter')?.value || 'DESC';
         const pageSize = document.getElementById('pageSizeFilter')?.value || '10';
+=======
+        // Get filter values - với null checks
+        const statusFilter = document.getElementById('statusFilter');
+        const tableNumberFilter = document.getElementById('tableNumberFilter'); // Thay đổi từ tableIdFilter
+        const minPriceFilter = document.getElementById('minPriceFilter');
+        const maxPriceFilter = document.getElementById('maxPriceFilter');
+        const sortByFilter = document.getElementById('sortByFilter');
+        const sortDirectionFilter = document.getElementById('sortDirectionFilter');
+        const pageSizeFilter = document.getElementById('pageSizeFilter');
+
+        const status = statusFilter ? statusFilter.value : '';
+        const tableNumber = tableNumberFilter ? tableNumberFilter.value : ''; // Thay đổi từ tableId
+        const minPrice = minPriceFilter ? minPriceFilter.value : '';
+        const maxPrice = maxPriceFilter ? maxPriceFilter.value : '';
+        const sortBy = sortByFilter ? sortByFilter.value || 'createdAt' : 'createdAt';
+        const sortDirection = sortDirectionFilter ? sortDirectionFilter.value || 'DESC' : 'DESC';
+        const pageSize = pageSizeFilter ? pageSizeFilter.value || '10' : '10';
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 
         // Build query parameters
         const params = new URLSearchParams();
         if (status) params.append('status', status);
+<<<<<<< HEAD
         if (tableId) params.append('tableId', tableId);
+=======
+        if (tableNumber) params.append('tableNumber', tableNumber); // Thay đổi từ tableId thành tableNumber
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
         if (minPrice) params.append('minPrice', minPrice);
         if (maxPrice) params.append('maxPrice', maxPrice);
         params.append('page', currentPage.toString());
@@ -266,6 +367,7 @@ async function loadOrders() {
 function applyFilters() {
     currentPage = 0; // Reset to first page when applying filters
     loadOrders();
+<<<<<<< HEAD
 }
 
 // Clear all filters
@@ -277,6 +379,31 @@ function clearFilters() {
     document.getElementById('sortByFilter').value = 'createdAt';
     document.getElementById('sortDirectionFilter').value = 'DESC';
     document.getElementById('pageSizeFilter').value = '10';
+=======
+    // Tạm dừng auto refresh khi người dùng thao tác filter
+    pauseAutoRefreshTemporarily();
+}
+
+
+// Clear all filters
+function clearFilters() {
+    const filterElements = [
+        {id: 'statusFilter', value: ''},
+        {id: 'tableNumberFilter', value: ''}, // Thay đổi từ tableIdFilter
+        {id: 'minPriceFilter', value: ''},
+        {id: 'maxPriceFilter', value: ''},
+        {id: 'sortByFilter', value: 'createdAt'},
+        {id: 'sortDirectionFilter', value: 'DESC'},
+        {id: 'pageSizeFilter', value: '10'}
+    ];
+
+    filterElements.forEach(filter => {
+        const element = document.getElementById(filter.id);
+        if (element) {
+            element.value = filter.value;
+        }
+    });
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 
     applyFilters();
 }
@@ -285,6 +412,14 @@ function clearFilters() {
 function renderOrders(orders) {
     const orderTableBody = document.getElementById('orderTableBody');
 
+<<<<<<< HEAD
+=======
+    if (!orderTableBody) {
+        console.error('orderTableBody element not found');
+        return;
+    }
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
     if (orders.length === 0) {
         // Show empty state
         orderTableBody.innerHTML = `
@@ -354,7 +489,10 @@ function renderOrders(orders) {
                             title="Xem chi tiết">
                         <i class="fas fa-eye"></i>
                     </button>
+<<<<<<< HEAD
                     ${getActionButton(order)}
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
                 </div>
             </td>
         `;
@@ -365,6 +503,11 @@ function renderOrders(orders) {
 // Update summary information
 function updateSummary(orderPage) {
     const summaryElement = document.getElementById('ordersSummary');
+<<<<<<< HEAD
+=======
+    if (!summaryElement) return;
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
     const pageSize = orderPage.size;
     const currentPageNum = orderPage.number + 1; // Display 1-based page number
     const startItem = orderPage.number * pageSize + 1;
@@ -377,7 +520,11 @@ function updateSummary(orderPage) {
     `;
 }
 
+<<<<<<< HEAD
 // Update pagination controls with smart pagination - Removed pagination info display
+=======
+// Update pagination controls with smart pagination
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 function updatePagination() {
     // Generate pagination buttons
     generatePaginationButtons();
@@ -386,11 +533,19 @@ function updatePagination() {
     const jumpContainer = document.getElementById('paginationJump');
     const jumpInput = document.getElementById('jumpToPage');
 
+<<<<<<< HEAD
     if (totalPages > 10) {
         jumpContainer.style.display = 'block';
         jumpInput.max = totalPages;
         jumpInput.placeholder = `1-${totalPages}`;
     } else {
+=======
+    if (jumpContainer && jumpInput && totalPages > 10) {
+        jumpContainer.style.display = 'block';
+        jumpInput.max = totalPages;
+        jumpInput.placeholder = `1-${totalPages}`;
+    } else if (jumpContainer) {
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
         jumpContainer.style.display = 'none';
     }
 }
@@ -398,6 +553,11 @@ function updatePagination() {
 // Generate smart pagination buttons (max 10 visible pages)
 function generatePaginationButtons() {
     const paginationList = document.getElementById('paginationList');
+<<<<<<< HEAD
+=======
+    if (!paginationList) return;
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
     paginationList.innerHTML = '';
 
     if (totalPages <= 1) return;
@@ -512,6 +672,11 @@ function goToPage(pageIndex) {
 // Jump to page functionality
 function jumpToPage() {
     const jumpInput = document.getElementById('jumpToPage');
+<<<<<<< HEAD
+=======
+    if (!jumpInput) return;
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
     const pageNumber = parseInt(jumpInput.value);
 
     if (pageNumber && pageNumber >= 1 && pageNumber <= totalPages) {
@@ -526,6 +691,7 @@ function jumpToPage() {
     }
 }
 
+<<<<<<< HEAD
 // Allow Enter key in jump input
 document.addEventListener('DOMContentLoaded', function() {
     // This will be called when the page is ready
@@ -550,11 +716,40 @@ function changePage(direction) {
 // Refresh orders
 function refreshOrders() {
     loadOrders();
+=======
+// Refresh orders
+async function refreshOrders() {
+    const refreshBtn = document.querySelector('[onclick="refreshOrders()"]');
+    if (refreshBtn) {
+        const originalHTML = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tải...';
+        refreshBtn.disabled = true;
+
+        try {
+            await loadOrders();
+        } finally {
+            refreshBtn.innerHTML = originalHTML;
+            refreshBtn.disabled = false;
+        }
+    } else {
+        await loadOrders();
+    }
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 }
 
 // Show error state
 function showErrorState(message) {
+<<<<<<< HEAD
     document.getElementById('orderTableBody').innerHTML = `
+=======
+    const orderTableBody = document.getElementById('orderTableBody');
+    if (!orderTableBody) {
+        console.error('orderTableBody element not found for error state');
+        return;
+    }
+
+    orderTableBody.innerHTML = `
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
         <tr>
             <td colspan="7">
                 <div class="empty-orders-state">
@@ -605,6 +800,7 @@ function formatCurrency(amount) {
         currency: 'VND'
     }).format(amount);
 }
+<<<<<<< HEAD
 // Helper function to get enhanced status badge classes
 function getStatusBadgeClass(status) {
     const statusMap = {
@@ -616,6 +812,8 @@ function getStatusBadgeClass(status) {
     };
     return statusMap[status] || 'badge-pending';
 }
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 
 // Helper function to get status icons
 function getStatusIcon(status) {
@@ -629,6 +827,7 @@ function getStatusIcon(status) {
     return iconMap[status] || '<i class="fas fa-clock me-1"></i>';
 }
 
+<<<<<<< HEAD
 // Helper function to get Vietnamese status text
 function getStatusText(status) {
     const textMap = {
@@ -678,6 +877,8 @@ function getActionButton(order) {
     return actionMap[order.status] || '';
 }
 
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 // Helper function to update navigation active state
 function updateActiveNavigation(currentFunction) {
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -689,6 +890,7 @@ function updateActiveNavigation(currentFunction) {
     }
 }
 
+<<<<<<< HEAD
 // Refresh orders function
 async function refreshOrders() {
     const refreshBtn = document.querySelector('[onclick="refreshOrders()"]');
@@ -708,6 +910,8 @@ async function refreshOrders() {
     }
 }
 
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 // Hàm định dạng thời gian
 function formatDateTime(dateString) {
     const date = new Date(dateString);
@@ -737,6 +941,10 @@ function formatDateTime(dateString) {
         }) + ` ${timeStr}`;
     }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 // Hàm xác định class cho badge trạng thái
 function getStatusBadgeClass(status) {
     const statusClasses = {
@@ -761,6 +969,7 @@ function getStatusText(status) {
     return statusTexts[status] || status;
 }
 
+<<<<<<< HEAD
 // Hàm tạo nút hành động dựa trên trạng thái đơn hàng
 function getActionButton(order) {
     switch (order.status) {
@@ -838,9 +1047,375 @@ function serveOrder(orderId) {
     }
 }
 
+=======
+async function viewTableOrders(tableId) {
+    try {
+        console.log('Fetching table orders for table ID:', tableId);
+
+        const data = await apiFetch(`/orders/table/${tableId}/current`, {
+            method: 'GET'
+        });
+
+        console.log('API Response:', data);
+
+        if (data && data.code === 0 && data.result) {
+            displayOrderDetails(data.result);
+        } else {
+            console.error('Invalid response:', data);
+            alert('Bàn này hiện tại không có đơn hàng nào!');
+        }
+
+    } catch (error) {
+        console.error('Error fetching table orders:', error);
+        alert('Có lỗi xảy ra khi tải đơn hàng: ' + error.message);
+    }
+}
+
+async function viewOrderDetails(orderId) {
+    try {
+        console.log('Fetching order details for ID:', orderId);
+
+        const data = await apiFetch(`/orders/${orderId}`, {
+            method: 'GET',
+        });
+
+        console.log('API Response:', data);
+
+        if (data && data.code === 0 && data.result) {
+            displayOrderDetails(data.result);
+        } else {
+            console.error('Invalid response:', data);
+            alert('Không thể lấy thông tin đơn hàng!');
+        }
+
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        alert('Có lỗi xảy ra khi lấy thông tin đơn hàng: ' + error.message);
+    }
+}
+
+// Hàm hiển thị chi tiết đơn hàng
+function displayOrderDetails(orderData) {
+    const {
+        id, status, orderType, createdAt, note,
+        tableNumber, username, totalAmount, orderItems
+    } = orderData;
+
+    // Format dữ liệu
+    const formattedDate = new Date(createdAt).toLocaleString('vi-VN');
+    const formattedAmount = formatCurrency(totalAmount);
+
+    // Tạo HTML cho danh sách món ăn
+    const orderItemsHtml = orderItems.map(item => `
+        <div class="order-item">
+            <div class="item-info">
+                <strong>${item.menuItemName}</strong>
+                <span class="item-details">SL: ${item.quantity} × ${formatCurrency(item.price)}</span>
+            </div>
+            <div class="item-status">
+                <span class="badge ${getStatusBadgeClass(item.status)}">${getStatusText(item.status)}</span>
+            </div>
+        </div>
+    `).join('');
+
+    // Tạo nội dung modal
+    const modalHtml = `
+        <div class="modal-overlay" onclick="closeOrderDetails()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Chi tiết đơn hàng #${id}</h3>
+                    <button class="btn-close" onclick="closeOrderDetails()">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="order-summary">
+                        <div class="info-row">
+                            <span>Trạng thái:</span>
+                            <span class="badge ${getStatusBadgeClass(status)}">${getStatusText(status)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Loại đơn:</span>
+                            <span>${getOrderTypeText(orderType)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Thời gian:</span>
+                            <span>${formattedDate}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Bàn:</span>
+                            <span>${tableNumber || 'Mang về'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Nhân viên:</span>
+                            <span>${username}</span>
+                        </div>
+                        ${note ? `<div class="info-row"><span>Ghi chú:</span><span>${note}</span></div>` : ''}
+                    </div>
+
+                    <div class="order-items-section">
+                        <h4>Danh sách món ăn:</h4>
+                        <div class="order-items-list">
+                            ${orderItemsHtml}
+                        </div>
+                    </div>
+
+                    <div class="order-total">
+                        <strong>Tổng tiền: ${formattedAmount}</strong>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="updateOrderStatus(${id})">
+                        Cập nhật trạng thái
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeOrderDetails()">
+                        Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Thêm CSS inline nếu chưa có
+    addModalStyles();
+
+    // Hiển thị modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// Thêm CSS cho modal
+function addModalStyles() {
+    if (document.getElementById('orderModalStyles')) return;
+
+    const styles = `
+        <style id="orderModalStyles">
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .btn-close:hover {
+            color: #000;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .order-items-section {
+            margin: 20px 0;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .item-details {
+            color: #666;
+            font-size: 14px;
+            display: block;
+        }
+        .order-total {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', styles);
+}
+
+// Đóng modal
+function closeOrderDetails() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Hàm updateOrderStatus đơn giản
+function updateOrderStatus(orderId) {
+    const newStatus = prompt('Nhập trạng thái mới (PENDING, CONFIRMED, READY, COMPLETED, CANCELLED):');
+    if (newStatus) {
+        console.log(`Updating order ${orderId} to status: ${newStatus}`);
+        // TODO: Implement API call to update status
+        alert('Chức năng cập nhật trạng thái sẽ được hoàn thiện sau!');
+    }
+}
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
 
 // Hàm nhận đơn mới
 function takeNewOrder() {
     // TODO: Implement take new order functionality
+<<<<<<< HEAD
     alert('Chức năng nhận đơn mới sẽ được cập nhật sau!');
 }
+=======
+    alert('Chức năng nhận đơn mới sẽ được hoàn thiện sau!');
+}
+
+let refreshInterval;
+
+function startSmartRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+
+    refreshInterval = setInterval(async () => {
+        if (ordersData.length > 0 && !isReloading) {
+            await loadOrders(true); // Auto-refresh mode
+        }
+    }, 30000); // 30 seconds
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Kitchen Dashboard initialized');
+    showDashboard();
+    startSmartRefresh();
+});
+
+// Stop refresh when page is hidden
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        if (refreshInterval) clearInterval(refreshInterval);
+    } else {
+        startSmartRefresh();
+    }
+});
+
+let autoRefreshInterval;
+let isAutoRefreshEnabled = false;
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+
+    isAutoRefreshEnabled = true;
+    autoRefreshInterval = setInterval(async () => {
+        if (isAutoRefreshEnabled && document.getElementById('orderTableBody')) {
+            try {
+                await loadOrders();
+                console.log('Auto refresh completed at:', new Date().toLocaleTimeString());
+            } catch (error) {
+                console.error('Auto refresh error:', error);
+            }
+        }
+    }, 30000); // 30 giây
+
+    console.log('Auto refresh started - will refresh every 30 seconds');
+}
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    isAutoRefreshEnabled = false;
+    console.log('Auto refresh stopped');
+}
+
+function pauseAutoRefreshTemporarily() {
+    if (isAutoRefreshEnabled) {
+        stopAutoRefresh();
+        // Khởi động lại sau 2 phút
+        setTimeout(() => {
+            if (document.getElementById('orderTableBody')) {
+                startAutoRefresh();
+            }
+        }, 120000); // 2 phút
+    }
+}
+
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+});
+
+// Thêm event listener để dừng/khởi động auto refresh khi tab ẩn/hiện
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        stopAutoRefresh();
+    } else {
+        // Chỉ khởi động lại nếu đang ở trang orders
+        if (document.getElementById('orderTableBody')) {
+            startAutoRefresh();
+        }
+    }
+});
+
+// Hàm toggle auto refresh (có thể thêm button để bật/tắt)
+
+
+
+
+
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90

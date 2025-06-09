@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.Instant;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -23,5 +25,5 @@ public class UserResponse {
     String phone;
     Boolean isAuthUser;
     String oauthProvider;
-    String registrationDate;
+    Instant registrationDate;
 }

@@ -41,10 +41,25 @@ public class RestaurantOrderService {
     private final MenuItemRepository menuItemRepository;
 
     public Page<RestaurantOrderResponse> getAllOrders(
-            String status, Integer tableId, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        Page<RestaurantOrder> orders = orderRepository.findAll(OrderSpecifications.filterOrders(status, tableId, minPrice, maxPrice), pageable);
+            String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+
+        log.info("Fetching all orders with status: {}, tableNumber: {}, minPrice: {}, maxPrice: {}",
+                status, tableNumber, minPrice, maxPrice);
+
+        Integer tableId = null;
+        if (tableNumber != null && !tableNumber.isEmpty()) {
+            RestaurantTable table = tableRepository.findByTableNumber(tableNumber)
+                    .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+            tableId = table.getId();
+        }
+
+        Page<RestaurantOrder> orders = orderRepository.findAll(
+                OrderSpecifications.filterOrders(status, tableId, minPrice, maxPrice),
+                pageable
+        );
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
+
 
     public RestaurantOrderResponse getCurrentOrdersByTableId(Integer tableId) {
         log.info("Fetching orders for table ID: {}", tableId);

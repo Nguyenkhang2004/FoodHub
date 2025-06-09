@@ -1,14 +1,15 @@
 package com.example.FoodHub.repository;
 
 import com.example.FoodHub.entity.MenuItem;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
-@Repository
 public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> {
-    List<MenuItem> findByCategoriesNameIgnoreCase(String name);
-    List<MenuItem> findByStatusIgnoreCase(String status);
+    Page<MenuItem> findAll(Pageable pageable);
+
+    Page<MenuItem> findByCategoriesNameIgnoreCase(String categoryName, Pageable pageable);
+
+    Page<MenuItem> findByStatusIgnoreCase(String status, Pageable pageable);
 }
 

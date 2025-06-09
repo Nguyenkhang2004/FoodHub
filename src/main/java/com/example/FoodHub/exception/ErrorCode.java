@@ -29,8 +29,6 @@ public enum ErrorCode {
     TABLE_NUMBER_INVALID(1021, "Table number must not be null", HttpStatus.BAD_REQUEST),
     QR_CODE_INVALID(1022, "QR code must not be null", HttpStatus.BAD_REQUEST),
     AREA_INVALID(1023, "Area must be an alphabet and not be null", HttpStatus.BAD_REQUEST),
-
-
     TABLE_ID_REQUIRED(1024, "Table ID is required", HttpStatus.BAD_REQUEST),
     TABLE_ID_INVALID(1025, "Table ID must be a positive number", HttpStatus.BAD_REQUEST),
     USER_ID_REQUIRED(1026, "User ID is required", HttpStatus.BAD_REQUEST),
@@ -53,6 +51,7 @@ public enum ErrorCode {
     INVALID_QR_TOKEN(2001, "Invalid QR token", HttpStatus.UNAUTHORIZED),
     OCCUPIED_TABLE(2002, "Table is already occupied", HttpStatus.BAD_REQUEST),
     INVALID_SESSION_ID(2003, "Invalid session ID", HttpStatus.BAD_REQUEST);
+
     private int code;
     private String message;
     private HttpStatusCode statusCode;

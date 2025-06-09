@@ -2,15 +2,18 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
+import com.example.FoodHub.entity.RestaurantTable;
 import com.example.FoodHub.enums.TableStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.RestaurantTableMapper;
 import com.example.FoodHub.repository.RestaurantTableRepository;
+import com.example.FoodHub.specification.TableSpecifications;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -24,9 +27,12 @@ public class RestaurantTableService {
     RestaurantTableRepository tableRepository;
     RestaurantTableMapper tableMapper;
 
-    public List<RestaurantTableResponse> getAllTables() {
+    public List<RestaurantTableResponse> getAllTables(String tableNumber, String status) {
         log.info("Fetching all restaurant tables");
-        return tableRepository.findAll().stream().map(tableMapper::toRestaurantTableResponse).toList();
+        log.info("Fetching filtered restaurant tables");
+        return tableRepository.findAll(TableSpecifications.filterTables(tableNumber, status)).stream()
+                .map(tableMapper::toRestaurantTableResponse)
+                .toList();
     }
 
     public List<RestaurantTableResponse> getTablesByArea(String area) {
