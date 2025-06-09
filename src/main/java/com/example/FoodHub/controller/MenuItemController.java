@@ -157,6 +157,7 @@ public class MenuItemController {
     public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuItems(
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
@@ -165,8 +166,11 @@ public class MenuItemController {
         if (page < 0) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
+        if (size <= 0) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
 
-        Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, sortBy, sortDirection, page, size);
+        Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, status, sortBy, sortDirection, page, size);
 
         ApiResponse<Page<MenuItemResponse>> response = ApiResponse.<Page<MenuItemResponse>>builder()
                 .code(1000)

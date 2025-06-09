@@ -32,6 +32,12 @@ public enum ErrorCode {
     PHONE_NOT_BLANK(1023, "Phone number must not be blank", HttpStatus.BAD_REQUEST),
     EMAIL_NOT_BLANK(1024, "Email must not be blank", HttpStatus.BAD_REQUEST),
     PASSWORD_NOT_BLANK(1025, "Password must not be blank", HttpStatus.BAD_REQUEST),
+    USER_HAS_SCHEDULE(1027, "User has existing work schedules", HttpStatus.BAD_REQUEST),
+    USER_HAS_FUTURE_SCHEDULE(1028, "User has future work schedules", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND(1029, "User not found", HttpStatus.NOT_FOUND),
+    INVALID_SHIFT_DATE(1030, "Cannot schedule shifts for days before today", HttpStatus.BAD_REQUEST),
+    DUPLICATE_SHIFT(1031, "Shift already exists for the specified date and time", HttpStatus.BAD_REQUEST),
+    INVALID_SHIFT_TYPE(1032, "Shift time must be one of: morning, afternoon, night", HttpStatus.BAD_REQUEST),
     PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST);
 
     private int code;

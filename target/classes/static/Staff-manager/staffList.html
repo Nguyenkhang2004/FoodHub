@@ -671,6 +671,7 @@
       showNotification('Không tìm thấy ID nhân viên!', 'error');
       return;
     }
+
     if (!confirm('Bạn có chắc chắn muốn vô hiệu hóa nhân viên này?')) return;
 
     try {
@@ -682,7 +683,8 @@
         throw new Error(response.data.message || 'Lỗi khi vô hiệu hóa nhân viên');
       }
     } catch (error) {
-      showNotification(error.message || 'Có lỗi xảy ra khi vô hiệu hóa nhân viên!', 'error');
+      const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra khi vô hiệu hóa nhân viên!';
+      showNotification(errorMessage, 'error');
     }
   }
 

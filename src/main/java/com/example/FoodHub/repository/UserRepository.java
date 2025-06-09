@@ -34,4 +34,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<User> findByRoleName_Name(String roleName);
     @Query("SELECT COUNT(m) > 0 FROM User m WHERE LOWER(TRIM(m.username)) = LOWER(TRIM(:username)) AND m.id != :id")
     boolean existsByNameIgnoreCaseAndIdNot(@Param("username") String username, @Param("id") Integer id);
+
+    List<User>findByRoleName_NameAndStatus(String roleName, String status);
 }

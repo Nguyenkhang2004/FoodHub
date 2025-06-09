@@ -5,11 +5,13 @@ import com.example.FoodHub.dto.request.UserCreationRequest;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
+import com.example.FoodHub.entity.WorkSchedule;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
+import com.example.FoodHub.repository.WorkScheduleRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Slf4j
@@ -34,6 +38,7 @@ public class UserService {
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
+    WorkScheduleRepository workScheduleRepository;
 
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -102,6 +107,15 @@ public class UserService {
     public void inactiveUser(Integer id) {
         if (!userRepository.existsById(id)) {
             throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
+        }
+        List<WorkSchedule>schedules = workScheduleRepository.findByUserId(id);
+        if (!schedules.isEmpty()) {
+            LocalDate currentDate = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")); // Lấy ngày hiện tại theo giờ Việt Nam
+            for (WorkSchedule schedule : schedules) {
+                if (!schedule.getWorkDate().isBefore(currentDate)) {
+                    throw new AppException(ErrorCode.USER_HAS_FUTURE_SCHEDULE);
+                }
+            }
         }
 
         int updatedRows = userRepository.updateStatusById(id, "INACTIVE");
