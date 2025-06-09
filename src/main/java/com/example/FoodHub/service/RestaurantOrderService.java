@@ -2,6 +2,7 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
+import com.example.FoodHub.dto.response.OrderItemResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
 import com.example.FoodHub.enums.*;
@@ -137,7 +138,7 @@ public class RestaurantOrderService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         order.setUser(user);
-        if(request.getOrderType().equals(OrderType.DINE_IN.name())) {
+        if (request.getOrderType().equals(OrderType.DINE_IN.name())) {
             RestaurantTable table = tableRepository.findById(request.getTableId())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
             // Kiểm tra trạng thái bàn trước khi gán
@@ -347,21 +348,34 @@ public class RestaurantOrderService {
         validateStatusTransition(order.getStatus(), newStatus);
 
         order.setStatus(newStatus);
-        if(newStatus.equals(OrderStatus.CANCELLED.name())) {
-            // If order is cancelled, set all order items to cancelled
-            order.getOrderItems().forEach(item -> item.setStatus(OrderItemStatus.CANCELLED.name()));
-            orderItemRepository.saveAll(order.getOrderItems());
 
-            // Recalculate total amount after cancelling items
-            BigDecimal newTotalAmount = calculateTotalAmount(order);
-            order.setTotalAmount(newTotalAmount);
-        }
+        order.getOrderItems().forEach(item -> item.setStatus(newStatus));
+        orderItemRepository.saveAll(order.getOrderItems());
+
+        // Recalculate total amount after cancelling items
+        BigDecimal newTotalAmount = calculateTotalAmount(order);
+        order.setTotalAmount(newTotalAmount);
+
 
         RestaurantOrder savedOrder = orderRepository.save(order);
 
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
+    public OrderItemResponse updateOrderItemStatus(Integer orderItemId, String newStatus) {
+        log.info("Updating order item status. Order Item ID: {}, New Status: {}", orderItemId, newStatus);
+
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_ITEM_NOT_EXISTED));
+
+        // Validate status transition (optional business logic)
+        validateStatusTransition(orderItem.getStatus(), newStatus);
+
+        orderItem.setStatus(newStatus);
+        OrderItem savedOrderItem = orderItemRepository.save(orderItem);
+
+        return orderMapper.toOrderItemResponse(savedOrderItem);
+    }
     // Method to cancel specific order item
     public RestaurantOrderResponse cancelOrderItem(Integer orderId, Integer orderItemId, String reason) {
         log.info("Cancelling order item. Order ID: {}, Item ID: {}", orderId, orderItemId);
@@ -406,11 +420,5 @@ public class RestaurantOrderService {
         }
     }
 
-    public List<RestaurantOrderResponse> getOrdersByStatus(String status) {
-        log.info("Fetching orders with status: {}", status);
-        return orderRepository.findByStatus(status).stream()
-                .map(orderMapper::toRestaurantOrderResponse)
-                .toList();
-    }
 
 }

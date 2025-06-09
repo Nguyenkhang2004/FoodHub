@@ -109,7 +109,7 @@ async function loadOrders() {
         if (maxPrice) params.append('maxPrice', maxPrice);
         params.append('page', currentPage.toString());
         params.append('size', pageSize);
-        params.append('SorderBy', sortBy); // Note: backend uses 'SorderBy'
+        params.append('orderBy', sortBy);
         params.append('sort', sortDirection);
 
         // Fetch orders with filters

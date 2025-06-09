@@ -23,9 +23,11 @@ public class TableController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getAllTables(
             @RequestParam(required = false) String tableNumber,
-            @RequestParam(required = false) String status
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "tableNumber") String orderBy,
+            @RequestParam(defaultValue = "ASC") String sort
     ) {
-        List<RestaurantTableResponse> tables = tableService.getAllTables(tableNumber, status);
+        List<RestaurantTableResponse> tables = tableService.getAllTables(tableNumber, status, orderBy, sort);
         ApiResponse<List<RestaurantTableResponse>> response = ApiResponse.<List<RestaurantTableResponse>>builder()
                 .result(tables)
                 .build();

@@ -2,6 +2,7 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
+import com.example.FoodHub.dto.response.OrderItemResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.service.RestaurantOrderService;
 import jakarta.validation.Valid;
@@ -43,11 +44,11 @@ public class OrderController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String SorderBy,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort
     ) {
         Sort.Direction direction = Sort.Direction.fromString(sort);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, SorderBy));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
         Page<RestaurantOrderResponse> orderResponses = orderService.getAllOrders(status, tableNumber, minPrice, maxPrice, pageable);
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)
@@ -65,7 +66,7 @@ public class OrderController {
         return ResponseEntity.ok().body(response);
     }
 
-    @PutMapping("/{orderId}/status")
+    @PutMapping("/status/{orderId}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderStatus(
             @PathVariable Integer orderId, @RequestParam String status) {
         RestaurantOrderResponse updatedOrder = orderService.updateOrderStatus(orderId, status);
@@ -75,15 +76,15 @@ public class OrderController {
         return ResponseEntity.ok().body(response);
     }
 
-//    @PutMapping("/items/{orderItemId}")
-//    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderItem(
-//            @PathVariable Integer orderItemId, @Valid @RequestBody RestaurantOrderRequest request) {
-//        RestaurantOrderResponse updatedOrder = orderService.updateOrderItem(orderItemId, request);
-//        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
-//                .result(updatedOrder)
-//                .build();
-//        return ResponseEntity.ok().body(response);
-//    }
+    @PutMapping("/items/status/{orderItemId}")
+    public ResponseEntity<ApiResponse<OrderItemResponse>> updateOrderItemStatus(
+            @PathVariable Integer orderItemId, @RequestParam String status) {
+        OrderItemResponse updatedOrderItemStatus = orderService.updateOrderItemStatus(orderItemId, status);
+        ApiResponse<OrderItemResponse> response = ApiResponse.<OrderItemResponse>builder()
+                .result(updatedOrderItemStatus)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
 
     @GetMapping("/table/{tableId}/current")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getOrdersByTableId(
