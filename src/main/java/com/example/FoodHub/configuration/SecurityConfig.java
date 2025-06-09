@@ -29,7 +29,10 @@ public class SecurityConfig {
             "/admin/**",
             "/waiter/**",
             "/orders/**",
-            "/login.html"
+            "/login.html",
+            "/scan",
+            "/scan/**",
+            "/customer/**"
     };
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {

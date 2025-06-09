@@ -44,13 +44,13 @@ public class OrderSession {
 
     @NotNull
     @ColumnDefault("'ACTIVE'")
-    @Enumerated(EnumType.STRING)
+//    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private SessionStatus status;
+    private String status;
 
     public OrderSession() {
         this.createdAt = Instant.now();
         this.expiresAt = Instant.now().plusSeconds(7200); // 2 giờ
-        this.status = SessionStatus.ACTIVE; // Gán giá trị mặc định
+        this.status = SessionStatus.ACTIVE.name(); // Gán giá trị mặc định
     }
 }

@@ -9,16 +9,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.function.EntityResponse;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/scan")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ScanController {
     ScanService scanService;
 
-    @PostMapping("/scan")
+    @PostMapping
     public ResponseEntity<ApiResponse<ScanResponse>> scanQRCode(@RequestBody ScanRequest request) {
         ScanResponse result = scanService.scanQRCode(request);
         ApiResponse<ScanResponse> response = ApiResponse.<ScanResponse>builder()

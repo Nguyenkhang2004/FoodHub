@@ -38,9 +38,9 @@ public class RestaurantTable {
 
     @NotNull
     @ColumnDefault("'AVAILABLE'")
-    @Enumerated(EnumType.STRING)
+//    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private TableStatus status;
+    private String status;
 
     @OneToMany(mappedBy = "table")
     private Set<ChatMessage> chatMessages = new LinkedHashSet<>();

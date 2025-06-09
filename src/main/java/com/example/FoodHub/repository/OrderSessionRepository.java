@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface OrderSessionRepository extends JpaRepository<OrderSession, Integer> {
-    Optional<OrderSession> findBySessionTokenAndStatus(String sessionToken, SessionStatus status);
-    Optional<OrderSession> findByTableIdAndStatus(Integer tableId, SessionStatus status);
+    Optional<OrderSession> findBySessionTokenAndStatus(String sessionToken, String status);
+    Optional<OrderSession> findByTableIdAndStatus(Integer tableId, String status);
 }

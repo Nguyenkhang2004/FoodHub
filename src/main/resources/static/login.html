@@ -53,14 +53,14 @@
             const token = data.result.token;
             localStorage.setItem('accessToken', token);
             const payload = parseJwt(token);
-            const role = payload?.scope; // ví dụ "ROLE_ADMIN" hoặc "ROLE_WAITER"
+            const scopes = payload?.scope?.split(" ");
 
-            if (role === 'ROLE_ADMIN') {
-                window.location.href = 'admin.html';
-            } else if (role === 'ROLE_WAITER') {
+            if (scopes.includes("ROLE_ADMIN")) {
+                window.location.href = 'adminDashboard/adminDashboard.html';
+            } else if (scopes.includes("ROLE_WAITER")) {
                 window.location.href = 'waiter.html';
             } else {
-                window.location.href = 'index.html'; // mặc định
+                window.location.href = 'adminDashboard/adminDashboard.html'; // mặc định fallback
             }
         } catch (err) {
             document.getElementById('errorMsg').innerText = err.message;

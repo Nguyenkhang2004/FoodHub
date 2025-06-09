@@ -1,13 +1,15 @@
 package com.example.FoodHub.service;
 
-
-import com.example.FoodHub.dto.response.UserDTO;
+import com.example.FoodHub.dto.request.UserCreationRequest;
+import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,26 +18,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
+    UserRepository userRepository;
+    RoleRepository roleRepository;
+    PasswordEncoder passwordEncoder;
 
-    @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    public List<UserDTO> getAllUsers() {
-        return userRepository.findByRoleName_Name("CUSTOMER").stream() // Chỉ lấy người dùng có roleName là CUSTOMER
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findByRoleName_Name("CUSTOMER").stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public UserDTO getUserById(Integer id) {
+    public UserResponse getUserById(Integer id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + id));
         if (!"CUSTOMER".equals(user.getRoleName().getName())) {
@@ -45,40 +42,49 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTO createUser(UserDTO userDTO) {
-        if (!"CUSTOMER".equals(userDTO.getRoleName())) {
+    public UserResponse createUser(UserCreationRequest userRequest) {
+        if (!"CUSTOMER".equals(userRequest.getRoleName().getName())) {
             throw new RuntimeException("Chỉ được phép tạo người dùng với vai trò CUSTOMER");
         }
-        validateUserDTO(userDTO, false);
-        User user = convertToEntity(userDTO);
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+
+        validateUserDTO(userRequest, false);
+
+        User user = new User();
+        user.setUsername(userRequest.getUsername());
+        user.setEmail(userRequest.getEmail());
+        user.setPhone(userRequest.getPhone());
+        user.setAddress(userRequest.getAddress());
+        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+        user.setRoleName(findRoleByName(userRequest.getRoleName().getName()));
+        user.setStatus("ACTIVE");
+        user.setIsAuthUser(false);
+        user.setOauthProvider(null);
+
         user = userRepository.save(user);
         return convertToDTO(user);
     }
 
     @Transactional
-    public UserDTO updateUser(Integer id, UserDTO userDTO) {
+    public UserResponse updateUser(Integer id, UserResponse userResponse) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + id));
         if (!"CUSTOMER".equals(existingUser.getRoleName().getName())) {
             throw new RuntimeException("Người dùng không có vai trò CUSTOMER");
         }
-        if (!"CUSTOMER".equals(userDTO.getRoleName())) {
+        if (!"CUSTOMER".equals(userResponse.getRoleName())) {
             throw new RuntimeException("Chỉ được phép cập nhật người dùng với vai trò CUSTOMER");
         }
-        validateUserDTO(userDTO, true);
 
-        existingUser.setUsername(userDTO.getUsername());
-        existingUser.setEmail(userDTO.getEmail());
-        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
-            existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        existingUser.setUsername(userResponse.getUsername());
+        existingUser.setEmail(userResponse.getEmail());
+        if (userResponse.getPassword() != null && !userResponse.getPassword().isEmpty()) {
+            existingUser.setPassword(passwordEncoder.encode(userResponse.getPassword()));
         }
-        existingUser.setRoleName(findRoleByName(userDTO.getRoleName()));
-        existingUser.setStatus(userDTO.getStatus());
-        existingUser.setAddress(userDTO.getAddress());
-        existingUser.setPhone(userDTO.getPhone());
-        existingUser.setIsAuthUser(userDTO.getIsAuthUser());
-        existingUser.setOauthProvider(userDTO.getOauthProvider());
+        existingUser.setStatus(userResponse.getStatus());
+        existingUser.setAddress(userResponse.getAddress());
+        existingUser.setPhone(userResponse.getPhone());
+        existingUser.setIsAuthUser(userResponse.getIsAuthUser());
+        existingUser.setOauthProvider(userResponse.getOauthProvider());
 
         userRepository.save(existingUser);
         return convertToDTO(existingUser);
@@ -95,28 +101,26 @@ public class UserService {
         userRepository.save(user);
     }
 
-    private void validateUserDTO(UserDTO userDTO, boolean isUpdate) {
+    private void validateUserDTO(UserCreationRequest userRequest, boolean isUpdate) {
         if (!isUpdate) {
-            if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
+            if (userRepository.findByUsername(userRequest.getUsername()).isPresent()) {
                 throw new RuntimeException("Tên người dùng đã tồn tại");
             }
-            if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+            if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
                 throw new RuntimeException("Email đã tồn tại");
             }
         }
-        if (!"CUSTOMER".equals(userDTO.getRoleName())) {
+        if (userRequest.getRoleName() == null || !"CUSTOMER".equals(userRequest.getRoleName().getName())) {
             throw new RuntimeException("Vai trò không hợp lệ, chỉ được phép là CUSTOMER");
-        }
-        if (!List.of("ACTIVE", "INACTIVE").contains(userDTO.getStatus())) {
-            throw new RuntimeException("Trạng thái không hợp lệ");
         }
     }
 
-    private UserDTO convertToDTO(User user) {
-        return UserDTO.builder()
+    private UserResponse convertToDTO(User user) {
+        return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .password(user.getPassword())
                 .roleName(user.getRoleName().getName())
                 .status(user.getStatus())
                 .address(user.getAddress())
@@ -126,24 +130,8 @@ public class UserService {
                 .build();
     }
 
-    private User convertToEntity(UserDTO userDTO) {
-        User user = new User();
-        user.setUsername(userDTO.getUsername());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(userDTO.getPassword()); // Will be encoded later
-        user.setRoleName(findRoleByName(userDTO.getRoleName()));
-        user.setStatus(userDTO.getStatus());
-        user.setAddress(userDTO.getAddress());
-        user.setPhone(userDTO.getPhone());
-        user.setIsAuthUser(userDTO.getIsAuthUser());
-        user.setOauthProvider(userDTO.getOauthProvider());
-        return user;
-    }
-
     private Role findRoleByName(String roleName) {
         return roleRepository.findById(roleName)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò: " + roleName));
     }
-
-
 }
