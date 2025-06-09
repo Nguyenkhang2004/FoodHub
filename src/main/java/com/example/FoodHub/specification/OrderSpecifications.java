@@ -14,7 +14,7 @@ public final class OrderSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (status != null) predicates.add(cb.equal(root.get("status"), status));
-            if (tableId != null) predicates.add(cb.equal(root.get("tableId"), tableId));
+            if (tableId != null) predicates.add(cb.equal(root.get("table").get("id"), tableId));
             if (minPrice != null) predicates.add(cb.ge(root.get("totalAmount"), minPrice));
             if (maxPrice != null) predicates.add(cb.le(root.get("totalAmount"), maxPrice));
             return cb.and(predicates.toArray(new Predicate[0]));

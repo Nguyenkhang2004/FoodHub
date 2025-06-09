@@ -29,6 +29,7 @@ public class SecurityConfig {
             "/admin/**",
             "/waiter/**",
             "/orders/**",
+            "/chef/**",
             "/login.html"
     };
     @Bean

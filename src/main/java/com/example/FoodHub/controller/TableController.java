@@ -21,8 +21,11 @@ public class TableController {
     RestaurantTableService tableService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getAllTables() {
-        List<RestaurantTableResponse> tables = tableService.getAllTables();
+    public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getAllTables(
+            @RequestParam(required = false) String tableNumber,
+            @RequestParam(required = false) String status
+    ) {
+        List<RestaurantTableResponse> tables = tableService.getAllTables(tableNumber, status);
         ApiResponse<List<RestaurantTableResponse>> response = ApiResponse.<List<RestaurantTableResponse>>builder()
                 .result(tables)
                 .build();
