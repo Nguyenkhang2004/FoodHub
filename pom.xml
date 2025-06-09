@@ -63,6 +63,12 @@
 			<artifactId>mapstruct</artifactId>
 			<version>1.6.0.Beta1</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.json/json -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20250517</version>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-crypto -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>

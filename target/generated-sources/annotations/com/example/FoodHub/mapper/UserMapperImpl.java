@@ -2,20 +2,15 @@ package com.example.FoodHub.mapper;
 
 import com.example.FoodHub.dto.request.UserCreationRequest;
 import com.example.FoodHub.dto.request.UserUpdateRequest;
-import com.example.FoodHub.dto.response.PermissionResponse;
-import com.example.FoodHub.dto.response.RoleResponse;
 import com.example.FoodHub.dto.response.UserResponse;
-import com.example.FoodHub.entity.Permission;
 import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-07T16:52:05+0700",
+    date = "2025-06-09T20:19:39+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
@@ -46,10 +41,19 @@ public class UserMapperImpl implements UserMapper {
 
         UserResponse.UserResponseBuilder userResponse = UserResponse.builder();
 
+        userResponse.roleName( userRoleNameName( user ) );
+        userResponse.id( user.getId() );
         userResponse.username( user.getUsername() );
         userResponse.email( user.getEmail() );
-        userResponse.roleName( roleToRoleResponse( user.getRoleName() ) );
-        userResponse.registrationDate( user.getRegistrationDate() );
+        userResponse.password( user.getPassword() );
+        userResponse.status( user.getStatus() );
+        userResponse.address( user.getAddress() );
+        userResponse.phone( user.getPhone() );
+        userResponse.isAuthUser( user.getIsAuthUser() );
+        userResponse.oauthProvider( user.getOauthProvider() );
+        if ( user.getRegistrationDate() != null ) {
+            userResponse.registrationDate( user.getRegistrationDate().toString() );
+        }
 
         return userResponse.build();
     }
@@ -65,43 +69,11 @@ public class UserMapperImpl implements UserMapper {
         user.setAddress( request.getAddress() );
     }
 
-    protected PermissionResponse permissionToPermissionResponse(Permission permission) {
-        if ( permission == null ) {
+    private String userRoleNameName(User user) {
+        Role roleName = user.getRoleName();
+        if ( roleName == null ) {
             return null;
         }
-
-        PermissionResponse.PermissionResponseBuilder permissionResponse = PermissionResponse.builder();
-
-        permissionResponse.name( permission.getName() );
-        permissionResponse.description( permission.getDescription() );
-
-        return permissionResponse.build();
-    }
-
-    protected Set<PermissionResponse> permissionSetToPermissionResponseSet(Set<Permission> set) {
-        if ( set == null ) {
-            return null;
-        }
-
-        Set<PermissionResponse> set1 = new LinkedHashSet<PermissionResponse>( Math.max( (int) ( set.size() / .75f ) + 1, 16 ) );
-        for ( Permission permission : set ) {
-            set1.add( permissionToPermissionResponse( permission ) );
-        }
-
-        return set1;
-    }
-
-    protected RoleResponse roleToRoleResponse(Role role) {
-        if ( role == null ) {
-            return null;
-        }
-
-        RoleResponse.RoleResponseBuilder roleResponse = RoleResponse.builder();
-
-        roleResponse.name( role.getName() );
-        roleResponse.description( role.getDescription() );
-        roleResponse.permissions( permissionSetToPermissionResponseSet( role.getPermissions() ) );
-
-        return roleResponse.build();
+        return roleName.getName();
     }
 }
