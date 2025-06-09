@@ -6,6 +6,8 @@ import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.OrderItem;
 import com.example.FoodHub.entity.Payment;
 import com.example.FoodHub.entity.RestaurantOrder;
+import com.example.FoodHub.exception.AppException;
+import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.OrderItemRepository;
 import com.example.FoodHub.repository.PaymentRepository;
 import com.example.FoodHub.repository.RestaurantOrderRepository;
@@ -32,27 +34,22 @@ public class CashierService {
     @Autowired
     private PaymentRepository paymentRepository;
 
-
-
-
-
-
     // Thanh toán đơn hàng
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request) {
         RestaurantOrder order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         if (!"PENDING".equals(order.getStatus()) && !"CONFIRMED".equals(order.getStatus())) {
-            throw new RuntimeException("Order cannot be paid in current status: " + order.getStatus());
+            throw new AppException(ErrorCode.ORDER_COMPLETED, "Order cannot be paid in current status: " + order.getStatus());
         }
 
         Payment payment = paymentRepository.findByOrderId(request.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Payment record not found for order: " + request.getOrderId()));
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND, "Payment record not found for order: " + request.getOrderId()));
 
         BigDecimal totalAmount = orderItemRepository.calculateTotalAmountByOrderId(request.getOrderId());
         if (totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Invalid order amount");
+            throw new AppException(ErrorCode.INVALID_ORDER_AMOUNT, "Invalid order amount");
         }
 
         payment.setAmount(totalAmount);
@@ -80,14 +77,14 @@ public class CashierService {
     @Transactional
     public void cancelOrRefundOrder(Integer orderId) {
         RestaurantOrder order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         if ("COMPLETED".equals(order.getStatus())) {
-            throw new RuntimeException("Cannot cancel completed order");
+            throw new AppException(ErrorCode.ORDER_COMPLETED, "Cannot cancel completed order");
         }
 
         Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new RuntimeException("Payment record not found for order: " + orderId));
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND, "Payment record not found for order: " + orderId));
 
         if ("PAID".equals(payment.getStatus())) {
             payment.setStatus("REFUNDED");
@@ -111,6 +108,9 @@ public class CashierService {
 
     // Quản lý giao dịch (lấy danh sách giao dịch theo ngày)
     public List<PaymentResponse> getTransactionsByDate(Instant start, Instant end) {
+        if (end.isBefore(start)) {
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        }
         List<Payment> payments = paymentRepository.findByCreatedAtBetween(start, end);
         return payments.stream()
                 .map(this::mapToPaymentResponse)
@@ -132,6 +132,9 @@ public class CashierService {
     }
 
     public RevenueStatsResponseForCashier getRevenueStatsByDateRange(Instant start, Instant end) {
+        if (end.isBefore(start)) {
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        }
         return calculateRevenueStats(start, end);
     }
 
