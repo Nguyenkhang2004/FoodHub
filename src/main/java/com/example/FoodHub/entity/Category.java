@@ -1,5 +1,7 @@
 package com.example.FoodHub.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -26,7 +28,7 @@ public class Category {
 
     @Column(name = "description")
     private String description;
-
+    @JsonBackReference
     @ManyToMany
     @JoinTable(name = "menu_item_category",
             joinColumns = @JoinColumn(name = "category_id"),

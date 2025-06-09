@@ -46,7 +46,25 @@ public enum ErrorCode {
     PRICE_REQUIRED(1036, "Price is required", HttpStatus.BAD_REQUEST),
     PRICE_INVALID(1037, "Price must be greater than 0", HttpStatus.BAD_REQUEST),
     PRICE_FORMAT_INVALID(1038, "Price format is invalid", HttpStatus.BAD_REQUEST),
-    ORDER_ITEM_STATUS_INVALID(1039, "Order item status must be PENDING, CONFIRMED, READY, CANCELLED, or COMPLETED", HttpStatus.BAD_REQUEST)
+    ORDER_ITEM_STATUS_INVALID(1039, "Order item status must be PENDING, CONFIRMED, READY, CANCELLED, or COMPLETED", HttpStatus.BAD_REQUEST),
+
+    INVALID_DOB(1008, "Your age must be at least {min} years old", HttpStatus.BAD_REQUEST),
+    MENU_ITEM_NOT_FOUND(1011, "Menu item not found", HttpStatus.NOT_FOUND),
+    CATEGORY_NOT_FOUND(1012, "One or more categories not found", HttpStatus.NOT_FOUND),
+    IMAGE_UPLOAD_FAILED(1013, "Failed to upload image", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_IMAGE_URL(1014, "Invalid image URL format", HttpStatus.BAD_REQUEST),
+    MENU_ITEM_EXISTED(1015, "Menu item already exists", HttpStatus.BAD_REQUEST),
+    MENU_NAME_NOT_BLANK(1016, "Menu name must not be blank", HttpStatus.BAD_REQUEST),
+    MENU_NAME_SIZE(1017, "Menu name must be at least 2 characters", HttpStatus.BAD_REQUEST),
+    PRICE_NOT_NULL(1018, "Price must not be null", HttpStatus.BAD_REQUEST),
+    PRICE_POSITIVE(1019, "Price must be a positive number", HttpStatus.BAD_REQUEST),
+    USERNAME_NOT_BLANK(1020, "Username must not be blank", HttpStatus.BAD_REQUEST),
+    ROLE_NOT_BLANK(1021, "Role must not be blank", HttpStatus.BAD_REQUEST),
+    ADDRESS_NOT_BLANK(1022, "Address must not be blank", HttpStatus.BAD_REQUEST),
+    PHONE_NOT_BLANK(1023, "Phone number must not be blank", HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_BLANK(1024, "Email must not be blank", HttpStatus.BAD_REQUEST),
+    PASSWORD_NOT_BLANK(1025, "Password must not be blank", HttpStatus.BAD_REQUEST),
+    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST)
     ;
 
     private int code;
