@@ -64,7 +64,10 @@ public enum ErrorCode {
     PHONE_NOT_BLANK(1023, "Phone number must not be blank", HttpStatus.BAD_REQUEST),
     EMAIL_NOT_BLANK(1024, "Email must not be blank", HttpStatus.BAD_REQUEST),
     PASSWORD_NOT_BLANK(1025, "Password must not be blank", HttpStatus.BAD_REQUEST),
-    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST)
+    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
+    USER_HAS_SCHEDULED_SHIFTS(1040, "User has scheduled shifts and cannot be deactivated", HttpStatus.BAD_REQUEST),
+    DUPLICATE_SHIFT(1042, "Duplicate shift found for the user on the same date", HttpStatus.BAD_REQUEST),
+    INVALID_SHIFT_TYPE(1043, "Invalid shift type. Must be morning, afternoon, or night", HttpStatus.BAD_REQUEST)
     ;
 
     private int code;

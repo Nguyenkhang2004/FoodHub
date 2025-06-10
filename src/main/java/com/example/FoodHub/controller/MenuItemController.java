@@ -153,29 +153,58 @@ public class MenuItemController {
     @Autowired
     private MenuItemService menuItemService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuItems(
-            @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDirection,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+//    @GetMapping
+//    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuItems(
+//            @RequestParam(required = false) Integer categoryId,
+//            @RequestParam(required = false) String keyword,
+//            @RequestParam(defaultValue = "name") String sortBy,
+//            @RequestParam(defaultValue = "asc") String sortDirection,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size) {
+//
+//        if (page < 0) {
+//            throw new AppException(ErrorCode.INVALID_KEY);
+//        }
+//
+//        Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, sortBy, sortDirection, page, size);
+//
+//        ApiResponse<Page<MenuItemResponse>> response = ApiResponse.<Page<MenuItemResponse>>builder()
+//                .code(1000)
+//                .message("Lấy danh sách món ăn thành công")
+//                .result(menuItems)
+//                .build();
+//
+//        return ResponseEntity.ok().body(response);
+//    }
+@GetMapping
+public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuItems(
+        @RequestParam(required = false) Integer categoryId,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) String status,
+        @RequestParam(defaultValue = "name") String sortBy,
+        @RequestParam(defaultValue = "asc") String sortDirection,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
 
-        if (page < 0) {
-            throw new AppException(ErrorCode.INVALID_KEY);
-        }
-
-        Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, sortBy, sortDirection, page, size);
-
-        ApiResponse<Page<MenuItemResponse>> response = ApiResponse.<Page<MenuItemResponse>>builder()
-                .code(1000)
-                .message("Lấy danh sách món ăn thành công")
-                .result(menuItems)
-                .build();
-
-        return ResponseEntity.ok().body(response);
+    if (page < 0) {
+        throw new AppException(ErrorCode.INVALID_KEY);
     }
+    if (size <= 0) {
+        throw new AppException(ErrorCode.INVALID_KEY);
+    }
+
+    Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, status, sortBy, sortDirection, page, size);
+
+    ApiResponse<Page<MenuItemResponse>> response = ApiResponse.<Page<MenuItemResponse>>builder()
+            .code(1000)
+            .message("Lấy danh sách món ăn thành công")
+            .result(menuItems)
+            .build();
+
+    return ResponseEntity.ok().body(response);
+}
+
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMenuItem(@PathVariable Integer id) {

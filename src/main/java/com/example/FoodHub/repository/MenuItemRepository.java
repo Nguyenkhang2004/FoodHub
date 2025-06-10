@@ -3,6 +3,7 @@ package com.example.FoodHub.repository;
 import com.example.FoodHub.entity.MenuItem;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,7 +11,7 @@ import org.springframework.data.domain.Page; // Đúng package cho Page
 import org.springframework.data.domain.Pageable;
 
 
-public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> {
+public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> , JpaSpecificationExecutor<MenuItem> {
 
 //    @Query("SELECT m FROM MenuItem m JOIN m.categories c WHERE c.id = :categoryId " +
 ////           "AND(:Keyword IS NULL OR LOWER (m.name) Like LOWER(CONCAT('%',:keyword,'%')))" +

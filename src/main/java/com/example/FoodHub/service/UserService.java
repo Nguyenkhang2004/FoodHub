@@ -5,11 +5,13 @@ import com.example.FoodHub.dto.request.UserCreationRequest;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
+import com.example.FoodHub.entity.WorkSchedule;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
+import com.example.FoodHub.repository.WorkScheduleRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -34,7 +37,7 @@ public class UserService {
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
-
+    WorkScheduleRepository workScheduleRepository;
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
@@ -103,7 +106,11 @@ public class UserService {
         if (!userRepository.existsById(id)) {
             throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
         }
-
+        LocalDate today = LocalDate.now();
+        List<WorkSchedule> futureSchedules = workScheduleRepository.findByUserIdAndDateFromToday(id, today);
+        if (!futureSchedules.isEmpty()) {
+            throw new AppException(ErrorCode.USER_HAS_SCHEDULED_SHIFTS); // Tạo mã lỗi mới
+        }
         int updatedRows = userRepository.updateStatusById(id, "INACTIVE");
         if (updatedRows == 0) {
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
