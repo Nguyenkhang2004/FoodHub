@@ -31,6 +31,6 @@ public class UserCreationRequest {
     @NotBlank(message="ADDRESS_NOT_BLANK")
     @Size(max = 255)
     private String address;
-    @NotBlank(message="ROLE_NOT_BLANK")
+    @NotBlank(message="ROLE_NOT_BLANK")gi
     private String roleName;
 }

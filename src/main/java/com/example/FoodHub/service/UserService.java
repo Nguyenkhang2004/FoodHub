@@ -12,6 +12,7 @@ import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
 import com.example.FoodHub.repository.WorkScheduleRepository;
+import jakarta.mail.MessagingException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,21 +40,31 @@ public class UserService {
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
     WorkScheduleRepository workScheduleRepository;
+    EmailService emailService;
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTS);
+        }
         log.info("In method createUser with password: {}", request.getPassword());
         User user = userMapper.toUser(request);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        String plainPassword = request.getPassword();
+        user.setPassword(passwordEncoder.encode(plainPassword));
         user.setRoleName(roleRepository.findById(request.getRoleName())
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED)));
         user.setStatus("ACTIVE");
         user.setRegistrationDate(Instant.now());
         user.setIsAuthUser(false);
-        userRepository.save(user);
-        return userMapper.toUserResponse(user);
+        User savedUser = userRepository.save(user);
+
+        // Gửi email chào mừng
+        emailService.sendWelcomeEmailAsync(savedUser.getEmail(), savedUser.getUsername(), plainPassword);
+
+        return userMapper.toUserResponse(savedUser);
     }
+
 
     public List<UserResponse> getAllUsers() {
         log.info("In method getAllUsers");
