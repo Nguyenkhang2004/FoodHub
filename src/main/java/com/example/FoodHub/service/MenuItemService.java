@@ -352,7 +352,7 @@ public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, S
         if (request.getImageUrl() != null && !request.getImageUrl().isEmpty()) {
             if (request.getImageUrl().startsWith("data:image")) {
                 String fileName = saveBase64Image(request.getImageUrl());
-                String imageUrl = "/foodhub/images/" + fileName + "?v=" + System.currentTimeMillis();
+                String imageUrl = "http://localhost:8080/foodhub/images/" + fileName + "?v=" + System.currentTimeMillis();
                 menuItem.setImageUrl(imageUrl);
             } else {
                 menuItem.setImageUrl(request.getImageUrl());
@@ -391,7 +391,7 @@ public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, S
             String newImageUrl = null;
 
             if (request.getImageUrl().startsWith("data:image")) {
-                newImageUrl = "/foodhub/images/" + saveBase64Image(request.getImageUrl()) + "?v=" + System.currentTimeMillis();
+                newImageUrl = "http://localhost:8080/foodhub/images/" + saveBase64Image(request.getImageUrl()) + "?v=" + System.currentTimeMillis();
             } else if (!request.getImageUrl().equals(menuItem.getImageUrl())) {
                 newImageUrl = request.getImageUrl();
             }
