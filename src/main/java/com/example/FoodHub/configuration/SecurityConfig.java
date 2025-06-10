@@ -27,6 +27,8 @@ public class SecurityConfig {
             "/auth/logout",
             "/auth/refresh",
             "/menu",
+            "/menu/**",
+            "/categories",
             "/public/**",
             "/admin/**",
             "/waiter/**",

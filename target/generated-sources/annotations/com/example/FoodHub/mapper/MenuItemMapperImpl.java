@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-09T12:19:55+0700",
-    comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.5 (Oracle Corporation)"
+    date = "2025-06-10T09:02:49+0700",
+    comments = "version: 1.6.0, compiler: javac, environment: Java 21.0.5 (Oracle Corporation)"
 )
 @Component
 public class MenuItemMapperImpl implements MenuItemMapper {
@@ -21,13 +21,14 @@ public class MenuItemMapperImpl implements MenuItemMapper {
 
         MenuItemResponse.MenuItemResponseBuilder menuItemResponse = MenuItemResponse.builder();
 
-        menuItemResponse.categoryNames( MenuItemMapper.mapCategoryNames( menuItem.getCategories() ) );
+        menuItemResponse.status( menuItem.getStatus() );
         menuItemResponse.id( menuItem.getId() );
         menuItemResponse.name( menuItem.getName() );
         menuItemResponse.description( menuItem.getDescription() );
         menuItemResponse.imageUrl( menuItem.getImageUrl() );
         menuItemResponse.price( menuItem.getPrice() );
-        menuItemResponse.status( menuItem.getStatus() );
+
+        menuItemResponse.categoryNames( menuItem.getCategories().stream().map(category -> category.getName()).collect(java.util.stream.Collectors.toList()) );
 
         return menuItemResponse.build();
     }

@@ -11,8 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,7 +35,4 @@ public class MenuService {
         return menuItemRepository.findByStatusIgnoreCase("AVAILABLE", pageable)
                 .map(menuItemMapper::toMenuItemResponse);
     }
-
-
-
 }
