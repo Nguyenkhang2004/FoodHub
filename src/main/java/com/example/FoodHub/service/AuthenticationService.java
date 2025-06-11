@@ -1,6 +1,5 @@
 package com.example.FoodHub.service;
 
-
 import com.example.FoodHub.dto.request.AuthenticationRequest;
 import com.example.FoodHub.dto.request.IntrospectRequest;
 import com.example.FoodHub.dto.request.LogoutRequest;
@@ -25,7 +24,6 @@ import org.springframework.beans.factory.annotation.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -44,12 +42,15 @@ public class AuthenticationService {
     UserRepository userRepository;
     InvalidateTokenRepository invalidateTokenRepository;
     PasswordEncoder passwordEncoder;
+
     @NonFinal
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
+
     @NonFinal
     @Value("${jwt.valid-duration}")
     protected long VALID_DURATION;
+
     @NonFinal
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
@@ -64,7 +65,7 @@ public class AuthenticationService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
                 .build();
-        Payload payload = new Payload(jwtClaimsSet.toString());
+        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
         try {
             jwsObject.sign(new MACSigner(SIGNER_KEY));
@@ -76,7 +77,8 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        var user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        var user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
@@ -104,13 +106,15 @@ public class AuthenticationService {
     public SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY);
         SignedJWT signedJWT = SignedJWT.parse(token);
-        Date expiryTime = (isRefresh)
-                ? new Date(signedJWT.getJWTClaimsSet().getIssueTime().toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
+        Date expiryTime = isRefresh
+                ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
+                .toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
         boolean verified = signedJWT.verify(verifier);
         if (!(verified && expiryTime.after(new Date()))
-                && invalidateTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+                || invalidateTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
         return signedJWT;
     }
 
@@ -123,7 +127,8 @@ public class AuthenticationService {
                 .expiryTime(expiryTime.toInstant())
                 .build();
         invalidateTokenRepository.save(invalidateToken);
-        User user = userRepository.findByEmail(signedJWT.getJWTClaimsSet().getSubject()).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        User user = userRepository.findByEmail(signedJWT.getJWTClaimsSet().getSubject())
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
         String token = generateToken(user);
         return AuthenticationResponse.builder()
                 .token(token)
@@ -134,8 +139,8 @@ public class AuthenticationService {
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
         try {
             SignedJWT signedJWT = verifyToken(request.getToken(), true);
-            Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
             String jti = signedJWT.getJWTClaimsSet().getJWTID();
+            Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
             InvalidateToken invalidateToken = InvalidateToken.builder()
                     .token(jti)
                     .expiryTime(expiryTime.toInstant())
@@ -151,9 +156,7 @@ public class AuthenticationService {
         Role role = user.getRoleName();
         if (role != null) {
             stringJoiner.add("ROLE_" + role.getName());
-            role.getPermissions().forEach(permission -> {
-                stringJoiner.add(permission.getName());
-            });
+            role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
         }
         return stringJoiner.toString();
     }

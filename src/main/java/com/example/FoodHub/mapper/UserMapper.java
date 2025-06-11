@@ -11,15 +11,14 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
-
-
-    @Mapping(target = "roleName", ignore = true)
     User toUser(UserCreationRequest request);
 
-    @Mapping(target = "roleName", expression = "java(toRoleResponse(user.getRoleName()))")
+    @Mapping(target = "roleName", expression = "java(user.getRoleName() != null ? toRoleResponse(user.getRoleName()) : null)")
     UserResponse toUserResponse(User user);
 
-    @Mapping(target = "password", ignore = true) // <- thêm dòng này
+    void updateUser(@MappingTarget User user, UserCreationRequest request);
+
+    @Mapping(target = "password", ignore = true)
     void updateStaff(@MappingTarget User user, EmployeeUpdateRequest request);
 
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
@@ -30,6 +29,7 @@ public interface UserMapper {
         role.setName(roleName);
         return role;
     }
+
     default RoleResponse toRoleResponse(Role role) {
         if (role == null) return null;
         return RoleResponse.builder()
@@ -37,4 +37,4 @@ public interface UserMapper {
                 .description(role.getDescription())
                 .build();
     }
-}  
+}

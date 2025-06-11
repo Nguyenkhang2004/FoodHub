@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-09T22:30:10+0700",
-    comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
+    date = "2025-06-11T16:01:33+0700",
+    comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.4 (Oracle Corporation)"
 )
 @Component
 public class UserMapperImpl implements UserMapper {
@@ -27,6 +27,7 @@ public class UserMapperImpl implements UserMapper {
         user.username( request.getUsername() );
         user.email( request.getEmail() );
         user.password( request.getPassword() );
+        user.roleName( map( request.getRoleName() ) );
         user.address( request.getAddress() );
         user.phone( request.getPhone() );
 
@@ -49,9 +50,23 @@ public class UserMapperImpl implements UserMapper {
         userResponse.address( user.getAddress() );
         userResponse.registrationDate( user.getRegistrationDate() );
 
-        userResponse.roleName( toRoleResponse(user.getRoleName()) );
+        userResponse.roleName( user.getRoleName() != null ? toRoleResponse(user.getRoleName()) : null );
 
         return userResponse.build();
+    }
+
+    @Override
+    public void updateUser(User user, UserCreationRequest request) {
+        if ( request == null ) {
+            return;
+        }
+
+        user.setUsername( request.getUsername() );
+        user.setEmail( request.getEmail() );
+        user.setPassword( request.getPassword() );
+        user.setRoleName( map( request.getRoleName() ) );
+        user.setAddress( request.getAddress() );
+        user.setPhone( request.getPhone() );
     }
 
     @Override
