@@ -1,5 +1,6 @@
 package com.example.FoodHub.entity;
 
+import com.example.FoodHub.enums.TableStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -37,6 +38,7 @@ public class RestaurantTable {
 
     @NotNull
     @ColumnDefault("'AVAILABLE'")
+//    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private String status;
 

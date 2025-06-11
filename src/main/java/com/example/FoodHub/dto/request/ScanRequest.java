@@ -1,16 +1,14 @@
 package com.example.FoodHub.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AuthenticationRequest {
-    String username;
-    String password;
+public class ScanRequest {
+    Integer tableId;
+    String qrToken;
 }

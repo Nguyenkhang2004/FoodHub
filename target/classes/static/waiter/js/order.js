@@ -834,6 +834,7 @@ function closeOrderDetails() {
     }
 }
 
+<<<<<<< HEAD
 // Hàm updateOrderStatus đơn giản
 function updateOrderStatus(orderId) {
     const newStatus = prompt('Nhập trạng thái mới (PENDING, CONFIRMED, READY, COMPLETED, CANCELLED):');
@@ -843,6 +844,8 @@ function updateOrderStatus(orderId) {
         alert('Chức năng cập nhật trạng thái sẽ được hoàn thiện sau!');
     }
 }
+=======
+>>>>>>> origin/scan
 
 // Hàm nhận đơn mới
 function takeNewOrder() {

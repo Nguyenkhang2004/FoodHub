@@ -64,9 +64,11 @@ public enum ErrorCode {
     PHONE_NOT_BLANK(1023, "Phone number must not be blank", HttpStatus.BAD_REQUEST),
     EMAIL_NOT_BLANK(1024, "Email must not be blank", HttpStatus.BAD_REQUEST),
     PASSWORD_NOT_BLANK(1025, "Password must not be blank", HttpStatus.BAD_REQUEST),
-    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST)
-    ;
-
+    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
+    INVALID_TABLE_ID(2000, "Invalid table ID", HttpStatus.BAD_REQUEST),
+    INVALID_QR_TOKEN(2001, "Invalid QR token", HttpStatus.UNAUTHORIZED),
+    OCCUPIED_TABLE(2002, "Table is already occupied", HttpStatus.BAD_REQUEST),
+    INVALID_SESSION_ID(2003, "Invalid session ID", HttpStatus.BAD_REQUEST);
     private int code;
     private String message;
     private HttpStatusCode statusCode;
