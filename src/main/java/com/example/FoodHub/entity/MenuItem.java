@@ -1,5 +1,6 @@
 package com.example.FoodHub.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -41,7 +42,7 @@ public class MenuItem {
     @ColumnDefault("'AVAILABLE'")
     @Column(name = "status")
     private String status;
-
+    @JsonManagedReference
     @ManyToMany(mappedBy = "menuItems")
     private Set<Category> categories = new LinkedHashSet<>();
 

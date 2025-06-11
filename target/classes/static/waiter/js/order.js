@@ -1,5 +1,6 @@
 async function showOrders() {
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Update page title and toggle visibility
     document.getElementById('pageTitle').textContent = 'Quản lý đơn hàng';
     document.getElementById('dashboardContent').style.display = 'none';
@@ -210,6 +211,8 @@ async function showOrders() {
     // Update navigation active state
     updateActiveNavigation('showOrders()');
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     try {
         // Update page title and toggle visibility
         document.getElementById('pageTitle').textContent = 'Quản lý đơn hàng';
@@ -285,7 +288,10 @@ function setupEventListeners() {
             element.addEventListener('change', applyFilters);
         }
     });
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 }
 
 // Global variables for pagination
@@ -297,6 +303,7 @@ let totalElements = 0;
 async function loadOrders() {
     try {
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Get filter values
         const status = document.getElementById('statusFilter')?.value || '';
         const tableId = document.getElementById('tableIdFilter')?.value || '';
@@ -306,6 +313,8 @@ async function loadOrders() {
         const sortDirection = document.getElementById('sortDirectionFilter')?.value || 'DESC';
         const pageSize = document.getElementById('pageSizeFilter')?.value || '10';
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         // Get filter values - với null checks
         const statusFilter = document.getElementById('statusFilter');
         const tableNumberFilter = document.getElementById('tableNumberFilter'); // Thay đổi từ tableIdFilter
@@ -322,21 +331,28 @@ async function loadOrders() {
         const sortBy = sortByFilter ? sortByFilter.value || 'createdAt' : 'createdAt';
         const sortDirection = sortDirectionFilter ? sortDirectionFilter.value || 'DESC' : 'DESC';
         const pageSize = pageSizeFilter ? pageSizeFilter.value || '10' : '10';
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
         // Build query parameters
         const params = new URLSearchParams();
         if (status) params.append('status', status);
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (tableId) params.append('tableId', tableId);
 =======
         if (tableNumber) params.append('tableNumber', tableNumber); // Thay đổi từ tableId thành tableNumber
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+        if (tableNumber) params.append('tableNumber', tableNumber); // Thay đổi từ tableId thành tableNumber
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         if (minPrice) params.append('minPrice', minPrice);
         if (maxPrice) params.append('maxPrice', maxPrice);
         params.append('page', currentPage.toString());
         params.append('size', pageSize);
-        params.append('SorderBy', sortBy); // Note: backend uses 'SorderBy'
+        params.append('orderBy', sortBy);
         params.append('sort', sortDirection);
 
         // Fetch orders with filters
@@ -368,6 +384,7 @@ function applyFilters() {
     currentPage = 0; // Reset to first page when applying filters
     loadOrders();
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
 
 // Clear all filters
@@ -380,6 +397,8 @@ function clearFilters() {
     document.getElementById('sortDirectionFilter').value = 'DESC';
     document.getElementById('pageSizeFilter').value = '10';
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     // Tạm dừng auto refresh khi người dùng thao tác filter
     pauseAutoRefreshTemporarily();
 }
@@ -403,7 +422,10 @@ function clearFilters() {
             element.value = filter.value;
         }
     });
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
     applyFilters();
 }
@@ -413,13 +435,19 @@ function renderOrders(orders) {
     const orderTableBody = document.getElementById('orderTableBody');
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     if (!orderTableBody) {
         console.error('orderTableBody element not found');
         return;
     }
 
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     if (orders.length === 0) {
         // Show empty state
         orderTableBody.innerHTML = `
@@ -490,9 +518,12 @@ function renderOrders(orders) {
                         <i class="fas fa-eye"></i>
                     </button>
 <<<<<<< HEAD
+<<<<<<< HEAD
                     ${getActionButton(order)}
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
                 </div>
             </td>
         `;
@@ -504,10 +535,15 @@ function renderOrders(orders) {
 function updateSummary(orderPage) {
     const summaryElement = document.getElementById('ordersSummary');
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     if (!summaryElement) return;
 
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+    if (!summaryElement) return;
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     const pageSize = orderPage.size;
     const currentPageNum = orderPage.number + 1; // Display 1-based page number
     const startItem = orderPage.number * pageSize + 1;
@@ -521,10 +557,14 @@ function updateSummary(orderPage) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Update pagination controls with smart pagination - Removed pagination info display
 =======
 // Update pagination controls with smart pagination
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+// Update pagination controls with smart pagination
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 function updatePagination() {
     // Generate pagination buttons
     generatePaginationButtons();
@@ -534,18 +574,24 @@ function updatePagination() {
     const jumpInput = document.getElementById('jumpToPage');
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     if (totalPages > 10) {
         jumpContainer.style.display = 'block';
         jumpInput.max = totalPages;
         jumpInput.placeholder = `1-${totalPages}`;
     } else {
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     if (jumpContainer && jumpInput && totalPages > 10) {
         jumpContainer.style.display = 'block';
         jumpInput.max = totalPages;
         jumpInput.placeholder = `1-${totalPages}`;
     } else if (jumpContainer) {
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         jumpContainer.style.display = 'none';
     }
 }
@@ -554,10 +600,15 @@ function updatePagination() {
 function generatePaginationButtons() {
     const paginationList = document.getElementById('paginationList');
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     if (!paginationList) return;
 
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+    if (!paginationList) return;
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     paginationList.innerHTML = '';
 
     if (totalPages <= 1) return;
@@ -673,10 +724,15 @@ function goToPage(pageIndex) {
 function jumpToPage() {
     const jumpInput = document.getElementById('jumpToPage');
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     if (!jumpInput) return;
 
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+    if (!jumpInput) return;
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     const pageNumber = parseInt(jumpInput.value);
 
     if (pageNumber && pageNumber >= 1 && pageNumber <= totalPages) {
@@ -691,6 +747,7 @@ function jumpToPage() {
     }
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Allow Enter key in jump input
 document.addEventListener('DOMContentLoaded', function() {
@@ -717,6 +774,8 @@ function changePage(direction) {
 function refreshOrders() {
     loadOrders();
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Refresh orders
 async function refreshOrders() {
     const refreshBtn = document.querySelector('[onclick="refreshOrders()"]');
@@ -734,14 +793,20 @@ async function refreshOrders() {
     } else {
         await loadOrders();
     }
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 }
 
 // Show error state
 function showErrorState(message) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     document.getElementById('orderTableBody').innerHTML = `
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     const orderTableBody = document.getElementById('orderTableBody');
     if (!orderTableBody) {
         console.error('orderTableBody element not found for error state');
@@ -749,7 +814,10 @@ function showErrorState(message) {
     }
 
     orderTableBody.innerHTML = `
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         <tr>
             <td colspan="7">
                 <div class="empty-orders-state">
@@ -801,6 +869,7 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Helper function to get enhanced status badge classes
 function getStatusBadgeClass(status) {
     const statusMap = {
@@ -814,6 +883,8 @@ function getStatusBadgeClass(status) {
 }
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Helper function to get status icons
 function getStatusIcon(status) {
@@ -827,6 +898,7 @@ function getStatusIcon(status) {
     return iconMap[status] || '<i class="fas fa-clock me-1"></i>';
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Helper function to get Vietnamese status text
 function getStatusText(status) {
@@ -879,6 +951,8 @@ function getActionButton(order) {
 
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Helper function to update navigation active state
 function updateActiveNavigation(currentFunction) {
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -890,6 +964,7 @@ function updateActiveNavigation(currentFunction) {
     }
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Refresh orders function
 async function refreshOrders() {
@@ -912,6 +987,8 @@ async function refreshOrders() {
 
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Hàm định dạng thời gian
 function formatDateTime(dateString) {
     const date = new Date(dateString);
@@ -942,9 +1019,13 @@ function formatDateTime(dateString) {
     }
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Hàm xác định class cho badge trạng thái
 function getStatusBadgeClass(status) {
     const statusClasses = {
@@ -969,6 +1050,7 @@ function getStatusText(status) {
     return statusTexts[status] || status;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Hàm tạo nút hành động dựa trên trạng thái đơn hàng
 function getActionButton(order) {
@@ -1048,6 +1130,8 @@ function serveOrder(orderId) {
 }
 
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 async function viewTableOrders(tableId) {
     try {
         console.log('Fetching table orders for table ID:', tableId);
@@ -1313,15 +1397,21 @@ function updateOrderStatus(orderId) {
         alert('Chức năng cập nhật trạng thái sẽ được hoàn thiện sau!');
     }
 }
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Hàm nhận đơn mới
 function takeNewOrder() {
     // TODO: Implement take new order functionality
 <<<<<<< HEAD
+<<<<<<< HEAD
     alert('Chức năng nhận đơn mới sẽ được cập nhật sau!');
 }
 =======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     alert('Chức năng nhận đơn mới sẽ được hoàn thiện sau!');
 }
 
@@ -1418,4 +1508,7 @@ document.addEventListener('visibilitychange', function() {
 
 
 
+<<<<<<< HEAD
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154

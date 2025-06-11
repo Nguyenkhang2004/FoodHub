@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://127.0.0.1:5500")
+//@.0.(origins = "http://127.0.0.1:5500")
 @Slf4j
 @RestController
 @RequestMapping("/menu")

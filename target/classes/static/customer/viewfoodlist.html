@@ -431,7 +431,7 @@
     let pageSize = 10;
 
     // API Configuration
-    const API_BASE_URL = 'http://localhost:8080/foodhub/menu';
+    const API_BASE_URL = 'http://localhost:8080/foodhub/menu-items';
     const CATEGORIES_API_URL = 'http://localhost:8080/foodhub/categories';
 
     // Default placeholder for images
@@ -451,7 +451,7 @@
             }
             const data = await response.json();
             if (data.result) {
-                categories = data.result;
+                categories = data.result.map(category => category.name);
                 renderCategories();
             } else {
                 throw new Error('Invalid categories response format');
@@ -490,7 +490,7 @@
                 menuItems = data.result.content.map((item, index) => ({
                     id: item.id || (page * pageSize + index + 1),
                     name: item.name,
-                    category: item.categoryNames[0] || 'Khác',
+                    category: Array.from(item.categoryNames)[0] || 'Khác',
                     price: item.price,
                     image: item.imageUrl || getPlaceholderImage(item.categoryNames[0]),
                     description: item.description || 'Không có mô tả',

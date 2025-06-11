@@ -1,10 +1,24 @@
-async function showTables() {
+let currentFilters = {
+    tableNumber: '',
+    status: ''
+};
+
+let currentSort = {
+    field: 'tableNumber',
+    order: 'asc'
+};
+
+async function showTables(filters = {}, sort = {}) {
+    // Cập nhật filter và sort hiện tại
+    currentFilters = { ...currentFilters, ...filters };
+    currentSort = { ...currentSort, ...sort };
+
     // Update page title and toggle visibility
     document.getElementById('pageTitle').textContent = 'Quản lý bàn';
     document.getElementById('dashboardContent').style.display = 'none';
     document.getElementById('dynamicContent').style.display = 'block';
 
-    // Render the tables management HTML
+    // Render the tables management HTML với filter/sort controls
     document.getElementById('dynamicContent').innerHTML = `
         <div class="container-fluid p-4">
             <!-- Header Section -->
@@ -18,6 +32,59 @@ async function showTables() {
                             style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3);">
                         <i class="fas fa-sync-alt me-2"></i><span class="btn-text">Làm mới</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Filter and Sort Section -->
+            <div class="filter-sort-section">
+                <div class="filter-sort-container">
+                    <div class="filter-section">
+                        <h5 class="filter-title"><i class="fas fa-filter me-2"></i>Lọc và Sắp xếp</h5>
+                        <div class="filter-controls">
+                            <div class="filter-group">
+                                <label class="filter-label">Số bàn:</label>
+                                <input type="text" id="filterTableNumber" class="form-control filter-input" 
+                                       placeholder="Nhập số bàn..." value="${currentFilters.tableNumber}"
+                                       onchange="applyTableFilters()">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label class="filter-label">Trạng thái:</label>
+                                <select id="filterStatus" class="form-select filter-select" onchange="applyTableFilters()">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="AVAILABLE" ${currentFilters.status === 'AVAILABLE' ? 'selected' : ''}>Trống</option>
+                                    <option value="OCCUPIED" ${currentFilters.status === 'OCCUPIED' ? 'selected' : ''}>Có khách</option>
+                                    <option value="RESERVED" ${currentFilters.status === 'RESERVED' ? 'selected' : ''}>Đặt trước</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">Sắp xếp:</label>
+                                <select id="sortField" class="form-select filter-select" onchange="applySorting()">
+                                    <option value="tableNumber" ${currentSort.field === 'tableNumber' ? 'selected' : ''}>Theo số bàn</option>
+                                    <option value="status" ${currentSort.field === 'status' ? 'selected' : ''}>Theo trạng thái</option>
+                                    <option value="area" ${currentSort.field === 'area' ? 'selected' : ''}>Theo khu vực</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">Thứ tự:</label>
+                                <select id="sortOrder" class="form-select filter-select" onchange="applySorting()">
+                                    <option value="asc" ${currentSort.order === 'asc' ? 'selected' : ''}>Tăng dần</option>
+                                    <option value="desc" ${currentSort.order === 'desc' ? 'selected' : ''}>Giảm dần</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="clearTableFilters()">
+                                <i class="fas fa-times me-1"></i>Xóa bộ lọc
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="refreshTables()">
+                                <i class="fas fa-sync-alt me-1"></i>Làm mới
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -72,12 +139,29 @@ async function showTables() {
         `;
 
     try {
-        // Fetch tables using fetch API
-        const data = await apiFetch('/tables', {
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+
+        if (currentFilters.tableNumber && currentFilters.tableNumber.trim()) {
+            queryParams.append('tableNumber', currentFilters.tableNumber.trim());
+        }
+
+        if (currentFilters.status && currentFilters.status.trim()) {
+            queryParams.append('status', currentFilters.status.trim());
+        }
+
+        const queryString = queryParams.toString();
+        const url = queryString ? `/tables?${queryString}` : '/tables';
+
+        // Fetch tables using fetch API with filters
+        const data = await apiFetch(url, {
             method: 'GET'
         });
 
-        const tables = data.result || [];
+        let tables = data.result || [];
+
+        // Apply client-side sorting (since backend might not support sorting yet)
+        tables = applySortingToTables(tables);
 
         // Update summary statistics
         updateTableStatistics(tables);
@@ -87,6 +171,8 @@ async function showTables() {
 
         // Render tables by area
         renderTablesByArea(tablesByArea);
+
+        // Show filter status if any filters are applied
 
     } catch (error) {
         console.error('Error fetching tables:', error);
@@ -107,6 +193,97 @@ async function showTables() {
         tablesLink.classList.add('active');
     }
 }
+
+function applyTableFilters() {
+    const tableNumber = document.getElementById('filterTableNumber').value;
+    const status = document.getElementById('filterStatus').value;
+
+    const filters = {
+        tableNumber: tableNumber,
+        status: status
+    };
+
+    showTables(filters, currentSort);
+}
+
+// Hàm áp dụng sắp xếp
+function applySorting() {
+    const sortField = document.getElementById('sortField').value;
+    const sortOrder = document.getElementById('sortOrder').value;
+
+    const sort = {
+        field: sortField,
+        order: sortOrder
+    };
+
+    showTables(currentFilters, sort);
+}
+
+// Hàm sắp xếp tables phía client
+function applySortingToTables(tables) {
+    return tables.sort((a, b) => {
+        let valueA, valueB;
+
+        switch (currentSort.field) {
+            case 'tableNumber':
+                // Sort by table number with natural sorting (A1, A2, A10, B1, etc.)
+                valueA = a.tableNumber;
+                valueB = b.tableNumber;
+                return currentSort.order === 'asc'
+                    ? valueA.localeCompare(valueB, undefined, { numeric: true, sensitivity: 'base' })
+                    : valueB.localeCompare(valueA, undefined, { numeric: true, sensitivity: 'base' });
+
+            case 'status':
+                // Sort by status priority: OCCUPIED -> RESERVED -> AVAILABLE
+                const statusPriority = { 'OCCUPIED': 3, 'RESERVED': 2, 'AVAILABLE': 1 };
+                valueA = statusPriority[a.status] || 0;
+                valueB = statusPriority[b.status] || 0;
+                return currentSort.order === 'asc' ? valueA - valueB : valueB - valueA;
+
+            case 'area':
+                valueA = a.area;
+                valueB = b.area;
+                return currentSort.order === 'asc'
+                    ? valueA.localeCompare(valueB)
+                    : valueB.localeCompare(valueA);
+
+            default:
+                return 0;
+        }
+    });
+}
+
+// Hàm xóa bộ lọc
+function clearTableFilters() {
+    currentFilters = {
+        tableNumber: '',
+        status: ''
+    };
+
+    currentSort = {
+        field: 'tableNumber',
+        order: 'asc'
+    };
+
+    // Reset form values
+    if (document.getElementById('filterTableNumber')) {
+        document.getElementById('filterTableNumber').value = '';
+    }
+    if (document.getElementById('filterStatus')) {
+        document.getElementById('filterStatus').value = '';
+    }
+    if (document.getElementById('sortField')) {
+        document.getElementById('sortField').value = 'tableNumber';
+    }
+    if (document.getElementById('sortOrder')) {
+        document.getElementById('sortOrder').value = 'asc';
+    }
+
+    showTables();
+}
+
+// Hàm hiển thị trạng thái bộ lọc
+
 
 // Hàm cập nhật thống kê bàn
 function updateTableStatistics(tables) {
@@ -138,6 +315,24 @@ function renderTablesByArea(tablesByArea) {
     const container = document.getElementById('tablesContainer');
     let html = '<h3 class="mb-4 section-title"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Sơ đồ bàn theo khu vực</h3>';
 
+    // Add sorting info
+    const sortFieldText = {
+        'tableNumber': 'số bàn',
+        'status': 'trạng thái',
+        'area': 'khu vực'
+    };
+
+    const sortOrderText = currentSort.order === 'asc' ? 'tăng dần' : 'giảm dần';
+
+    html += `
+        <div class="sort-info mb-3">
+            <small class="text-muted">
+                <i class="fas fa-sort me-1"></i>
+                Đang sắp xếp theo ${sortFieldText[currentSort.field]} (${sortOrderText})
+            </small>
+        </div>
+    `;
+
     Object.keys(tablesByArea).sort().forEach(area => {
         html += `
             <div class="area-section mb-5">
@@ -159,12 +354,8 @@ function renderTablesByArea(tablesByArea) {
                 <div class="tables-grid">
         `;
 
-        // Sort tables by number for better organization
-        const sortedTables = tablesByArea[area].sort((a, b) =>
-            parseInt(a.tableNumber) - parseInt(b.tableNumber)
-        );
-
-        sortedTables.forEach(table => {
+        // Tables are already sorted, no need to sort again here
+        tablesByArea[area].forEach(table => {
             const statusClass = getTableStatusClass(table.status);
             const statusText = getTableStatusText(table.status);
             const statusIcon = getTableStatusIcon(table.status);
@@ -220,6 +411,149 @@ function renderTablesByArea(tablesByArea) {
 
     container.innerHTML = html;
 }
+
+// CSS cho filter và sort section
+const filterSortStyle = document.createElement('style');
+filterSortStyle.textContent = `
+    .filter-sort-section {
+        margin: 0 1rem 2rem 1rem;
+    }
+    
+    .filter-sort-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(0, 102, 204, 0.1);
+    }
+    
+    .filter-title {
+        color: var(--waiter-blue);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .filter-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-input,
+    .filter-select {
+        border-radius: 10px;
+        border: 2px solid rgba(0, 102, 204, 0.2);
+        padding: 0.5rem 0.75rem;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-input:focus,
+    .filter-select:focus {
+        border-color: var(--waiter-blue);
+        box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+        outline: none;
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .filter-actions .btn {
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-status-alert {
+        border-radius: 15px;
+        border: none;
+        background: linear-gradient(135deg, rgba(13, 202, 240, 0.1), rgba(13, 202, 240, 0.05));
+        border-left: 4px solid var(--info);
+        margin-bottom: 1.5rem;
+    }
+    
+    .sort-info {
+        text-align: center;
+        padding: 0.5rem;
+        background: rgba(0, 102, 204, 0.05);
+        border-radius: 10px;
+        border: 1px solid rgba(0, 102, 204, 0.1);
+    }
+    
+    /* Responsive design for filter section */
+    @media (max-width: 768px) {
+        .filter-sort-section {
+            margin: 0 0.5rem 1.5rem 0.5rem;
+        }
+        
+        .filter-sort-container {
+            padding: 1rem;
+            border-radius: 15px;
+        }
+        
+        .filter-controls {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-actions {
+            justify-content: stretch;
+        }
+        
+        .filter-actions .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .filter-controls {
+            gap: 0.5rem;
+        }
+        
+        .filter-actions {
+            flex-direction: column;
+        }
+        
+        .filter-actions .btn {
+            width: 100%;
+        }
+        
+        .filter-title {
+            font-size: 1.1rem;
+            text-align: center;
+        }
+    }
+    
+    /* Animation for filter changes */
+    .tables-grid {
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+`;
+document.head.appendChild(filterSortStyle);
 
 // Hàm tạo thống kê cho từng khu vực
 function getAreaStats(tables) {
@@ -372,11 +706,14 @@ async function assignTable(tableId) {
 async function viewTableOrders(tableId) {
     try {
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Hiển thị loading notification
         showNotification('Đang tải dữ liệu đơn hàng...', 'info');
 
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         // Gọi API để lấy đơn hàng hiện tại của bàn
         const data = await apiFetch(`/orders/table/${tableId}/current`,{
             method: 'GET'
@@ -399,10 +736,13 @@ async function viewTableOrders(tableId) {
         displayTableOrder(order, tableId);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         showNotification('Tải dữ liệu đơn hàng thành công!', 'success');
 
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     } catch (error) {
         console.error('Error fetching table orders:', error);
         showNotification('Có lỗi xảy ra khi tải đơn hàng: ' + error.message, 'error');
@@ -411,6 +751,7 @@ async function viewTableOrders(tableId) {
 
 // Hàm hiển thị thông tin đơn hàng (đã được sửa để xử lý một đơn hàng duy nhất)
 // Hàm hiển thị thông tin đơn hàng (đã được cập nhật với CSS mới)
+<<<<<<< HEAD
 <<<<<<< HEAD
 function displayTableOrder(order, tableId) {
     const statusText = getStatusText(order.status);
@@ -507,6 +848,8 @@ function closeOrderModal() {
 }
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Thêm CSS animation cho fade out
 const fadeOutStyle = document.createElement('style');
@@ -518,6 +861,7 @@ fadeOutStyle.textContent = `
 `;
 document.head.appendChild(fadeOutStyle);
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Hàm helper để lấy text trạng thái (nếu chưa có)
 function getStatusText(status) {
@@ -543,6 +887,10 @@ function formatCurrency(amount) {
 
 
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Đóng modal khi nhấn ESC
 document.addEventListener('keydown', function(event) {
@@ -603,6 +951,7 @@ function createModalContainer() {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Hàm đóng modal
 function closeOrderModal() {
     const modal = document.getElementById('orderModal');
@@ -613,6 +962,9 @@ function closeOrderModal() {
 =======
 
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Hàm thanh toán bàn
 function checkoutTable(tableId) {
@@ -674,9 +1026,11 @@ function refreshTables() {
         }, 1000);
     }
 
-    showTables();
+    // Refresh with current filters and sort
+    showTables(currentFilters, currentSort);
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Add CSS animations and responsive styles
 const style = document.createElement('style');
@@ -700,6 +1054,10 @@ style.textContent = `
 const style = document.createElement('style');
 style.textContent = `    
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+const style = document.createElement('style');
+style.textContent = `    
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     .tables-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -826,12 +1184,15 @@ style.textContent = `
     }
     
 <<<<<<< HEAD
+<<<<<<< HEAD
     @keyframes float {
         0%, 100% { transform: translateY(0px) rotate(0deg); }
         50% { transform: translateY(-20px) rotate(180deg); }
     }
 =======
 >>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     
     .table-overlay {
         position: absolute;
@@ -1095,3 +1456,6 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+
+

@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -27,10 +28,11 @@ public class RestaurantTableService {
     RestaurantTableRepository tableRepository;
     RestaurantTableMapper tableMapper;
 
-    public List<RestaurantTableResponse> getAllTables(String tableNumber, String status) {
+    public List<RestaurantTableResponse> getAllTables(String tableNumber, String status, String orderBy, String sort) {
         log.info("Fetching all restaurant tables");
         log.info("Fetching filtered restaurant tables");
-        return tableRepository.findAll(TableSpecifications.filterTables(tableNumber, status)).stream()
+        Sort sortOrder = Sort.by(Sort.Direction.fromString(sort), orderBy);
+        return tableRepository.findAll(TableSpecifications.filterTables(tableNumber, status), sortOrder).stream()
                 .map(tableMapper::toRestaurantTableResponse)
                 .toList();
     }

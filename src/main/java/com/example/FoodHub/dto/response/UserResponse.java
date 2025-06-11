@@ -1,4 +1,3 @@
-
 package com.example.FoodHub.dto.response;
 
 import com.example.FoodHub.entity.Role;
@@ -18,12 +17,9 @@ public class UserResponse {
     Integer id;
     String username;
     String email;
-    String password;
-    String roleName; // Sửa từ Role → String
+    String phone;
+    RoleResponse roleName;
     String status;
     String address;
-    String phone;
-    Boolean isAuthUser;
-    String oauthProvider;
     Instant registrationDate;
 }

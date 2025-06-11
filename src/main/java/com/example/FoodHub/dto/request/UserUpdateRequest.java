@@ -15,4 +15,6 @@ public class UserUpdateRequest {
     String email;
     String phoneNumber;
     String address;
+
+
 }

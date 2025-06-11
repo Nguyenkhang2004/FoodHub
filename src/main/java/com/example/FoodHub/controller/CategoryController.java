@@ -1,6 +1,7 @@
 package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.response.ApiResponse;
+import com.example.FoodHub.dto.response.CategoryResponse;
 import com.example.FoodHub.service.CategoryService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +25,10 @@ public class CategoryController {
     CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<String>>> getCategories() {
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategories() {
         log.info("Fetching all categories");
-        List<String> categories = categoryService.getAllCategories();
-        return ResponseEntity.ok(ApiResponse.<List<String>>builder()
+        List<CategoryResponse> categories = categoryService.getAllCategories();
+        return ResponseEntity.ok(ApiResponse.<List<CategoryResponse>>builder()
                 .result(categories)
                 .message(categories.isEmpty() ? "No categories found" : null)
                 .build());

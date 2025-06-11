@@ -26,8 +26,6 @@ public class SecurityConfig {
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
-            "/menu",
-            "/menu/**",
             "/categories",
             "/public/**",
             "/admin/**",
@@ -37,7 +35,10 @@ public class SecurityConfig {
             "/login.html",
             "/scan",
             "/scan/**",
-            "/customer/**"
+            "/customer/**",
+            "/menu",
+            "/menu/**",
+            "/menu-items",
     };
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -61,8 +62,5 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return converter;
     }
-//    @Bean
-//    PasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder(10);
-//    }
+
 }

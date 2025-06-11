@@ -1,8 +1,9 @@
 package com.example.FoodHub.service;
 
+import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
 import com.example.FoodHub.dto.request.UserCreationRequest;
-import com.example.FoodHub.dto.request.UserUpdateRequest;
 import com.example.FoodHub.dto.response.UserResponse;
+import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
@@ -13,9 +14,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -54,17 +59,16 @@ public class UserService {
     }
 
     public UserResponse getUserById(Integer id) {
-        return userMapper.toUserResponse(userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+        return userMapper.toUserResponse(userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 
-    public UserResponse updateUser(Integer id, UserUpdateRequest request) {
-        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        userMapper.updateUser(user, request);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-        return userMapper.toUserResponse(user);
-    }
+//    public UserResponse updateUser(Integer id, UserUpdateRequest request) {
+//        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+//        userMapper.updateUser(user, request);
+//        user.setPassword(passwordEncoder.encode(user.getPassword()));
+//        userRepository.save(user);
+//        return userMapper.toUserResponse(user);
+//    }
 
     public void deleteUser(Integer id) {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -72,9 +76,72 @@ public class UserService {
     }
 
     public UserResponse myInfo() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        return userMapper.toUserResponse(userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+        return userMapper.toUserResponse(userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+    }
+    public Page<UserResponse> getEmployees(
+            String role, String keyword, String sortDirection, int page, int size) {
+
+        // Xác định hướng sắp xếp theo username
+        Sort sort = Sort.by("username");
+        sort = sortDirection.equalsIgnoreCase("desc") ? sort.descending() : sort.ascending();
+
+        // Tạo Pageable với phân trang và sắp xếp
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Lấy danh sách nhân viên từ repository
+        Page<User> employeePage = userRepository.findEmployees(role, keyword, pageable);
+
+        // Ánh xạ sang DTO
+        return employeePage.map(userMapper::toUserResponse);
+    }
+
+
+    @Transactional
+    public void inactiveUser(Integer id) {
+        if (!userRepository.existsById(id)) {
+            throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
+        }
+
+        int updatedRows = userRepository.updateStatusById(id, "INACTIVE");
+        if (updatedRows == 0) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public void restoreUser(Integer id) {
+        if (!userRepository.existsById(id)) {
+            throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
+        }
+
+        int updatedRows =  userRepository.updateStatusById(id, "ACTIVE");
+        if (updatedRows == 0) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+    public void updateUser(Integer id, EmployeeUpdateRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Cập nhật các field trừ password
+        userMapper.updateStaff(user, request);
+
+        // Mã hóa mật khẩu mới
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        // Cập nhật role nếu cần
+        Role role = roleRepository.findById(request.getRoleName())
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
+        user.setRoleName(role);
+
+        userRepository.save(user);
+    }
+    public long countUser() {
+        return userRepository.count();
     }
 }
+

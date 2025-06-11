@@ -11,6 +11,9 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.6.0/mapstruct-processor-1.6.0.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.6.0/mapstruct-1.6.0.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.6.0/mapstruct-processor-1.6.0.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.6.0/mapstruct-1.6.0.jar" />
         </processorPath>
         <module name="FoodHub" />
       </profile>

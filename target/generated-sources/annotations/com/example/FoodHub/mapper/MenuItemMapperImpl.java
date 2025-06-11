@@ -1,5 +1,6 @@
 package com.example.FoodHub.mapper;
 
+import com.example.FoodHub.dto.request.MenuItemRequest;
 import com.example.FoodHub.dto.response.MenuItemResponse;
 import com.example.FoodHub.entity.MenuItem;
 import javax.annotation.processing.Generated;
@@ -7,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-10T09:02:49+0700",
+    date = "2025-06-11T11:22:27+0700",
     comments = "version: 1.6.0, compiler: javac, environment: Java 21.0.5 (Oracle Corporation)"
 )
 @Component
@@ -21,15 +22,43 @@ public class MenuItemMapperImpl implements MenuItemMapper {
 
         MenuItemResponse.MenuItemResponseBuilder menuItemResponse = MenuItemResponse.builder();
 
-        menuItemResponse.status( menuItem.getStatus() );
+        menuItemResponse.categoryNames( toCategoryNames( menuItem.getCategories() ) );
+        menuItemResponse.categoryIds( toCategoryIds( menuItem.getCategories() ) );
         menuItemResponse.id( menuItem.getId() );
         menuItemResponse.name( menuItem.getName() );
         menuItemResponse.description( menuItem.getDescription() );
         menuItemResponse.imageUrl( menuItem.getImageUrl() );
         menuItemResponse.price( menuItem.getPrice() );
-
-        menuItemResponse.categoryNames( menuItem.getCategories().stream().map(category -> category.getName()).collect(java.util.stream.Collectors.toList()) );
+        menuItemResponse.status( menuItem.getStatus() );
 
         return menuItemResponse.build();
+    }
+
+    @Override
+    public MenuItem toMenuItem(MenuItemRequest request) {
+        if ( request == null ) {
+            return null;
+        }
+
+        MenuItem menuItem = new MenuItem();
+
+        menuItem.setName( request.getName() );
+        menuItem.setDescription( request.getDescription() );
+        menuItem.setPrice( request.getPrice() );
+
+        menuItem.setStatus( "AVAILABLE" );
+
+        return menuItem;
+    }
+
+    @Override
+    public void updateMenuItemFromRequest(MenuItemRequest request, MenuItem menuItem) {
+        if ( request == null ) {
+            return;
+        }
+
+        menuItem.setName( request.getName() );
+        menuItem.setDescription( request.getDescription() );
+        menuItem.setPrice( request.getPrice() );
     }
 }
