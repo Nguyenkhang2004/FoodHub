@@ -24,6 +24,7 @@ public interface UserMapper {
 
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
 
+
     default Role map(String roleName) {
         if (roleName == null) return null;
         Role role = new Role();

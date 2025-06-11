@@ -23,11 +23,6 @@ public class OrderItemRequest {
     @Max(value = 99, message = "QUANTITY_TOO_LARGE")
     private Integer quantity;
 
-//    @NotNull(message = "PRICE_REQUIRED")
-//    @DecimalMin(value = "0.0", inclusive = false, message = "PRICE_INVALID")
-//    @Digits(integer = 10, fraction = 2, message = "PRICE_FORMAT_INVALID")
-//    private BigDecimal price;
-
     @Pattern(regexp = "PENDING|CONFIRMED|READY|CANCELLED|COMPLETED", message = "ORDER_ITEM_STATUS_INVALID")
     private String status = "PENDING";
 
