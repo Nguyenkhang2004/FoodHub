@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import javax.swing.text.html.Option;
@@ -45,4 +46,51 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
             BigDecimal maxPrice,
             Instant startTime,
             Pageable pageable);
+
+    @Query("SELECT SUM(ro.totalAmount) FROM RestaurantOrder ro WHERE ro.status = 'COMPLETED' AND ro.createdAt BETWEEN :start AND :end")
+    Optional<BigDecimal> findTotalRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    // Đếm số đơn hàng theo khoảng thời gian
+    @Query("SELECT COUNT(o) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end")
+    Long countOrdersByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    // Doanh thu theo giờ (cho "today")
+    @Query("SELECT HOUR(o.createdAt), SUM(o.totalAmount) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end GROUP BY HOUR(o.createdAt) ORDER BY HOUR(o.createdAt)")
+    List<Object[]> findHourlyRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    // Doanh thu theo ngày trong tuần (cho "week")
+    @Query("SELECT DAYOFWEEK(o.createdAt), SUM(o.totalAmount) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end GROUP BY DAYOFWEEK(o.createdAt) ORDER BY DAYOFWEEK(o.createdAt)")
+    List<Object[]> findDailyRevenueByPeriodForWeek(@Param("start") Instant start, @Param("end") Instant end);
+
+    // Doanh thu theo ngày trong tháng (cho "month")
+    @Query("SELECT DAYOFMONTH(o.createdAt), SUM(o.totalAmount) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end GROUP BY DAYOFMONTH(o.createdAt) ORDER BY DAYOFMONTH(o.createdAt)")
+    List<Object[]> findDailyRevenueByPeriodForMonth(@Param("start") Instant start, @Param("end") Instant end);
+
+    // Doanh thu theo tuần trong quý (cho "quarter")
+    @Query("SELECT MONTH(ro1_0.createdAt) AS month, SUM(ro1_0.totalAmount) " +
+            "FROM RestaurantOrder ro1_0 " +
+            "WHERE ro1_0.status = 'COMPLETED' AND ro1_0.createdAt BETWEEN :start AND :end " +
+            "GROUP BY MONTH(ro1_0.createdAt) " +
+            "ORDER BY MONTH(ro1_0.createdAt)")
+    List<Object[]> findMonthlyRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    // Query cũ - deprecated, chỉ để backward compatibility
+    @Deprecated
+    @Query("SELECT HOUR(o.createdAt), SUM(o.totalAmount) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end GROUP BY HOUR(o.createdAt)")
+    List<Object[]> findDailyRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    @Query("SELECT p.paymentMethod, SUM(p.amount) " +
+            "FROM Payment p " +
+            "JOIN p.order o " +
+            "WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end " +
+            "GROUP BY p.paymentMethod")
+    List<Object[]> findRevenueByPaymentMethod(@Param("start") Instant start, @Param("end") Instant end);
+
+    // Doanh thu theo loại đơn hàng
+    @Query("SELECT o.orderType, SUM(o.totalAmount) " +
+            "FROM RestaurantOrder o " +
+            "WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end " +
+            "GROUP BY o.orderType")
+    List<Object[]> findRevenueByOrderType(@Param("start") Instant start, @Param("end") Instant end);
+
 }
