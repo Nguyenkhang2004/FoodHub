@@ -224,11 +224,14 @@ import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.CategoryRepository;
 import com.example.FoodHub.repository.MenuItemRepository;
+import com.example.FoodHub.specification.MenuItemSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -236,10 +239,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class MenuItemService {
@@ -256,16 +256,46 @@ public class MenuItemService {
         this.categoryRepository = categoryRepository;
     }
 
-    public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, String sortBy, String sortDirection, int page, int size) {
+//    public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, String sortBy, String sortDirection, int page, int size) {
+//        String sortField = validateSortBy(sortBy);
+//        boolean isAsc = "asc".equalsIgnoreCase(sortDirection);
+//        Pageable pageable = PageRequest.of(page, size);
+//
+//        String normalizedKeyword = (keyword != null) ? normalizeKeyword(keyword) : null;
+//
+//        Page<MenuItem> menuItems = menuItemRepository.findMenuItems(sortField, isAsc, categoryId, normalizedKeyword, pageable);
+//        return menuItems.map(MenuItemResponse::new);
+//    }
+
+    public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, String status, String sortBy, String sortDirection, int page, int size) {
+        // Validate page and size
+        if (page < 0 || size <= 0) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        // Validate status
+        if (status != null && !status.isEmpty() && !Arrays.asList("AVAILABLE", "UNAVAILABLE").contains(status.toUpperCase())) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        // Normalize inputs
+        String normalizedKeyword = normalizeKeyword(keyword);
+        String normalizedStatus = (status != null && !status.isEmpty()) ? status.toUpperCase() : null;
         String sortField = validateSortBy(sortBy);
         boolean isAsc = "asc".equalsIgnoreCase(sortDirection);
-        Pageable pageable = PageRequest.of(page, size);
 
-        String normalizedKeyword = (keyword != null) ? normalizeKeyword(keyword) : null;
+        // Build sort
+        Sort sort = Sort.by(isAsc ? Sort.Direction.ASC : Sort.Direction.DESC, sortField).and(Sort.by("id"));
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<MenuItem> menuItems = menuItemRepository.findMenuItems(sortField, isAsc, categoryId, normalizedKeyword, pageable);
+        // Build specification
+        Specification<MenuItem> spec = MenuItemSpecification.buildSpecification(categoryId, normalizedKeyword, normalizedStatus);
+
+        // Execute query
+        Page<MenuItem> menuItems = menuItemRepository.findAll(spec, pageable);
         return menuItems.map(MenuItemResponse::new);
     }
+
 
     @Transactional
     public void deleteMenuItem(Integer id) {
@@ -312,7 +342,7 @@ public class MenuItemService {
         if (request.getImageUrl() != null && !request.getImageUrl().isEmpty()) {
             if (request.getImageUrl().startsWith("data:image")) {
                 String fileName = saveBase64Image(request.getImageUrl());
-                String imageUrl = "/foodhub/images/" + fileName + "?v=" + System.currentTimeMillis();
+                String imageUrl = "http://localhost:8080/images/" + fileName + "?v=" + System.currentTimeMillis();
                 menuItem.setImageUrl(imageUrl);
             } else {
                 menuItem.setImageUrl(request.getImageUrl());
@@ -351,7 +381,7 @@ public class MenuItemService {
             String newImageUrl = null;
 
             if (request.getImageUrl().startsWith("data:image")) {
-                newImageUrl = "/foodhub/images/" + saveBase64Image(request.getImageUrl()) + "?v=" + System.currentTimeMillis();
+                newImageUrl = "http://localhost:8080/images/" + saveBase64Image(request.getImageUrl()) + "?v=" + System.currentTimeMillis();
             } else if (!request.getImageUrl().equals(menuItem.getImageUrl())) {
                 newImageUrl = request.getImageUrl();
             }

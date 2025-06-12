@@ -3,6 +3,7 @@ package com.example.FoodHub.repository;
 import com.example.FoodHub.entity.WorkSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -12,5 +13,6 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Inte
     List<WorkSchedule> findByWeek(LocalDate startDate, LocalDate endDate);
     @Query("SELECT ws FROM WorkSchedule ws WHERE ws.workDate = :date")
     List<WorkSchedule> findByDate(LocalDate date);
-
+    @Query("SELECT ws FROM WorkSchedule ws WHERE ws.user.id = :userId AND ws.workDate >= :date")
+    List<WorkSchedule> findByUserIdAndDateFromToday(@Param("userId") Integer userId, @Param("date") LocalDate date);
 }

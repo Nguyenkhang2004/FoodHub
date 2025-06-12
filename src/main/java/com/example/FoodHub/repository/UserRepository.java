@@ -2,6 +2,9 @@ package com.example.FoodHub.repository;
 
 import com.example.FoodHub.entity.User;
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +20,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer> {
     User save(User user);
     boolean existsByUsername(String username);
+    boolean existsByEmail(@Email @NotBlank @Size(max = 255) String email);
     List<User> findAll();
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
@@ -34,4 +38,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<User> findByRoleName_Name(String roleName);
     @Query("SELECT COUNT(m) > 0 FROM User m WHERE LOWER(TRIM(m.username)) = LOWER(TRIM(:username)) AND m.id != :id")
     boolean existsByNameIgnoreCaseAndIdNot(@Param("username") String username, @Param("id") Integer id);
+    List<User> findByRoleName_NameAndStatus(String roleName, String status);
+
+
 }

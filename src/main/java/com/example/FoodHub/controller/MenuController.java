@@ -26,24 +26,4 @@ public class MenuController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
-
-    @GetMapping("/by-category")
-    public ResponseEntity<ApiResponse<List<MenuItemResponse>>> getMenuByCategory(@RequestParam("name") String categoryName) {
-        List<MenuItemResponse> menuItems = menuService.getMenuItemsByCategory(categoryName);
-        ApiResponse<List<MenuItemResponse>> response = ApiResponse.<List<MenuItemResponse>>builder()
-                .result(menuItems)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
-
-    @GetMapping("/available")
-    public ResponseEntity<ApiResponse<List<MenuItemResponse>>> getAvailableMenuItems() {
-        List<MenuItemResponse> menuItems = menuService.getAvailableMenuItems();
-        ApiResponse<List<MenuItemResponse>> response = ApiResponse.<List<MenuItemResponse>>builder()
-                .result(menuItems)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
-
-
 }
