@@ -2,7 +2,6 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
-import com.example.FoodHub.entity.RestaurantTable;
 import com.example.FoodHub.enums.TableStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
@@ -14,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -28,18 +26,12 @@ public class RestaurantTableService {
     RestaurantTableRepository tableRepository;
     RestaurantTableMapper tableMapper;
 
-    public List<RestaurantTableResponse> getAllTables(String tableNumber, String status, String orderBy, String sort) {
+    public List<RestaurantTableResponse> getAllTables(
+            String tableNumber, String status, String area, String orderBy, String sort) {
         log.info("Fetching all restaurant tables");
         log.info("Fetching filtered restaurant tables");
         Sort sortOrder = Sort.by(Sort.Direction.fromString(sort), orderBy);
-        return tableRepository.findAll(TableSpecifications.filterTables(tableNumber, status), sortOrder).stream()
-                .map(tableMapper::toRestaurantTableResponse)
-                .toList();
-    }
-
-    public List<RestaurantTableResponse> getTablesByArea(String area) {
-        log.info("Fetching tables in area: {}", area);
-        return tableRepository.findByArea(area).stream()
+        return tableRepository.findAll(TableSpecifications.filterTables(tableNumber, status, area), sortOrder).stream()
                 .map(tableMapper::toRestaurantTableResponse)
                 .toList();
     }
@@ -63,12 +55,6 @@ public class RestaurantTableService {
         return tableMapper.toRestaurantTableResponse(table);
     }
 
-    public List<RestaurantTableResponse> getTablesByAreaAndStatus(String area, String status) {
-        log.info("Fetching tables in area: {} with status: {}", area, status);
-        return tableRepository.findByAreaAndStatus(area, status).stream()
-                .map(tableMapper::toRestaurantTableResponse)
-                .toList();
-    }
 
     public RestaurantTableResponse updateTableStatus (Integer tableId, String status) {
         log.info("Updating table status for table ID: {} to {}", tableId, status);

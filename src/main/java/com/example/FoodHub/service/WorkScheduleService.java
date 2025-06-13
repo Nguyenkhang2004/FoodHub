@@ -10,6 +10,9 @@ import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.UserRepository;
 import com.example.FoodHub.repository.WorkScheduleRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +22,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WorkScheduleService {
-    @Autowired
-    private WorkScheduleRepository workScheduleRepository;
+    WorkScheduleRepository workScheduleRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
     public List<ShiftResponse> getShiftsForWeek(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);

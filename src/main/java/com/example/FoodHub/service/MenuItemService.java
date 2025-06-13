@@ -225,6 +225,7 @@ import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.CategoryRepository;
 import com.example.FoodHub.repository.MenuItemRepository;
 import com.example.FoodHub.specification.MenuItemSpecification;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -242,6 +243,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class MenuItemService {
 
     @Value("${app.upload.dir}")
@@ -250,11 +252,6 @@ public class MenuItemService {
     private final MenuItemRepository menuItemRepository;
     private final CategoryRepository categoryRepository;
 
-    @Autowired
-    public MenuItemService(MenuItemRepository menuItemRepository, CategoryRepository categoryRepository) {
-        this.menuItemRepository = menuItemRepository;
-        this.categoryRepository = categoryRepository;
-    }
 
 //    public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, String sortBy, String sortDirection, int page, int size) {
 //        String sortField = validateSortBy(sortBy);

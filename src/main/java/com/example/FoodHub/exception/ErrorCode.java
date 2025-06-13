@@ -26,7 +26,7 @@ public enum ErrorCode {
     INVALID_STATUS_TRANSITION(1018, "Invalid status transition", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(1019, "Invalid request", HttpStatus.BAD_REQUEST),
     INVALID_TABLE_STATUS(1020, "Invalid table status", HttpStatus.BAD_REQUEST),
-    TABLE_NUMBER_INVALID(1021, "Table number must not be null", HttpStatus.BAD_REQUEST),
+    TABLE_NUMBER_INVALID(1021, "Invalid table number", HttpStatus.BAD_REQUEST),
     QR_CODE_INVALID(1022, "QR code must not be null", HttpStatus.BAD_REQUEST),
     AREA_INVALID(1023, "Area must be an alphabet and not be null", HttpStatus.BAD_REQUEST),
 

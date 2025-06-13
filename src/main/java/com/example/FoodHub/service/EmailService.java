@@ -2,6 +2,9 @@ package com.example.FoodHub.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,10 +15,11 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 @Slf4j
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    JavaMailSender mailSender;
 
     public void sendWelcomeEmail(String to, String username, String password) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
