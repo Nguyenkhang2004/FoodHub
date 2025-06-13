@@ -72,8 +72,38 @@
 				<optional>true</optional>
 			</dependency>
 
+		<!-- Spring Boot Starter Mail (bao gồm JavaMailSender) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+		<!-- Lombok (cho @Slf4j và các annotation khác) -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Jakarta Mail (nếu cần, nhưng thường đã bao gồm trong spring-boot-starter-mail) -->
+		<dependency>
+			<groupId>jakarta.mail</groupId>
+			<artifactId>jakarta.mail-api</artifactId>
+			<version>2.1.2</version> <!-- Kiểm tra phiên bản mới nhất nếu cần -->
+		</dependency>
 
 
+		<!-- Thêm nếu cần xử lý file -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<!-- Thư viện hỗ trợ xử lý file (nếu cần) -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.11.0</version>
+		</dependency>
 
 
 		<dependency>

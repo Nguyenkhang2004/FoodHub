@@ -29,7 +29,12 @@ public enum ErrorCode {
     INSUFFICIENT_FUNDS(1020, "Insufficient funds, please use another payment method", HttpStatus.PAYMENT_REQUIRED),
     ORDER_COMPLETED(1021, "Order cannot be paid in current status: COMPLETED", HttpStatus.BAD_REQUEST),
     PAYMENT_NOT_FOUND(1022, "Payment record not found", HttpStatus.NOT_FOUND),
-    INVALID_ORDER_AMOUNT(1023, "Invalid order amount", HttpStatus.BAD_REQUEST);
+    INVALID_ORDER_AMOUNT(1023, "Invalid order amount", HttpStatus.BAD_REQUEST),
+    ORDER_ALREADY_CANCELED(1024, "Order has already been canceled", HttpStatus.BAD_REQUEST),
+    PAYMENT_ALREADY_PROCESSED(1025, "Payment has already been processed", HttpStatus.BAD_REQUEST),
+    INVALID_PAYMENT_METHOD(1026, "Invalid payment method", HttpStatus.BAD_REQUEST),
+    TABLE_NOT_EXISTED(1027, "Table not found", HttpStatus.NOT_FOUND);
+
 
     private int code;
     private String message;
