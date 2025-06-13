@@ -1,5 +1,6 @@
 package com.example.FoodHub.controller;
 
+
 import com.example.FoodHub.dto.request.*;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.AuthenticationResponse;
@@ -12,9 +13,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.text.ParseException;
+
 
 @RestController
 @RequestMapping("/auth")
@@ -25,15 +30,12 @@ public class AuthenticationController {
     UserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthenticationResponse>> login(@RequestBody AuthenticationRequest request) {
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> login(@RequestBody AuthenticationRequest request){
         AuthenticationResponse result = authenticationService.authenticate(request);
-        return ResponseEntity.ok(ApiResponse.<AuthenticationResponse>builder().result(result).build());
-    }
-
-    @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse<Void>> sendOtp(@RequestBody UserCreationRequest request) {
-        userService.sendOtp(request);
-        return ResponseEntity.ok(ApiResponse.<Void>builder().message("OTP sent to email").build());
+        ApiResponse<AuthenticationResponse> response = ApiResponse.<AuthenticationResponse>builder()
+                .result(result)
+                .build();
+        return ResponseEntity.ok().body(response);
     }
 
     @PostMapping("/verify-otp")
@@ -45,18 +47,26 @@ public class AuthenticationController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestBody LogoutRequest request) throws ParseException, JOSEException {
         authenticationService.logout(request);
-        return ResponseEntity.ok(ApiResponse.<Void>builder().build());
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .build();
+        return ResponseEntity.ok().body(response);
     }
 
     @PostMapping("/introspect")
     public ResponseEntity<ApiResponse<IntrospectResponse>> introspect(@RequestBody IntrospectRequest request) throws ParseException, JOSEException {
         IntrospectResponse result = authenticationService.introspect(request);
-        return ResponseEntity.ok(ApiResponse.<IntrospectResponse>builder().result(result).build());
+        ApiResponse<IntrospectResponse> response = ApiResponse.<IntrospectResponse>builder()
+                .result(result)
+                .build();
+        return ResponseEntity.ok().body(response);
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthenticationResponse>> refresh(@RequestBody RefreshRequest request) throws ParseException, JOSEException {
         AuthenticationResponse result = authenticationService.refreshToken(request);
-        return ResponseEntity.ok(ApiResponse.<AuthenticationResponse>builder().result(result).build());
+        ApiResponse<AuthenticationResponse> response = ApiResponse.<AuthenticationResponse>builder()
+                .result(result)
+                .build();
+        return ResponseEntity.ok().body(response);
     }
 }

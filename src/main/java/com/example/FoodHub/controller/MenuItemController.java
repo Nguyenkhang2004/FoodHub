@@ -137,6 +137,7 @@ import com.example.FoodHub.dto.request.MenuItemRequest;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.service.MenuItemService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -148,25 +149,44 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/menu-items")
+@RequiredArgsConstructor
 public class MenuItemController {
 
-    @Autowired
-    private MenuItemService menuItemService;
+    private final MenuItemService menuItemService;
 
+    //    @GetMapping
+//    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuItems(
+//            @RequestParam(required = false) Integer categoryId,
+//            @RequestParam(required = false) String keyword,
+//            @RequestParam(defaultValue = "name") String sortBy,
+//            @RequestParam(defaultValue = "asc") String sortDirection,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size) {
+//
+//        if (page < 0) {
+//            throw new AppException(ErrorCode.INVALID_KEY);
+//        }
+//
+//        Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, sortBy, sortDirection, page, size);
+//
+//        ApiResponse<Page<MenuItemResponse>> response = ApiResponse.<Page<MenuItemResponse>>builder()
+//                .code(1000)
+//                .message("Lấy danh sách món ăn thành công")
+//                .result(menuItems)
+//                .build();
+//
+//        return ResponseEntity.ok().body(response);
+//    }
     @GetMapping
     public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuItems(
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
-        if (page < 0) {
-            throw new AppException(ErrorCode.INVALID_KEY);
-        }
-
-        Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, sortBy, sortDirection, page, size);
+        Page<MenuItemResponse> menuItems = menuItemService.getMenuItems(categoryId, keyword, status, sortBy, sortDirection, page, size);
 
         ApiResponse<Page<MenuItemResponse>> response = ApiResponse.<Page<MenuItemResponse>>builder()
                 .code(1000)
@@ -176,6 +196,7 @@ public class MenuItemController {
 
         return ResponseEntity.ok().body(response);
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMenuItem(@PathVariable Integer id) {
@@ -243,6 +264,7 @@ public class MenuItemController {
 
         return ResponseEntity.ok().body(response);
     }
+
     @GetMapping("/count")
     public ApiResponse<Long> getMenuItemCount() {
         Long totalItems = menuItemService.countMenuItems();

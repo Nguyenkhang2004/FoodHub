@@ -21,7 +21,6 @@ public class CashierController {
     private final PaymentService paymentService;
 
 
-
     @GetMapping("/payments")
     public String showPayments(Model model) {
         model.addAttribute("payments", paymentService.getPendingPayments());

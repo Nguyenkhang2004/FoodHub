@@ -3,7 +3,7 @@ package com.example.FoodHub.dto.request;
 import lombok.Data;
 
 @Data
-public class ShiftDTO {
+public class ShiftRequest {
     private Integer id;
     private String name; // User username
     private String role; // Role name

@@ -4,6 +4,7 @@ import com.example.FoodHub.dto.request.ChatRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.ChatResponse;
 import com.example.FoodHub.service.GeminiService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,10 +12,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/gemini")
 @CrossOrigin(origins = "*") // Cho phép CORS nếu cần (tùy môi trường)
+@RequiredArgsConstructor
 public class GeminiController {
 
-    @Autowired
-    private GeminiService geminiService;
+    private final GeminiService geminiService;
 
     /**
      * Endpoint để nhận tin nhắn từ người dùng và trả về phản hồi từ Gemini

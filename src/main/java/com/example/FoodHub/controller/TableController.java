@@ -3,6 +3,7 @@ package com.example.FoodHub.controller;
 import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
+import com.example.FoodHub.enums.TableStatus;
 import com.example.FoodHub.service.RestaurantTableService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -24,10 +25,11 @@ public class TableController {
     public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getAllTables(
             @RequestParam(required = false) String tableNumber,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String area,
             @RequestParam(defaultValue = "tableNumber") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort
     ) {
-        List<RestaurantTableResponse> tables = tableService.getAllTables(tableNumber, status, orderBy, sort);
+        List<RestaurantTableResponse> tables = tableService.getAllTables(tableNumber, status, area, orderBy, sort);
         ApiResponse<List<RestaurantTableResponse>> response = ApiResponse.<List<RestaurantTableResponse>>builder()
                 .result(tables)
                 .build();
@@ -42,17 +44,6 @@ public class TableController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
-
-    @GetMapping("/area/{area}")
-    public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getTablesByArea(@PathVariable String area) {
-        List<RestaurantTableResponse> tables = tableService.getTablesByArea(area);
-        ApiResponse<List<RestaurantTableResponse>> response = ApiResponse.<List<RestaurantTableResponse>>builder()
-                .result(tables)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
-
-
 
     @PutMapping("/{tableId}")
     public ResponseEntity<ApiResponse<RestaurantTableResponse>> updateTableStatus(

@@ -137,10 +137,15 @@ public class RestaurantOrderService {
         log.info("Creating new order for table: {}", request.getTableId());
 
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        order.setUser(user);
+        if(request.getUserId() != null){
+            log.info("Setting user for order: {}", request.getUserId());
+            User user = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+            order.setUser(user);
+        }
+
         if (request.getOrderType().equals(OrderType.DINE_IN.name())) {
+
             RestaurantTable table = tableRepository.findById(request.getTableId())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
             // Kiểm tra trạng thái bàn trước khi gán

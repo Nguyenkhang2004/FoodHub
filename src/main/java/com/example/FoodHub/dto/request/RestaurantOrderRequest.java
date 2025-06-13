@@ -18,7 +18,6 @@ public class RestaurantOrderRequest {
     @Positive(message = "TABLE_ID_INVALID")
     private Integer tableId;
 
-    @NotNull(message = "USER_ID_REQUIRED")
     @Positive(message = "USER_ID_INVALID")
     private Integer userId;
 
