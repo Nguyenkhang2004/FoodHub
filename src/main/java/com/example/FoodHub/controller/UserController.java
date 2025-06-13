@@ -2,7 +2,6 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
 import com.example.FoodHub.dto.request.UserCreationRequest;
-import com.example.FoodHub.dto.request.UserUpdateRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.service.UserService;
@@ -12,8 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +23,7 @@ import java.util.List;
 public class UserController {
     UserService userService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody UserCreationRequest request) {
         UserResponse userResponse = userService.createUser(request);
@@ -50,44 +49,36 @@ public class UserController {
             @RequestParam(defaultValue = "asc") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
-        // Gọi service để lấy danh sách nhân viên
         Page<UserResponse> employeePage = userService.getEmployees(role, keyword, sortDirection, page, size);
-
-        // Xây dựng response với ApiResponse
         ApiResponse<Page<UserResponse>> response = ApiResponse.<Page<UserResponse>>builder()
                 .result(employeePage)
                 .build();
-
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/employees/{id}")
-    public ResponseEntity<ApiResponse<Void>> inactiveUse(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> inactiveUser(@PathVariable Integer id) {
         userService.inactiveUser(id);
-
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .code(1000)
                 .message("Nhân viên chuyển sang trạng thái INACTIVE thành công")
                 .result(null)
                 .build();
-
         return ResponseEntity.ok().body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/employees/{id}/restore")
     public ResponseEntity<ApiResponse<Void>> restoreUser(@PathVariable Integer id) {
         userService.restoreUser(id);
-
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .code(1000)
                 .message("Nhân viên được khôi phục thành công")
                 .result(null)
                 .build();
-
         return ResponseEntity.ok().body(response);
     }
-
 
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Integer userId) {
@@ -98,11 +89,11 @@ public class UserController {
         return ResponseEntity.ok().body(response);
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{userId}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Integer userId) {
         userService.deleteUser(userId);
-        ApiResponse response = ApiResponse.<Void>builder()
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .build();
         return ResponseEntity.ok().body(response);
     }
@@ -116,22 +107,20 @@ public class UserController {
         return ResponseEntity.ok().body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> updateUser(
             @PathVariable Integer id,
             @Valid @RequestBody EmployeeUpdateRequest request) {
-
         userService.updateUser(id, request);
-
         ApiResponse<String> response = ApiResponse.<String>builder()
                 .code(1000)
                 .message("Cập nhật người dùng thành công")
                 .result("User ID " + id + " đã được cập nhật")
                 .build();
-
         return ResponseEntity.ok(response);
-
     }
+
     @GetMapping("/count")
     public ApiResponse<Long> getUserCount() {
         Long totalItems = userService.countUser();

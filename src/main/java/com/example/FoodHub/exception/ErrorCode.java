@@ -64,8 +64,23 @@ public enum ErrorCode {
     PHONE_NOT_BLANK(1023, "Phone number must not be blank", HttpStatus.BAD_REQUEST),
     EMAIL_NOT_BLANK(1024, "Email must not be blank", HttpStatus.BAD_REQUEST),
     PASSWORD_NOT_BLANK(1025, "Password must not be blank", HttpStatus.BAD_REQUEST),
-    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST)
-    ;
+    PHONE_PATTERN(1026, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
+    USER_HAS_SCHEDULED_SHIFTS(1040, "User has scheduled shifts and cannot be deactivated", HttpStatus.BAD_REQUEST),
+    DUPLICATE_SHIFT(1042, "Duplicate shift found for the user on the same date", HttpStatus.BAD_REQUEST),
+    INVALID_SHIFT_TYPE(1043, "Invalid shift type. Must be morning, afternoon, or night", HttpStatus.BAD_REQUEST),
+    USERNAME_SIZE(1045, "Username must be at least 2 characters long", HttpStatus.BAD_REQUEST),
+    PASSWORD_SIZE(1047, "Password must be exactly 8 characters", HttpStatus.BAD_REQUEST),
+    EMAIL_SIZE(1049, "Email must be at least 2 characters long", HttpStatus.BAD_REQUEST),
+    PHONE_SIZE(1051, "Phone must be at least 2 characters long", HttpStatus.BAD_REQUEST),
+    ADDRESS_SIZE(1053, "Address must be at least 2 characters long", HttpStatus.BAD_REQUEST),
+    ROLE_NAME_NOT_BLANK(1054, "Role name cannot be blank", HttpStatus.BAD_REQUEST),
+    EMAIL_EXISTS(1056, "Email already exists", HttpStatus.BAD_REQUEST),
+    ROLE_NAME_SIZE(1055, "Role name must be at least 2 characters long", HttpStatus.BAD_REQUEST),
+    OTP_NOT_FOUND(1060, "OTP not found", HttpStatus.NOT_FOUND),
+    OTP_EXPIRED(1061, "OTP has expired", HttpStatus.BAD_REQUEST),
+    OTP_ALREADY_VERIFIED(1062, "OTP has already been verified", HttpStatus.BAD_REQUEST),
+    INVALID_OTP(1063, "Invalid OTP", HttpStatus.BAD_REQUEST),
+    INVALID_ROLE(1064, "Invalid role", HttpStatus.BAD_REQUEST),;
 
     private int code;
     private String message;
