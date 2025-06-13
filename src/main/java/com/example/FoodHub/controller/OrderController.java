@@ -1,6 +1,5 @@
 package com.example.FoodHub.controller;
 
-import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.OrderItemResponse;

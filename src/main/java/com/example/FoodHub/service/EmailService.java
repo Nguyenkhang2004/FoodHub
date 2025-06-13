@@ -1,8 +1,8 @@
 package com.example.FoodHub.service;
 
+import com.example.FoodHub.dto.response.InvoiceResponse;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -10,14 +10,21 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.text.DecimalFormat;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    @Autowired
+    private JavaMailSender mailSender;
 
     public void sendWelcomeEmail(String to, String username, String password) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
@@ -204,6 +211,113 @@ public class EmailService {
                 "<p>Liên hệ với chúng tôi qua email hoặc hotline để được giúp đỡ nhanh nhất.</p>" +
                 "<p class=\"signature\">Trân trọng,<br><strong>Đội ngũ FOODHUB</strong></p>" +
                 "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+    }
+
+
+
+    //================================m====hóa đơn====================================================================
+
+
+    // Sử dụng InvoiceResponse
+    public void sendInvoiceEmail(String to, InvoiceResponse invoiceResponse) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        log.info("Sending invoice email to: {}", to);
+
+        helper.setTo(to);
+        helper.setSubject("Hóa đơn thanh toán - Order #" + (invoiceResponse.getOrderId() != null ? invoiceResponse.getOrderId() : "N/A"));
+
+        String htmlContent = buildInvoiceEmailTemplate(invoiceResponse);
+        helper.setText(htmlContent, true);
+
+        mailSender.send(message);
+    }
+
+    @Async
+    public void sendInvoiceEmailAsync(String to, InvoiceResponse invoiceResponse) {
+        try {
+            log.info("Bắt đầu gửi email hóa đơn đến {} tại {}", to, Instant.now());
+            sendInvoiceEmail(to, invoiceResponse);
+            log.info("Kết thúc gửi email hóa đơn đến {} tại {}", to, Instant.now());
+        } catch (MessagingException e) {
+            log.error("Lỗi khi gửi email hóa đơn đến {}: {}", to, e.getMessage());
+        }
+    }
+
+    private String buildInvoiceEmailTemplate(InvoiceResponse invoiceResponse) {
+        DecimalFormat df = new DecimalFormat("#,###");
+        String orderId = String.valueOf(invoiceResponse.getOrderId() != null ? invoiceResponse.getOrderId() : "N/A");
+
+// Lấy thời gian hiện tại theo múi giờ Việt Nam
+        ZonedDateTime nowInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        String formattedPaymentTime = nowInVietnam.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+
+        String tableNumber = invoiceResponse.getTableNumber() != null ? invoiceResponse.getTableNumber() : "N/A";
+        String customerName = invoiceResponse.getCustomerName() != null ? invoiceResponse.getCustomerName() : "N/A";
+        String amount = invoiceResponse.getAmount() != null ?
+                df.format(invoiceResponse.getAmount()) + "₫" : "N/A";
+        String paymentMethod = invoiceResponse.getPaymentMethod() != null ? invoiceResponse.getPaymentMethod() : "N/A";
+        String status = invoiceResponse.getStatus() != null ? invoiceResponse.getStatus() : "N/A";
+        String transactionId = invoiceResponse.getTransactionId() != null ? invoiceResponse.getTransactionId() : "N/A";
+
+        List<Map<String, Object>> orderItems = invoiceResponse.getOrderItems() != null ? invoiceResponse.getOrderItems() : List.of();
+        String itemsHtml = orderItems.stream()
+                .map(item -> {
+                    String itemName = String.valueOf(item.getOrDefault("itemName", "N/A"));
+                    String quantity = String.valueOf(item.getOrDefault("quantity", "N/A"));
+                    String price = item.get("price") != null ?
+                            df.format(((Number) item.get("price")).doubleValue()) + "₫" : "N/A";
+                    String total = (item.get("price") != null && item.get("quantity") != null) ?
+                            df.format(((Number) item.get("price")).doubleValue() * ((Number) item.get("quantity")).doubleValue()) + "₫" : "N/A";
+                    return String.format(
+                            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+                            itemName, quantity, price, total
+                    );
+                })
+                .collect(Collectors.joining());
+
+        return "<!DOCTYPE html>" +
+                "<html lang=\"vi\">" +
+                "<head>" +
+                "<meta charset=\"UTF-8\">" +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "<title>Hóa đơn từ FoodHub</title>" +
+                "<style>" +
+                "body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }" +
+                ".container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 20px; border: 1px solid #e0e0e0; }" +
+                ".header { text-align: center; background-color: #ff9800; color: #fff; padding: 10px; }" +
+                ".details p { margin: 5px 0; color: #333; }" +
+                ".item-table { width: 100%; border-collapse: collapse; margin: 10px 0; }" +
+                ".item-table th, .item-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }" +
+                ".item-table th { background-color: #ffeb3b; color: #000; }" +
+                ".total { font-weight: bold; margin-top: 10px; }" +
+                ".footer { text-align: center; color: #757575; font-size: 12px; margin-top: 20px; }" +
+                "@media (max-width: 600px) { .container { margin: 0; border-radius: 0; } .item-table { font-size: 14px; } }" +
+                "</style>" +
+                "</head>" +
+                "<body>" +
+                "<div class=\"container\">" +
+                "<div class=\"header\"><h3>Hóa đơn từ FoodHub</h3></div>" +
+                "<div class=\"details\">" +
+                "<p><strong>Số hóa đơn:</strong> #" + orderId + "</p>" +
+                "<p><strong>Ngày thanh toán:</strong> " + formattedPaymentTime + "</p>" +
+                "<p><strong>Bàn:</strong> " + tableNumber + "</p>" +
+                "<p><strong>Khách hàng:</strong> " + customerName + "</p>" +
+                "</div>" +
+                "<table class=\"item-table\">" +
+                "<thead><tr><th>Tên món ăn</th><th>Số lượng</th><th>Giá đơn vị</th><th>Tổng tiền</th></tr></thead>" +
+                "<tbody>" + itemsHtml + "</tbody>" +
+                "</table>" +
+                "<div class=\"total\">" +
+                "<p><strong>Tổng cộng:</strong> " + amount + "</p>" +
+                "<p><strong>Phương thức:</strong> " + paymentMethod + "</p>" +
+                "<p><strong>Trạng thái:</strong> " + status + "</p>" +
+                "<p><strong>Mã giao dịch:</strong> " + transactionId + "</p>" +
+                "</div>" +
+                "<div class=\"footer\">FoodHub - Chuyên món lẩu và nướng<br>Cảm ơn quý khách!</div>" +
                 "</div>" +
                 "</body>" +
                 "</html>";

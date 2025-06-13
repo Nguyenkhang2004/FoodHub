@@ -84,7 +84,18 @@ public enum ErrorCode {
     OTP_EXPIRED(1061, "OTP has expired", HttpStatus.BAD_REQUEST),
     OTP_ALREADY_VERIFIED(1062, "OTP has already been verified", HttpStatus.BAD_REQUEST),
     INVALID_OTP(1063, "Invalid OTP", HttpStatus.BAD_REQUEST),
-    INVALID_ROLE(1064, "Invalid role", HttpStatus.BAD_REQUEST)
+    INVALID_ROLE(1064, "Invalid role", HttpStatus.BAD_REQUEST),
+    PAYMENT_PENDING(1016, "Payment is pending, please wait for confirmation", HttpStatus.ACCEPTED),
+    PAYMENT_FAILED(1017, "Payment failed due to {reason}", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_RANGE(1018, "Invalid date range, end date must be after start date", HttpStatus.BAD_REQUEST),
+    ORDER_NOT_FOUND(1019, "Order not found", HttpStatus.NOT_FOUND),
+    INSUFFICIENT_FUNDS(1020, "Insufficient funds, please use another payment method", HttpStatus.PAYMENT_REQUIRED),
+    ORDER_COMPLETED(1021, "Order cannot be paid in current status: COMPLETED", HttpStatus.BAD_REQUEST),
+    PAYMENT_NOT_FOUND(1022, "Payment record not found", HttpStatus.NOT_FOUND),
+    INVALID_ORDER_AMOUNT(1023, "Invalid order amount", HttpStatus.BAD_REQUEST),
+    ORDER_ALREADY_CANCELED(1024, "Order has already been canceled", HttpStatus.BAD_REQUEST),
+    PAYMENT_ALREADY_PROCESSED(1025, "Payment has already been processed", HttpStatus.BAD_REQUEST),
+    INVALID_PAYMENT_METHOD(1026, "Invalid payment method", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;
