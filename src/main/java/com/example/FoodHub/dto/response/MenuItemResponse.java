@@ -1,3 +1,4 @@
+
 package com.example.FoodHub.dto.response;
 
 import com.example.FoodHub.entity.Category;
@@ -26,4 +27,21 @@ public class MenuItemResponse {
     private Set<String> categoryNames;
     private List<Integer> categoryIds;
 
+    public MenuItemResponse(MenuItem menuItem) {
+        this.id = menuItem.getId();
+        this.name = menuItem.getName();
+        this.description = menuItem.getDescription();
+        this.imageUrl = menuItem.getImageUrl();
+        this.price = menuItem.getPrice();
+        this.status = menuItem.getStatus();
+        this.categoryNames = menuItem.getCategories().stream()
+                .map(Category::getName)
+                .collect(Collectors.toSet());
+        this.categoryIds = (menuItem.getCategories() != null)
+                ? menuItem.getCategories().stream()
+                .map(Category::getId)
+                .collect(Collectors.toList())
+                : List.of();
+
+    }
 }

@@ -36,9 +36,8 @@ public class SecurityConfig {
             "/scan",
             "/scan/**",
             "/customer/**",
-            "/menu",
-            "/menu/**",
             "/menu-items",
+            "/menu-items/**",
     };
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
