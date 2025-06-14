@@ -96,8 +96,11 @@ public enum ErrorCode {
     ORDER_ALREADY_CANCELED(1024, "Order has already been canceled", HttpStatus.BAD_REQUEST),
     PAYMENT_ALREADY_PROCESSED(1025, "Payment has already been processed", HttpStatus.BAD_REQUEST),
     INVALID_PAYMENT_METHOD(1026, "Invalid payment method", HttpStatus.BAD_REQUEST),
+    PAST_SHIFT(1041, "You cannot customize past calendars", HttpStatus.BAD_REQUEST),
+    SHIFT_NOT_FOUND(1044, "Shift not found", HttpStatus.NOT_FOUND),
+    PAST_DATE_NOT_ALLOWED(1046, "You cannot create OR delete a shift in the past", HttpStatus.BAD_REQUEST),
+    PAST_SHIFT_TIME(1048, "You cannot create a shift that has already passed", HttpStatus.BAD_REQUEST)
     ;
-
     private int code;
     private String message;
     private HttpStatusCode statusCode;
