@@ -21,30 +21,6 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
     List<RestaurantOrder> findByStatus(String status);
     Optional<RestaurantOrder> findFirstByTableIdAndStatusInOrderByCreatedAtDesc(Integer tableId, List<String> statuses);
 
-    @Query("SELECT o FROM RestaurantOrder o " +
-            "JOIN o.table t " +
-            "WHERE t.area = :area " +
-            "AND ((o.createdAt >= :currentShiftStart) " +
-            "     OR (o.createdAt BETWEEN :previousShiftStart AND :previousShiftEnd " +
-            "         AND o.status IN (:pendingStatuses))) " +
-            "AND (:status IS NULL OR o.status = :status) " +
-            "AND (:tableNumber IS NULL OR t.tableNumber = :tableNumber) " +
-            "AND (:minPrice IS NULL OR o.totalAmount >= :minPrice) " +
-            "AND (:maxPrice IS NULL OR o.totalAmount <= :maxPrice) " +
-            "AND (:startTime IS NULL OR o.createdAt >= :startTime)")
-    Page<RestaurantOrder> findCurrentAndPreviousOrdersByArea(
-            String area,
-            List<String> pendingStatuses,
-            LocalDateTime currentShiftStart,
-            LocalDateTime previousShiftStart,
-            LocalDateTime previousShiftEnd,
-            String status,
-            String tableNumber,
-            BigDecimal minPrice,
-            BigDecimal maxPrice,
-            Instant startTime,
-            Pageable pageable);
-
     @Query("SELECT SUM(ro.totalAmount) FROM RestaurantOrder ro WHERE ro.status = 'COMPLETED' AND ro.createdAt BETWEEN :start AND :end")
     Optional<BigDecimal> findTotalRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
 

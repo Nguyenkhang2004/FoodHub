@@ -19,6 +19,7 @@ public class RestaurantOrderResponse {
     private String status;
     private String orderType;
     private Instant createdAt;
+    private Instant updatedAt;
     private String note;
 
     private Integer tableId;
