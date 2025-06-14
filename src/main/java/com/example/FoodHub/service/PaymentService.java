@@ -58,7 +58,7 @@ public class PaymentService {
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND, "Payment record not found for order: " + request.getOrderId()));
 
         // Tính tổng tiền dựa trên giá từ MenuItem
-        BigDecimal totalAmount = orderItemRepository.findByOrderId(request.getOrderId()).stream()
+        BigDecimal totalAmount = orderItemRepository.findById(request.getOrderId()).stream()
                 .map(item -> {
                     MenuItem menuItem = item.getMenuItem();
                     return menuItem != null ? menuItem.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())) : BigDecimal.ZERO;
