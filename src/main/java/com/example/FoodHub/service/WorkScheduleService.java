@@ -8,6 +8,7 @@ import com.example.FoodHub.entity.User;
 import com.example.FoodHub.entity.WorkSchedule;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
+import com.example.FoodHub.mapper.WorkScheduleMapper;
 import com.example.FoodHub.repository.UserRepository;
 import com.example.FoodHub.repository.WorkScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +27,13 @@ public class WorkScheduleService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private WorkScheduleMapper workScheduleMapper;
+
     public List<ShiftResponse> getShiftsForWeek(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
         List<WorkSchedule> schedules = workScheduleRepository.findByWeek(weekStart, weekEnd);
-        return schedules.stream().map(this::convertToShiftResponse).collect(Collectors.toList());
+        return schedules.stream().map(workScheduleMapper::toShiftResponse).collect(Collectors.toList());
     }
 
     public List<EmployeeWorkResponse> getEmployeesByRole(String role) {
@@ -47,11 +51,37 @@ public class WorkScheduleService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         LocalDate shiftDate = LocalDate.parse(shiftRequest.getDate());
         LocalDate today = LocalDate.now();
+        LocalTime currentTime = LocalTime.now();
 
+        // Kiểm tra ngày trong quá khứ
         if (shiftDate.isBefore(today)) {
-            throw new AppException(ErrorCode.INVALID_KEY);
+            throw new AppException(ErrorCode.PAST_DATE_NOT_ALLOWED);
         }
 
+        // Kiểm tra ca hôm nay đã qua giờ bắt đầu
+        if (shiftDate.isEqual(today)) {
+            switch (shiftRequest.getShift().toLowerCase()) {
+                case "morning":
+                    if (currentTime.isAfter(LocalTime.of(8, 30))) {
+                        throw new AppException(ErrorCode.PAST_SHIFT_TIME);
+                    }
+                    break;
+                case "afternoon":
+                    if (currentTime.isAfter(LocalTime.of(12, 30))) {
+                        throw new AppException(ErrorCode.PAST_SHIFT_TIME);
+                    }
+                    break;
+                case "night":
+                    if (currentTime.isAfter(LocalTime.of(17, 30))) {
+                        throw new AppException(ErrorCode.PAST_SHIFT_TIME);
+                    }
+                    break;
+                default:
+                    throw new AppException(ErrorCode.INVALID_SHIFT_TYPE);
+            }
+        }
+
+        // Kiểm tra ca trùng lặp
         List<WorkSchedule> existingSchedules = workScheduleRepository.findByDate(shiftDate);
         for (WorkSchedule schedule : existingSchedules) {
             if (schedule.getUser().getUsername().equals(shiftRequest.getName()) &&
@@ -60,11 +90,11 @@ public class WorkScheduleService {
             }
         }
 
-        WorkSchedule schedule = new WorkSchedule();
-        schedule.setUser(user);
-        schedule.setWorkDate(LocalDate.parse(shiftRequest.getDate()));
-        schedule.setShiftType(shiftRequest.getShift().toUpperCase());
+        // Sử dụng mapper để ánh xạ ShiftRequest sang WorkSchedule
+        WorkSchedule schedule = workScheduleMapper.toWorkSchedule(shiftRequest);
+        schedule.setUser(user); // Gán user thủ công
 
+        // Gán thời gian bắt đầu và kết thúc theo loại ca
         switch (shiftRequest.getShift().toLowerCase()) {
             case "morning":
                 schedule.setStartTime(LocalTime.of(8, 30));
@@ -83,20 +113,20 @@ public class WorkScheduleService {
         }
 
         WorkSchedule savedSchedule = workScheduleRepository.save(schedule);
-        return convertToShiftResponse(savedSchedule);
+        return workScheduleMapper.toShiftResponse(savedSchedule);
     }
 
     public void deleteShift(Integer id) {
-        workScheduleRepository.deleteById(id);
-    }
+        WorkSchedule schedule = workScheduleRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SHIFT_NOT_FOUND));
+        LocalDate shiftDate = schedule.getWorkDate();
+        LocalDate today = LocalDate.now();
 
-    private ShiftResponse convertToShiftResponse(WorkSchedule schedule) {
-        ShiftResponse dto = new ShiftResponse();
-        dto.setId(schedule.getId());
-        dto.setName(schedule.getUser().getUsername());
-        dto.setRole(schedule.getUser().getRoleName().getName().toLowerCase());
-        dto.setDate(schedule.getWorkDate().toString());
-        dto.setShift(schedule.getShiftType().toLowerCase());
-        return dto;
+        // Kiểm tra ngày trong quá khứ
+        if (shiftDate.isBefore(today)) {
+            throw new AppException(ErrorCode.PAST_DATE_NOT_ALLOWED);
+        }
+
+        workScheduleRepository.deleteById(id);
     }
 }

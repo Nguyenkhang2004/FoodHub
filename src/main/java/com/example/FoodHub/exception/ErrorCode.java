@@ -75,8 +75,11 @@ public enum ErrorCode {
     ADDRESS_SIZE(1053, "Address must be at least 2 characters long", HttpStatus.BAD_REQUEST),
     ROLE_NAME_NOT_BLANK(1054, "Role name cannot be blank", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTS(1056, "Email already exists", HttpStatus.BAD_REQUEST),
-    ROLE_NAME_SIZE(1055, "Role name must be at least 2 characters long", HttpStatus.BAD_REQUEST);
-
+    ROLE_NAME_SIZE(1055, "Role name must be at least 2 characters long", HttpStatus.BAD_REQUEST),
+    PAST_SHIFT(1041, "You cannot customize past calendars", HttpStatus.BAD_REQUEST),
+    SHIFT_NOT_FOUND(1044, "Shift not found", HttpStatus.NOT_FOUND),
+    PAST_DATE_NOT_ALLOWED(1046, "You cannot create OR delete a shift in the past", HttpStatus.BAD_REQUEST),
+    PAST_SHIFT_TIME(1048, "You cannot create a shift that has already passed", HttpStatus.BAD_REQUEST);
     private int code;
     private String message;
     private HttpStatusCode statusCode;
