@@ -146,6 +146,7 @@ public class UserService {
     public UserResponse myInfo() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
+        log.info("In method myInfo for user: {}", username);
         return userMapper.toUserResponse(userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }

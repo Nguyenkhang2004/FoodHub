@@ -16,4 +16,5 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Inte
     List<WorkSchedule> findByDate(LocalDate date);
     @Query("SELECT ws FROM WorkSchedule ws WHERE ws.user.id = :userId AND ws.workDate >= :date")
     List<WorkSchedule> findByUserIdAndDateFromToday(@Param("userId") Integer userId, @Param("date") LocalDate date);
+    List<WorkSchedule> findByUserId(Integer userId);
 }

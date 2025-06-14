@@ -12,13 +12,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-<<<<<<< HEAD
-    date = "2025-06-13T22:55:37+0700",
+    date = "2025-06-14T15:54:28+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
-=======
-    date = "2025-06-13T17:28:49+0700",
-    comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.3 (Oracle Corporation)"
->>>>>>> 5d792740c23f683a39301739f44400358e03c56e
 )
 @Component
 public class RoleMapperImpl implements RoleMapper {

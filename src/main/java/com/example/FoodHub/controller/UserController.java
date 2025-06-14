@@ -23,7 +23,6 @@ import java.util.List;
 public class UserController {
     UserService userService;
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserCreationRequest request) {
         UserResponse userResponse = userService.createUser(request);
@@ -99,7 +98,7 @@ public class UserController {
         return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/myInfo")
+    @GetMapping("/my-info")
     public ResponseEntity<ApiResponse<UserResponse>> getMyInfo() {
         UserResponse userResponse = userService.myInfo();
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()

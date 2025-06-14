@@ -96,6 +96,7 @@ public enum ErrorCode {
     ORDER_ALREADY_CANCELED(1024, "Order has already been canceled", HttpStatus.BAD_REQUEST),
     PAYMENT_ALREADY_PROCESSED(1025, "Payment has already been processed", HttpStatus.BAD_REQUEST),
     INVALID_PAYMENT_METHOD(1026, "Invalid payment method", HttpStatus.BAD_REQUEST),
+    WORK_SCHEDULE_NOT_FOUND(1041, "Work schedule not found", HttpStatus.NOT_FOUND)
     ;
 
     private int code;

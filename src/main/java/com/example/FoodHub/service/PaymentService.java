@@ -5,6 +5,10 @@ import com.example.FoodHub.dto.response.InvoiceResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.*;
+import com.example.FoodHub.enums.OrderItemStatus;
+import com.example.FoodHub.enums.OrderStatus;
+import com.example.FoodHub.enums.PaymentMethod;
+import com.example.FoodHub.enums.PaymentStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.*;
@@ -38,8 +42,6 @@ public class PaymentService {
     private final MenuItemRepository menuItemRepository;
     // Process payment for an order
 
-
-
     @Transactional
     public PaymentResponse processPayment(@NotNull PaymentRequest request) {
         log.info("Processing payment for order ID: {}", request.getOrderId());
@@ -47,10 +49,10 @@ public class PaymentService {
         RestaurantOrder order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        if ("CANCELLED".equals(order.getStatus())) {
+        if (OrderStatus.CANCELLED.name().equals(order.getStatus())) {
             throw new AppException(ErrorCode.ORDER_ALREADY_CANCELED, "Order has been canceled");
         }
-        if (!"PENDING".equals(order.getStatus()) && !"CONFIRMED".equals(order.getStatus())) {
+        if (!OrderStatus.PENDING.name().equals(order.getStatus()) && !OrderStatus.CONFIRMED.name().equals(order.getStatus())) {
             throw new AppException(ErrorCode.ORDER_COMPLETED, "Order cannot be paid in current status: " + order.getStatus());
         }
 
@@ -70,17 +72,17 @@ public class PaymentService {
 
         payment.setAmount(totalAmount);
         payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setStatus("PAID");
+        payment.setStatus(PaymentStatus.PAID.name());
         payment.setUpdatedAt(Instant.now()); // Cập nhật thời gian thanh toán thực tế
         paymentRepository.save(payment);
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(request.getOrderId());
         orderItems.forEach(item -> {
-            item.setStatus("COMPLETED");
+            item.setStatus(OrderItemStatus.COMPLETED.name()); // Consider using enum if available
             orderItemRepository.save(item);
         });
 
-        order.setStatus("COMPLETED");
+        order.setStatus(OrderStatus.COMPLETED.name());
         orderRepository.save(order);
 
         return mapToPaymentResponse(payment);
@@ -94,10 +96,10 @@ public class PaymentService {
         RestaurantOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        if ("CANCELLED".equals(order.getStatus())) {
+        if (OrderStatus.CANCELLED.name().equals(order.getStatus())) {
             throw new AppException(ErrorCode.ORDER_ALREADY_CANCELED, "Order has already been canceled");
         }
-        if ("COMPLETED".equals(order.getStatus())) {
+        if (OrderStatus.COMPLETED.name().equals(order.getStatus())) {
             throw new AppException(ErrorCode.ORDER_COMPLETED, "Cannot cancel completed order");
         }
 
@@ -109,21 +111,20 @@ public class PaymentService {
             log.error("Payment status is null for orderId: {}", orderId);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Payment status is null");
         }
-        if ("PAID".equals(paymentStatus)) {
-            payment.setStatus("REFUNDED");
-        } else if ("REFUNDED".equals(paymentStatus) || "CANCELLED".equals(paymentStatus)) {
+        if (PaymentStatus.PAID.name().equals(paymentStatus)) {
+            payment.setStatus(PaymentStatus.REFUNDED.name());
+        } else if (PaymentStatus.REFUNDED.name().equals(paymentStatus) || PaymentStatus.CANCELLED.name().equals(paymentStatus)) {
             throw new AppException(ErrorCode.PAYMENT_ALREADY_PROCESSED, "Payment has already been processed");
         } else {
-            payment.setStatus("CANCELLED");
+            payment.setStatus(PaymentStatus.CANCELLED.name());
         }
         paymentRepository.save(payment);
 
-        order.setStatus("CANCELLED");
         orderRepository.save(order);
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
         orderItems.forEach(item -> {
-            item.setStatus("CANCELLED");
+            item.setStatus(OrderItemStatus.CANCELLED.name()); // Consider using enum if available
             orderItemRepository.save(item);
         });
     }
@@ -181,18 +182,18 @@ public class PaymentService {
         for (Payment payment : payments) {
             BigDecimal amount = payment.getAmount() != null ? payment.getAmount() : BigDecimal.ZERO;
 
-            if ("PAID".equals(payment.getStatus())) {
+            if (PaymentStatus.PAID.name().equals(payment.getStatus())) {
                 totalRevenue = totalRevenue.add(amount);
                 paidRevenue = paidRevenue.add(amount);
 
-                if ("CASH".equals(payment.getPaymentMethod())) {
+                if (PaymentMethod.CASH.name().equals(payment.getPaymentMethod())) {
                     cashRevenue = cashRevenue.add(amount);
-                } else if ("VNPAY".equals(payment.getPaymentMethod())) {
+                } else if (PaymentMethod.VNPAY.name().equals(payment.getPaymentMethod())) {
                     vnpayRevenue = vnpayRevenue.add(amount);
                 }
-            } else if ("PENDING".equals(payment.getStatus())) {
+            } else if (PaymentStatus.PENDING.name().equals(payment.getStatus())) {
                 pendingRevenue = pendingRevenue.add(amount);
-            } else if ("CANCELLED".equals(payment.getStatus())) {
+            } else if (PaymentStatus.CANCELLED.name().equals(payment.getStatus())) {
                 cancelledRevenue = cancelledRevenue.add(amount);
             }
         }
@@ -217,14 +218,14 @@ public class PaymentService {
     // Existing PaymentService methods
     public List<Payment> getPendingPayments() {
         log.info("Fetching pending payments");
-        return paymentRepository.findByStatus("PENDING");
+        return paymentRepository.findByStatus(PaymentStatus.PENDING.name());
     }
 
     public Payment refundPayment(Integer paymentId) {
         log.info("Refunding payment with ID: {}", paymentId);
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
-        payment.setStatus("REFUNDED");
+        payment.setStatus(PaymentStatus.REFUNDED.name());
         payment.setUpdatedAt(Instant.now());
         return paymentRepository.save(payment);
     }
@@ -233,8 +234,6 @@ public class PaymentService {
         log.info("Fetching all transactions");
         return paymentRepository.findAll();
     }
-
-
 
     // hóa đơn
 
@@ -298,8 +297,5 @@ public class PaymentService {
 
         return response;
     }
-
-
-
-
 }
+

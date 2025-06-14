@@ -8,12 +8,14 @@ import com.example.FoodHub.entity.User;
 import com.example.FoodHub.entity.WorkSchedule;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
+import com.example.FoodHub.mapper.WorkScheduleMapper;
 import com.example.FoodHub.repository.UserRepository;
 import com.example.FoodHub.repository.WorkScheduleRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -26,8 +28,8 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WorkScheduleService {
     WorkScheduleRepository workScheduleRepository;
-
     UserRepository userRepository;
+    WorkScheduleMapper workScheduleMapper;
 
     public List<ShiftResponse> getShiftsForWeek(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
@@ -101,5 +103,33 @@ public class WorkScheduleService {
         dto.setDate(schedule.getWorkDate().toString());
         dto.setShift(schedule.getShiftType().toLowerCase());
         return dto;
+    }
+
+    public ShiftResponse getMyWorkScheduleToday(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        List<WorkSchedule> schedules = workScheduleRepository.findByUserIdAndDateFromToday(user.getId(), LocalDate.now());
+        if (schedules.isEmpty()) {
+            throw new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND);
+        }
+
+        return workScheduleMapper.toShiftResponse(schedules.get(0));
+    }
+
+    public List<ShiftResponse> getMyWorkSchedule(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        List<WorkSchedule> schedules = workScheduleRepository.findByUserId(user.getId());
+        if (schedules.isEmpty()) {
+            throw new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND);
+        }
+
+        return schedules.stream()
+                .map(workScheduleMapper::toShiftResponse)
+                .collect(Collectors.toList());
     }
 }
