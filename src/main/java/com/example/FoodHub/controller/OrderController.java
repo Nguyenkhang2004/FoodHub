@@ -2,7 +2,6 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
-import com.example.FoodHub.dto.response.OrderItemResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.service.RestaurantOrderService;
 import jakarta.validation.Valid;
@@ -15,10 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
@@ -94,7 +90,7 @@ public class OrderController {
             @RequestParam(required = false) String tableNumber,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam Instant startTime,
+            @RequestParam String startTime,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,

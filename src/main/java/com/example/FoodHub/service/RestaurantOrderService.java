@@ -24,9 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -72,16 +72,27 @@ public class RestaurantOrderService {
             String tableNumber,
             BigDecimal minPrice,
             BigDecimal maxPrice,
-            Instant startTime,
+            String startTime,
             Pageable pageable) {
 
         log.info("Fetching orders for area: {}, status: {}, tableId: {}, minPrice: {}, maxPrice: {}, startTime: {}",
                 area, status, tableNumber, minPrice, maxPrice, startTime);
 
-        // Convert tableId to tableNumber if provided
+        // Convert startTime string "HH:mm" to LocalDateTime of today
         LocalDateTime startTimeLocal = null;
-        if (startTime != null) {
-            startTimeLocal = LocalDateTime.ofInstant(startTime, ZoneId.systemDefault());
+        if (startTime != null && !startTime.trim().isEmpty()) {
+            try {
+                // Parse time string "08:30" to LocalTime
+                LocalTime time = LocalTime.parse(startTime.trim(), DateTimeFormatter.ofPattern("HH:mm"));
+
+                // Combine with today's date to create LocalDateTime
+                startTimeLocal = LocalDateTime.of(LocalDate.now(), time);
+
+                log.info("Parsed startTime: {} to LocalDateTime: {}", startTime, startTimeLocal);
+            } catch (DateTimeParseException e) {
+                log.warn("Invalid startTime format: {}. Expected format: HH:mm (e.g., 08:30)", startTime);
+                throw new AppException(ErrorCode.INVALID_TIME_FORMAT);
+            }
         }
 
         // Use OrderSpecifications to filter orders

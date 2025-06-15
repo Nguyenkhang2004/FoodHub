@@ -9,5 +9,7 @@ public class ShiftResponse {
     private String role; // Role name
     private String date; // Work date (YYYY-MM-DD)
     private String shift;
-    private String area; // Area of work
+    private String area;
+    private String startTime;
+    private String endTime;
 }
