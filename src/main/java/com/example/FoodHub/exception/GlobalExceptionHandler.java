@@ -3,11 +3,14 @@ package com.example.FoodHub.exception;
 import com.example.FoodHub.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.expression.AccessException;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
@@ -32,26 +35,26 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessException.class)
-    ResponseEntity<ApiResponse<String>> handleAccessException(AccessException e) {
-        ApiResponse<String> apiResponse = new ApiResponse<>();
+    ResponseEntity<ApiResponse> handleAccessException(AccessException e) {
+        ApiResponse apiResponse = new ApiResponse<>();
         apiResponse.setMessage(ErrorCode.UNAUTHORIZED.getMessage() + " : " + e.getMessage());
         apiResponse.setCode(ErrorCode.UNAUTHORIZED.getCode());
         return ResponseEntity.status(ErrorCode.UNAUTHORIZED.getStatusCode()).body(apiResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ResponseEntity<ApiResponse<String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    ResponseEntity<ApiResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String enumKey = e.getFieldError().getDefaultMessage();
         ErrorCode errorCode = ErrorCode.INVALID_KEY;
         Map<String, Object> attributes = null;
-        try{
+        try {
             errorCode = ErrorCode.valueOf(enumKey);
             var constraintViolation = e.getBindingResult().getAllErrors().getFirst().unwrap(ConstraintViolation.class);
             attributes = constraintViolation.getConstraintDescriptor().getAttributes();
         } catch (IllegalArgumentException ex) {
             // Handle the case where enumKey is not a valid ErrorCode
         }
-        ApiResponse<String> apiResponse = new ApiResponse<>();
+        ApiResponse apiResponse = new ApiResponse<>();
         apiResponse.setMessage(attributes != null ? mapAttribute(errorCode.getMessage(), attributes) : errorCode.getMessage());
         apiResponse.setCode(errorCode.getCode());
         return ResponseEntity.badRequest().body(apiResponse);
@@ -63,5 +66,16 @@ public class GlobalExceptionHandler {
         }
         return message;
     }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ApiResponse<Object>> handleIOException(IOException ex) {
+        ApiResponse<Object> response = ApiResponse.<Object>builder()
+                .code(ErrorCode.IMAGE_UPLOAD_FAILED.getCode())
+                .message(ErrorCode.IMAGE_UPLOAD_FAILED.getMessage() + ": " + ex.getMessage())
+                .result(null)
+                .build();
+        return new ResponseEntity<>(response, ErrorCode.IMAGE_UPLOAD_FAILED.getStatusCode());
+    }
+
 
 }

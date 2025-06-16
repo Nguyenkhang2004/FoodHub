@@ -20,7 +20,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer> {
     User save(User user);
     boolean existsByUsername(String username);
-    boolean existsByEmail(@Email @NotBlank @Size(max = 255) String email);
+    boolean existsByEmail(String email);
     List<User> findAll();
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
@@ -39,6 +39,4 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT COUNT(m) > 0 FROM User m WHERE LOWER(TRIM(m.username)) = LOWER(TRIM(:username)) AND m.id != :id")
     boolean existsByNameIgnoreCaseAndIdNot(@Param("username") String username, @Param("id") Integer id);
     List<User> findByRoleName_NameAndStatus(String roleName, String status);
-
-
 }

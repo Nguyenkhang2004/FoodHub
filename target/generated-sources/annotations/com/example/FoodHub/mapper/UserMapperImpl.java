@@ -1,21 +1,16 @@
 package com.example.FoodHub.mapper;
 
+import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
 import com.example.FoodHub.dto.request.UserCreationRequest;
 import com.example.FoodHub.dto.request.UserUpdateRequest;
-import com.example.FoodHub.dto.response.PermissionResponse;
-import com.example.FoodHub.dto.response.RoleResponse;
 import com.example.FoodHub.dto.response.UserResponse;
-import com.example.FoodHub.entity.Permission;
-import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-15T10:07:49+0700",
+    date = "2025-06-16T19:28:41+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.2 (Amazon.com Inc.)"
 )
 @Component
@@ -32,6 +27,7 @@ public class UserMapperImpl implements UserMapper {
         user.username( request.getUsername() );
         user.email( request.getEmail() );
         user.password( request.getPassword() );
+        user.roleName( map( request.getRoleName() ) );
         user.address( request.getAddress() );
         user.phone( request.getPhone() );
 
@@ -46,12 +42,46 @@ public class UserMapperImpl implements UserMapper {
 
         UserResponse.UserResponseBuilder userResponse = UserResponse.builder();
 
+        userResponse.id( user.getId() );
         userResponse.username( user.getUsername() );
         userResponse.email( user.getEmail() );
-        userResponse.roleName( roleToRoleResponse( user.getRoleName() ) );
+        userResponse.phone( user.getPhone() );
+        userResponse.status( user.getStatus() );
+        userResponse.address( user.getAddress() );
         userResponse.registrationDate( user.getRegistrationDate() );
 
+        userResponse.roleName( user.getRoleName() != null ? toRoleResponse(user.getRoleName()) : null );
+
         return userResponse.build();
+    }
+
+    @Override
+    public void updateUser(User user, UserCreationRequest request) {
+        if ( request == null ) {
+            return;
+        }
+
+        user.setUsername( request.getUsername() );
+        user.setEmail( request.getEmail() );
+        user.setPassword( request.getPassword() );
+        user.setRoleName( map( request.getRoleName() ) );
+        user.setAddress( request.getAddress() );
+        user.setPhone( request.getPhone() );
+    }
+
+    @Override
+    public void updateStaff(User user, EmployeeUpdateRequest request) {
+        if ( request == null ) {
+            return;
+        }
+
+        user.setUsername( request.getUsername() );
+        user.setEmail( request.getEmail() );
+        user.setRoleName( map( request.getRoleName() ) );
+        user.setStatus( request.getStatus() );
+        user.setAddress( request.getAddress() );
+        user.setPhone( request.getPhone() );
+        user.setOauthProvider( request.getOauthProvider() );
     }
 
     @Override
@@ -63,45 +93,5 @@ public class UserMapperImpl implements UserMapper {
         user.setEmail( request.getEmail() );
         user.setPassword( request.getPassword() );
         user.setAddress( request.getAddress() );
-    }
-
-    protected PermissionResponse permissionToPermissionResponse(Permission permission) {
-        if ( permission == null ) {
-            return null;
-        }
-
-        PermissionResponse.PermissionResponseBuilder permissionResponse = PermissionResponse.builder();
-
-        permissionResponse.name( permission.getName() );
-        permissionResponse.description( permission.getDescription() );
-
-        return permissionResponse.build();
-    }
-
-    protected Set<PermissionResponse> permissionSetToPermissionResponseSet(Set<Permission> set) {
-        if ( set == null ) {
-            return null;
-        }
-
-        Set<PermissionResponse> set1 = new LinkedHashSet<PermissionResponse>( Math.max( (int) ( set.size() / .75f ) + 1, 16 ) );
-        for ( Permission permission : set ) {
-            set1.add( permissionToPermissionResponse( permission ) );
-        }
-
-        return set1;
-    }
-
-    protected RoleResponse roleToRoleResponse(Role role) {
-        if ( role == null ) {
-            return null;
-        }
-
-        RoleResponse.RoleResponseBuilder roleResponse = RoleResponse.builder();
-
-        roleResponse.name( role.getName() );
-        roleResponse.description( role.getDescription() );
-        roleResponse.permissions( permissionSetToPermissionResponseSet( role.getPermissions() ) );
-
-        return roleResponse.build();
     }
 }

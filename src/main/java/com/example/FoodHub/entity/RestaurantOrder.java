@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -24,7 +23,6 @@ public class RestaurantOrder {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -53,13 +51,17 @@ public class RestaurantOrder {
     @OneToMany(mappedBy = "order")
     private Set<Payment> payments = new LinkedHashSet<>();
 
-    // Thêm @Formula để tính totalAmount
-    @Formula("(SELECT COALESCE(SUM(oi.quantity * oi.price), 0) FROM order_item oi WHERE oi.order_id = id)")
+    @NotNull
+    @ColumnDefault("0.00")
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "table_id")
     private RestaurantTable table;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
 }

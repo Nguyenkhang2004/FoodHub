@@ -16,6 +16,7 @@
 </head>
 
 <body>
+
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
   <div class="brand">
@@ -185,6 +186,7 @@
         Chuyên món lẩu và nướng<br>
         📞 Hotline: 1900-1234 | 🌐 www.foodhub.vn<br>
         <em>Cảm ơn quý khách đã sử dụng dịch vụ!</em>
+        <button id="downloadBtn" class="submit-btn" style="display: none;">📥 Tải Hóa Đơn</button>
       </div>
     </div>
   </div>
@@ -210,8 +212,6 @@
       </form>
     </div>
   </div>
-
-
 
   <!-- Transactions Section -->
   <div class="section" id="transactionsSection">
@@ -257,23 +257,21 @@
         <button class="filter-btn" id="filterBtn" onclick="showFilterMenu()">Lọc</button>
         <div class="filter-menu" id="filter-menu" style="display: none;">
           <div class="filter-item" onclick="filterTransactionsByStatus('all')">Tất cả</div>
-          <div class="filter-item" onclick="filterTransactionsByStatus('pending')">Đang chờ</div>
-          <div class="filter-item" onclick="filterTransactionsByStatus('cancelled')">Đã hủy</div>
-          <div class="filter-item" onclick="filterTransactionsByStatus('paid')">Đã thanh toán</div>
+          <div class="filter-item" onclick="filterTransactionsByStatus('PENDING')">Đang chờ</div>
+          <div class="filter-item" onclick="filterTransactionsByStatus('CANCELLED')">Đã hủy</div>
+          <div class="filter-item" onclick="filterTransactionsByStatus('PAID')">Đã thanh toán</div>
         </div>
       </div>
     </div>
-    <!-- Phần Search -->
+
+    <!-- Phần Search (giữ nguyên) -->
     <div class="search-container" style="display: none;" id="searchContainer">
       <h3>🔎 Tìm Kiếm Giao Dịch</h3>
-      <div class="search-input-group">
-        <div class="input-wrapper" style="position: relative; display: inline-block; width: 70%;">
-          <input type="text" id="searchTransactionInput" class="form-input" placeholder="Nhập Order ID, Transaction ID..." oninput="fetchSuggestions()" onkeypress="if(event.key === 'Enter') searchTransactions()">
-          <span class="icon">🔎</span>
-          <div id="suggestions" class="suggestions" style="display: none;"></div>
-        </div>
-        <button type="button" id="searchTransactionBtn" class="submit-btn" style="display: inline-block; margin-left: 10px; vertical-align: top;">Tìm Kiếm</button>
+      <div class="input-wrapper">
+        <input type="text" id="searchTransactionInput" class="form-input" placeholder="Nhập Order ID, Transaction ID...">
+        <span class="icon">🔎</span>
       </div>
+      <button type="button" id="searchTransactionBtn" class="submit-btn">Tìm Kiêm</button>
     </div>
     <div id="transactionsResult">
       <table id="transactionsTable" style="display: none;">
@@ -294,7 +292,6 @@
       <div id="transactionCount" style="margin-top: 10px;"></div>
     </div>
   </div>
-
 
   <!-- Revenue Section -->
   <div class="section" id="revenueSection">
@@ -333,16 +330,20 @@
         <button type="submit" class="submit-btn">✨ Xem Doanh Thu</button>
       </form>
     </div>
-
     <div id="revenueResult"></div>
   </div>
 </div>
 
+
+<!-- Thư viện Font Awesome -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <!-- Thư viện html2pdf -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script src="https://momentjs.com/downloads/moment.min.js"></script>
 <script src="https://momentjs.com/downloads/moment-timezone-with-data-10-years.min.js"></script>
+
+
 <script>
   // Hàm showSection
   function showSection(sectionId) {
@@ -359,12 +360,15 @@
   document.getElementById("paymentBtn").addEventListener("click", processPayment);
 
   // Tải file PDF hóa đơn dựa trên orderId
-  function downloadInvoicePdf(orderId) {
-    const link = document.createElement('a');
-    link.href = `${API_BASE_URL}/invoice/${orderId}/pdf`;
-    link.download = `invoice_${orderId}.pdf`;
-    link.click();
-  }
+ function downloadInvoicePdf(orderId) {
+  const link = document.createElement('a');
+  link.href = `${API_BASE_URL}/invoice/${orderId}/pdf`;
+  link.download = `invoice_${orderId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 
   // Hiển thị chi tiết hóa đơn từ dữ liệu API
   function displayInvoice(invoiceData) {
@@ -714,7 +718,10 @@
   }
 
   // Làm mới danh sách giao dịch
-  async function refreshTransactions() {
+
+  // Cập nhật refreshTransactions
+// Làm mới danh sách giao dịch khi chọn ngày
+async function refreshTransactions() {
     const startDateInput = document.getElementById('transactionsStartDateInput').value;
     const endDateInput = document.getElementById('transactionsEndDateInput').value;
     const start = new Date(startDateInput);
@@ -725,132 +732,132 @@
     const endIso = end.toISOString();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`);
-      const data = await response.json();
+        const response = await fetch(`${API_BASE_URL}/transactions?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`);
+        const data = await response.json();
 
-      if (response.ok) {
-        let transactions = data.result || [];
-        const tbody = document.getElementById("transactionsBody");
-        tbody.innerHTML = "";
-        const transactionCount = document.getElementById("transactionCount");
-        if (transactions.length > 0) {
-          document.getElementById("transactionsTable").style.display = "table";
-          document.getElementById("filterContainer").style.display = "block";
-          document.getElementById("searchContainer").style.display = "block";
-          transactions.forEach(tx => {
-            const row = document.createElement("tr");
-            let actionButtons = `
-              <button class="action-btn process-btn" onclick="selectOrder(${tx.orderId}, 'payment')">Process</button>
-              <button class="action-btn cancel-btn" onclick="selectOrder(${tx.orderId}, 'cancel')">Cancel</button>
-            `;
-            if (tx.status === "PAID") {
-              actionButtons += `
-                <button class="btn btn-outline-primary" onclick="downloadInvoicePdf(${tx.orderId})">
-                  🖨️ In Hóa Đơn
-                </button>
-              `;
+        if (response.ok) {
+            let transactions = data.result || [];
+            const tbody = document.getElementById("transactionsBody");
+            tbody.innerHTML = "";
+            const transactionCount = document.getElementById("transactionCount");
+            if (transactions.length > 0) {
+                document.getElementById("transactionsTable").style.display = "table";
+                document.getElementById("filterContainer").style.display = "block";
+                document.getElementById("searchContainer").style.display = "block";
+                transactions.forEach(tx => {
+                    const row = document.createElement("tr");
+                    let actionButtons = `
+                        <button class="action-btn process-btn" onclick="selectOrder(${tx.orderId}, 'payment')">Process</button>
+                        <button class="action-btn cancel-btn" onclick="selectOrder(${tx.orderId}, 'cancel')">Cancel</button>
+                    `;
+                    if (tx.status === "PAID") {
+                        actionButtons += `
+                            <button class="btn btn-outline-primary" onclick="downloadInvoicePdf(${tx.orderId})">
+                                🖨️ In Hóa Đơn
+                            </button>
+                        `;
+                    }
+                    row.innerHTML = `
+                        <td>${tx.orderId || 'N/A'}</td>
+                        <td>${(tx.amount || 0).toLocaleString()}₫</td>
+                        <td>${tx.paymentMethod || 'N/A'}</td>
+                        <td><span style="color: ${tx.status === 'PAID' ? '#2ed573' : tx.status === 'CANCELLED' ? '#ff4757' : '#ff9800'}">${tx.status || 'N/A'}</span></td>
+                        <td>${tx.transactionId || tx.transaction_id || 'N/A'}</td>
+                        <td>${tx.createdAt ? new Date(tx.createdAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
+                        <td>${tx.updatedAt ? new Date(tx.updatedAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
+                        <td class="action-buttons">${actionButtons}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                transactionCount.textContent = `Tổng số hóa đơn: ${transactions.length}`;
+            } else {
+                document.getElementById("transactionsTable").style.display = "none";
+                document.getElementById("filterContainer").style.display = "block";
+                document.getElementById("searchContainer").style.display = "none";
+                transactionCount.textContent = "Không có hóa đơn nào.";
             }
-            row.innerHTML = `
-              <td>${tx.orderId || 'N/A'}</td>
-              <td>${(tx.amount || 0).toLocaleString()}₫</td>
-              <td>${tx.paymentMethod || 'N/A'}</td>
-              <td><span style="color: ${tx.status === 'PAID' ? '#2ed573' : tx.status === 'CANCELLED' ? '#ff4757' : '#ff9800'}">${tx.status || 'N/A'}</span></td>
-              <td>${tx.transactionId || tx.transaction_id || 'N/A'}</td>
-              <td>${tx.createdAt ? new Date(tx.createdAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
-              <td>${tx.updatedAt ? new Date(tx.updatedAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
-              <td class="action-buttons">${actionButtons}</td>
-            `;
-            tbody.appendChild(row);
-          });
-          transactionCount.textContent = `Tổng số hóa đơn: ${transactions.length}`;
         } else {
-          document.getElementById("transactionsTable").style.display = "none";
-          document.getElementById("filterContainer").style.display = "none";
-          document.getElementById("searchContainer").style.display = "none";
-          transactionCount.textContent = "Không có hóa đơn nào.";
+            showError("error", `❌ ${data.message || "Không thể tải giao dịch."}`);
         }
-      } else {
-        showError("error", `❌ ${data.message || "Không thể tải giao dịch."}`);
-      }
     } catch (error) {
-      showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau.");
+        showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau.");
     }
-  }
+}
+
 
   // Tìm kiếm giao dịch
-  async function searchTransactions() {
+
+
+  // Cập nhật searchTransactions
+async function searchTransactions() {
+  const query = document.getElementById('searchTransactionInput').value.trim();
+  if (!query) {
+    showError('error', 'Vui lòng nhập Order ID hoặc Transaction ID!');
+    return;
+  }
+
+  try {
     const startDateInput = document.getElementById('transactionsStartDateInput').value;
     const endDateInput = document.getElementById('transactionsEndDateInput').value;
-    const start = new Date(startDateInput);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDateInput);
-    end.setHours(23, 59, 59, 999);
-    const startIso = start.toISOString();
-    const endIso = end.toISOString();
-    const searchTerm = document.getElementById('searchTransactionInput').value.toLowerCase();
-    const suggestionsDiv = document.getElementById('suggestions'); // Khai báo biến
+    const start = new Date(startDateInput + 'T00:00:00Z');
+    const end = new Date(endDateInput + 'T23:59:59Z');
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/transactions?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`);
-      const data = await response.json();
-      console.log("API Response:", data);
+    const response = await fetch(`${API_BASE_URL}/transactions?start=${start.toISOString()}&end=${end.toISOString()}`);
+    const data = await response.json();
 
-      if (response.ok) {
-        let transactions = data.result || [];
-        // Lọc client-side theo orderId hoặc transactionId
-        if (searchTerm) {
-          transactions = transactions.filter(tx =>
-            tx.orderId?.toString().includes(searchTerm) ||
-            tx.transactionId?.toLowerCase().includes(searchTerm)
-          );
-        }
-        const tbody = document.getElementById("transactionsBody");
-        tbody.innerHTML = "";
-        const transactionCount = document.getElementById("transactionCount");
-        if (transactions.length > 0) {
-          document.getElementById("transactionsTable").style.display = "table";
-          document.getElementById("filterContainer").style.display = "block";
-          document.getElementById("searchContainer").style.display = "block";
-          transactions.forEach(tx => {
-            const row = document.createElement("tr");
-            let actionButtons = `
-              <button class="action-btn process-btn" onclick="selectOrder(${tx.orderId}, 'payment')">Process</button>
-              <button class="action-btn cancel-btn" onclick="selectOrder(${tx.orderId}, 'cancel')">Cancel</button>
+    if (response.ok) {
+      let transactions = data.result || [];
+      const tbody = document.getElementById("transactionsBody");
+      tbody.innerHTML = "";
+      const transactionCount = document.getElementById("transactionCount");
+      transactions = transactions.filter(tx =>
+        tx.orderId.toString().includes(query) ||
+        (tx.transactionId && tx.transactionId.includes(query))
+      );
+      if (transactions.length > 0) {
+        document.getElementById("transactionsTable").style.display = "table";
+        document.getElementById("filterContainer").style.display = "block";
+        document.getElementById("searchContainer").style.display = "block";
+        transactions.forEach(tx => {
+          const row = document.createElement("tr");
+          let actionButtons = `
+            <button class="action-btn process-btn" onclick="selectOrder(${tx.orderId}, 'payment')">Process</button>
+            <button class="action-btn cancel-btn" onclick="selectOrder(${tx.orderId}, 'cancel')">Cancel</button>
+          `;
+          if (tx.status === "PAID") {
+            actionButtons += `
+              <button class="btn btn-outline-primary" onclick="downloadInvoicePdf(${tx.orderId})">
+                🖨️ In Hóa Đơn
+              </button>
             `;
-            if (tx.status === "PAID") {
-              actionButtons += `
-                <button class="btn btn-outline-primary" onclick="downloadInvoicePdf(${tx.orderId})">
-                  🖨️ In Hóa Đơn
-                </button>
-              `;
-            }
-            row.innerHTML = `
-              <td>${tx.orderId || 'N/A'}</td>
-              <td>${(tx.amount || 0).toLocaleString()}₫</td>
-              <td>${tx.paymentMethod || 'N/A'}</td>
-              <td><span style="color: ${tx.status === 'PAID' ? '#2ed573' : tx.status === 'CANCELLED' ? '#ff4757' : '#ff9800'}">${tx.status || 'N/A'}</span></td>
-              <td>${tx.transactionId || tx.transaction_id || 'N/A'}</td>
-              <td>${tx.createdAt ? new Date(tx.createdAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
-              <td>${tx.updatedAt ? new Date(tx.updatedAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
-              <td class="action-buttons">${actionButtons}</td>
-            `;
-            tbody.appendChild(row);
-          });
-          transactionCount.textContent = `Tổng số giao dịch: ${transactions.length} (Kết quả tìm kiếm)`;
-        } else {
-          document.getElementById("transactionsTable").style.display = "none";
-          document.getElementById("filterContainer").style.display = "block";
-          document.getElementById("searchContainer").style.display = "block";
-          transactionCount.textContent = "Không tìm thấy giao dịch nào.";
-        }
+          }
+          row.innerHTML = `
+            <td>${tx.orderId || 'N/A'}</td>
+            <td>${(tx.amount || 0).toLocaleString()}₫</td>
+            <td>${tx.paymentMethod || 'N/A'}</td>
+            <td><span style="color: ${tx.status === 'PAID' ? '#2ed573' : tx.status === 'CANCELLED' ? '#ff4757' : '#ff9800'}">${tx.status || 'N/A'}</span></td>
+            <td>${tx.transactionId || tx.transaction_id || 'N/A'}</td>
+            <td>${tx.createdAt ? new Date(tx.createdAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
+            <td>${tx.updatedAt ? new Date(tx.updatedAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
+            <td class="action-buttons">${actionButtons}</td>
+          `;
+          tbody.appendChild(row);
+        });
+        transactionCount.textContent = `Tổng số hóa đơn tìm thấy: ${transactions.length}`;
       } else {
-        showError("error", `❌ ${data.message || "Không thể tải giao dịch."}`);
+        document.getElementById("transactionsTable").style.display = "none";
+        transactionCount.textContent = "Không tìm thấy hóa đơn nào.";
       }
-    } catch (error) {
-      showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau.");
+    } else {
+      showError("error", `❌ ${data.message || "Không thể tìm kiếm giao dịch."}`);
     }
-    if (suggestionsDiv) suggestionsDiv.style.display = 'none'; // Ẩn gợi ý sau khi tìm kiếm
+  } catch (error) {
+    showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau.");
   }
+      if (suggestionsDiv) suggestionsDiv.style.display = 'none'; // Ẩn gợi ý sau khi tìm kiếm
+
+}
+
 
   // Hiển thị/ẩn menu lọc
   function showFilterMenu() {
@@ -875,7 +882,7 @@
   }
 
   // Lọc giao dịch theo trạng thái
-  async function filterTransactionsByStatus(status) {
+async function filterTransactionsByStatus(status) {
     const startDateInput = document.getElementById('transactionsStartDateInput').value;
     const endDateInput = document.getElementById('transactionsEndDateInput').value;
     const start = new Date(startDateInput);
@@ -886,63 +893,57 @@
     const endIso = end.toISOString();
 
     try {
-      let url = `${API_BASE_URL}/transactions?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`;
-      if (status !== 'all') {
-        url += `&status=${encodeURIComponent(status)}`;
-      }
-      console.log("Fetching URL:", url);
-      const response = await fetch(url);
-      const data = await response.json();
-      console.log("API Response:", data);
+        const response = await fetch(`${API_BASE_URL}/transactions?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}&status=${encodeURIComponent(status)}`);
+        const data = await response.json();
 
-      if (response.ok) {
-        let transactions = data.result || [];
-        const tbody = document.getElementById("transactionsBody");
-        tbody.innerHTML = "";
-        const transactionCount = document.getElementById("transactionCount");
-        if (transactions.length > 0) {
-          document.getElementById("transactionsTable").style.display = "table";
-          document.getElementById("filterContainer").style.display = "block";
-          document.getElementById("searchContainer").style.display = "block";
-          transactions.forEach(tx => {
-            const row = document.createElement("tr");
-            let actionButtons = `
-              <button class="action-btn process-btn" onclick="selectOrder(${tx.orderId}, 'payment')">Process</button>
-              <button class="action-btn cancel-btn" onclick="selectOrder(${tx.orderId}, 'cancel')">Cancel</button>
-            `;
-            if (tx.status === "PAID") {
-              actionButtons += `
-                <button class="btn btn-outline-primary" onclick="downloadInvoicePdf(${tx.orderId})">
-                  🖨️ In Hóa Đơn
-                </button>
-              `;
+        if (response.ok) {
+            let transactions = data.result || [];
+            const tbody = document.getElementById("transactionsBody");
+            tbody.innerHTML = "";
+            const transactionCount = document.getElementById("transactionCount");
+            if (transactions.length > 0) {
+                document.getElementById("transactionsTable").style.display = "table";
+                document.getElementById("filterContainer").style.display = "block";
+                document.getElementById("searchContainer").style.display = "block";
+                transactions.forEach(tx => {
+                    const row = document.createElement("tr");
+                    let actionButtons = `
+                        <button class="action-btn process-btn" onclick="selectOrder(${tx.orderId}, 'payment')">Process</button>
+                        <button class="action-btn cancel-btn" onclick="selectOrder(${tx.orderId}, 'cancel')">Cancel</button>
+                    `;
+                    if (tx.status === "PAID") {
+                        actionButtons += `
+                            <button class="btn btn-outline-primary" onclick="downloadInvoicePdf(${tx.orderId})">
+                                🖨️ In Hóa Đơn
+                            </button>
+                        `;
+                    }
+                    row.innerHTML = `
+                        <td>${tx.orderId || 'N/A'}</td>
+                        <td>${(tx.amount || 0).toLocaleString()}₫</td>
+                        <td>${tx.paymentMethod || 'N/A'}</td>
+                        <td><span style="color: ${tx.status === 'PAID' ? '#2ed573' : tx.status === 'CANCELLED' ? '#ff4757' : '#ff9800'}">${tx.status || 'N/A'}</span></td>
+                        <td>${tx.transactionId || tx.transaction_id || 'N/A'}</td>
+                        <td>${tx.createdAt ? new Date(tx.createdAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
+                        <td>${tx.updatedAt ? new Date(tx.updatedAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
+                        <td class="action-buttons">${actionButtons}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                transactionCount.textContent = `Tổng số hóa đơn: ${transactions.length} (Đã lọc: ${status === 'all' ? 'Tất cả' : status.charAt(0).toUpperCase() + status.slice(1)})`;
+            } else {
+                document.getElementById("transactionsTable").style.display = "none";
+                document.getElementById("filterContainer").style.display = "block";
+                document.getElementById("searchContainer").style.display = "none";
+                transactionCount.textContent = `Không có hóa đơn nào với trạng thái ${status === 'all' ? 'Tất cả' : status.charAt(0).toUpperCase() + status.slice(1)}.`;
             }
-            row.innerHTML = `
-              <td>${tx.orderId || 'N/A'}</td>
-              <td>${(tx.amount || 0).toLocaleString()}₫</td>
-              <td>${tx.paymentMethod || 'N/A'}</td>
-              <td><span style="color: ${tx.status === 'PAID' ? '#2ed573' : tx.status === 'CANCELLED' ? '#ff4757' : '#ff9800'}">${tx.status || 'N/A'}</span></td>
-              <td>${tx.transactionId || tx.transaction_id || 'N/A'}</td>
-              <td>${tx.createdAt ? new Date(tx.createdAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
-              <td>${tx.updatedAt ? new Date(tx.updatedAt).toISOString().replace('T', ' ').split('.')[0] : 'N/A'}</td>
-              <td class="action-buttons">${actionButtons}</td>
-            `;
-            tbody.appendChild(row);
-          });
-          transactionCount.textContent = `Tổng số hóa đơn: ${transactions.length} (Đã lọc: ${status === 'all' ? 'Tất cả' : status.charAt(0).toUpperCase() + status.slice(1)})`;
         } else {
-          document.getElementById("transactionsTable").style.display = "none";
-          document.getElementById("filterContainer").style.display = "block";
-          document.getElementById("searchContainer").style.display = "none";
-          transactionCount.textContent = `Không có hóa đơn nào với trạng thái ${status === 'all' ? 'Tất cả' : status.charAt(0).toUpperCase() + status.slice(1)}.`;
+            showError("error", `❌ ${data.message || "Không thể tải giao dịch."}`);
         }
-      } else {
-        showError("error", `❌ ${data.message || "Không thể tải giao dịch."}`);
-      }
     } catch (error) {
-      showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau. Chi tiết: " + error.message);
+        showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau.");
     }
-  }
+}
 
   // Chọn đơn hàng để xử lý thanh toán hoặc hủy
   function selectOrder(orderId, section) {
@@ -981,53 +982,57 @@
   });
 
   // Lấy gợi ý tìm kiếm
-  async function fetchSuggestions() {
-    const startDateInput = document.getElementById('transactionsStartDateInput').value;
-    const endDateInput = document.getElementById('transactionsEndDateInput').value;
-    const start = new Date(startDateInput);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDateInput);
-    end.setHours(23, 59, 59, 999);
-    const startIso = start.toISOString();
-    const endIso = end.toISOString();
-    const query = document.getElementById('searchTransactionInput').value.trim();
 
-    if (query.length < 1) {
-      document.getElementById('suggestions').style.display = 'none';
-      return;
-    }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/transactions/suggestions?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}&query=${encodeURIComponent(query)}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        const suggestions = data.result || [];
-        const suggestionsDiv = document.getElementById('suggestions');
-        suggestionsDiv.innerHTML = '';
-        if (suggestions.length > 0) {
-          suggestions.forEach(suggestion => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = suggestion;
-            div.onclick = () => {
-              document.getElementById('searchTransactionInput').value = suggestion.split(' - ')[0];
-              suggestionsDiv.style.display = 'none';
-              searchTransactions();
-            };
-            suggestionsDiv.appendChild(div);
-          });
-          suggestionsDiv.style.display = 'block';
-        } else {
-          suggestionsDiv.style.display = 'none';
-        }
-      } else {
-        showError("error", `❌ ${data.message || "Không thể tải gợi ý."}`);
-      }
-    } catch (error) {
-      showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau.");
-    }
+ async function fetchSuggestions() {
+  const query = document.getElementById('searchTransactionInput').value.trim();
+  if (!query) {
+    document.getElementById('suggestions').style.display = 'none';
+    return;
   }
+
+  const startDateInput = document.getElementById('transactionsStartDateInput').value;
+  const endDateInput = document.getElementById('transactionsEndDateInput').value;
+  const start = new Date(startDateInput + 'T00:00:00Z');
+  const end = new Date(endDateInput + 'T23:59:59Z');
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/transactions?start=${start.toISOString()}&end=${end.toISOString()}`);
+    const data = await response.json();
+
+    if (response.ok) {
+      const transactions = data.result || [];
+      const suggestions = transactions
+        .filter(tx => tx.orderId.toString().includes(query) || (tx.transactionId && tx.transactionId.includes(query)))
+        .map(tx => `${tx.orderId} - ${tx.transactionId || 'N/A'}`)
+        .slice(0, 5); // Giới hạn 5 gợi ý
+
+      const suggestionsDiv = document.getElementById('suggestions');
+      suggestionsDiv.innerHTML = '';
+      if (suggestions.length > 0) {
+        suggestions.forEach(suggestion => {
+          const div = document.createElement('div');
+          div.className = 'suggestion-item';
+          div.textContent = suggestion;
+          div.onclick = () => {
+            document.getElementById('searchTransactionInput').value = suggestion.split(' - ')[0];
+            suggestionsDiv.style.display = 'none';
+            searchTransactions();
+          };
+          suggestionsDiv.appendChild(div);
+        });
+        suggestionsDiv.style.display = 'block';
+      } else {
+        suggestionsDiv.style.display = 'none';
+      }
+    } else {
+      showError("error", `❌ ${data.message || "Không thể tải gợi ý."}`);
+    }
+  } catch (error) {
+    showError("error", "❌ Lỗi kết nối hệ thống, vui lòng thử lại sau.");
+  }
+}
+
 
   // Làm mới thống kê doanh thu
   async function refreshRevenue() {
