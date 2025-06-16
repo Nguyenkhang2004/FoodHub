@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +39,6 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final MenuItemRepository menuItemRepository;
     // Process payment for an order
-
 
 
     @Transactional
@@ -140,6 +141,71 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
+
+    // Hàm mới: Lấy giao dịch theo khoảng thời gian và trạng thái
+    public List<PaymentResponse> getTransactionsByDateAndStatus(Instant start, Instant end, String status) {
+        log.info("Fetching transactions from {} to {} with status {}", start, end, status);
+        if (end.isBefore(start)) {
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        }
+        List<Payment> payments = paymentRepository.findByCreatedAtBetweenAndStatus(start, end, status);
+        return payments.stream()
+                .map(this::mapToPaymentResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Thêm phương thức search theo orderId
+    public List<PaymentResponse> searchByOrderId(Integer orderId) {
+        log.info("Searching payments by order ID: {}", orderId);
+        return paymentRepository.findByOrderId(orderId)
+                .map(payment -> List.of(mapToPaymentResponse(payment)))
+                .orElse(List.of());
+    }
+
+    // Thêm phương thức search theo transactionId
+    public List<PaymentResponse> searchByTransactionId(String transactionId) {
+        log.info("Searching payments by transaction ID: {}", transactionId);
+        List<Payment> payments = paymentRepository.findByTransactionIdContaining(transactionId);
+        return payments.stream()
+                .map(this::mapToPaymentResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<String> getTransactionSuggestions(Instant start, Instant end, String query) {
+        log.info("Fetching transaction suggestions from {} to {} with query {}", start, end, query);
+        if (end.isBefore(start)) {
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        }
+        List<Payment> payments = paymentRepository.findByCreatedAtBetween(start, end);
+        return payments.stream()
+                .filter(p -> (String.valueOf(p.getOrder().getId()).toLowerCase().contains(query != null ? query.toLowerCase() : "")) // Sử dụng order.getId()
+                        || (p.getTransactionId() != null && p.getTransactionId().toLowerCase().contains(query != null ? query.toLowerCase() : "")))
+                .map(p -> String.valueOf(p.getOrder().getId()) + " - " + (p.getTransactionId() != null ? p.getTransactionId() : "N/A"))
+                .distinct()
+                .limit(5) // Giới hạn 5 gợi ý
+                .collect(Collectors.toList());
+    }
+
+    // Thêm phương thức autocomplete
+    public List<PaymentResponse> getSuggestions(String query, String type) {
+        log.info("Fetching suggestions for query: {}, type: {}", query, type);
+        List<Payment> payments;
+        if ("orderId".equalsIgnoreCase(type)) {
+            payments = paymentRepository.findSuggestionsByOrderId(query);
+        } else if ("transactionId".equalsIgnoreCase(type)) {
+            payments = paymentRepository.findSuggestionsByTransactionId(query);
+        } else {
+            List<Payment> orderSuggestions = paymentRepository.findSuggestionsByOrderId(query);
+            List<Payment> transactionSuggestions = paymentRepository.findSuggestionsByTransactionId(query);
+            orderSuggestions.addAll(transactionSuggestions);
+            payments = orderSuggestions;
+        }
+        return payments.stream()
+                .map(this::mapToPaymentResponse)
+                .collect(Collectors.toList());
+    }
+
     // Get total revenue by date
     public BigDecimal getTotalRevenueByDate(Instant date) {
         log.info("Fetching total revenue for date: {}", date);
@@ -234,11 +300,6 @@ public class PaymentService {
         return paymentRepository.findAll();
     }
 
-
-
-    // hóa đơn
-
-    // Phương thức mới: Lấy thông tin hóa đơn
     public InvoiceResponse getOrderDetails(Integer orderId) {
         // Lấy thông tin đơn hàng
         RestaurantOrder order = orderRepository.findById(orderId)
@@ -248,40 +309,39 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        // Lấy thông tin bàn (truy cập qua quan hệ)
-        RestaurantTable table = order.getTable(); // Sử dụng getTable() thay vì findById
+
+        System.out.println("Class of updatedAt: " + payment.getUpdatedAt().getClass());
+        System.out.println("Raw updatedAt: " + payment.getUpdatedAt());  //2 cái này để test thôi nhé
+
+        // Lấy thông tin bàn
+        RestaurantTable table = order.getTable();
         if (table == null) {
             throw new AppException(ErrorCode.TABLE_NOT_EXISTED);
         }
 
-        // Lấy thông tin khách hàng (truy cập qua quan hệ)
-        User user = order.getUser(); // Sử dụng getUser() thay vì findById
+        // Lấy thông tin khách hàng
+        User user = order.getUser();
         if (user == null) {
             throw new AppException(ErrorCode.TABLE_NOT_EXISTED);
         }
 
         // Lấy danh sách món ăn
-        // Lấy danh sách món ăn
         List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
         List<Map<String, Object>> orderItems = items.stream().map(item -> {
-            MenuItem menuItem = item.getMenuItem(); // vẫn lấy để lấy tên món
-
+            MenuItem menuItem = item.getMenuItem();
             if (menuItem == null) {
                 throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
             }
-
-            BigDecimal unitPrice = menuItem.getPrice(); // ✅ GIÁ GỐC TỪ MENU
+            BigDecimal unitPrice = menuItem.getPrice();
             int quantity = item.getQuantity();
             BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(quantity));
-
             Map<String, Object> itemMap = new HashMap<>();
             itemMap.put("itemName", menuItem.getName());
             itemMap.put("quantity", quantity);
             itemMap.put("price", unitPrice);
-            itemMap.put("total", total); // nếu bạn muốn hiện tổng tiền từng món
+            itemMap.put("total", total);
             return itemMap;
         }).collect(Collectors.toList());
-
 
         // Tạo response
         InvoiceResponse response = new InvoiceResponse();
@@ -296,10 +356,16 @@ public class PaymentService {
         response.setTransactionId(payment.getTransactionId());
         response.setOrderItems(orderItems);
 
+        // Định dạng paymentDate thành formattedPaymentDate
+        String formattedPaymentDate = payment.getUpdatedAt() != null
+                ? DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                .withZone(ZoneId.of("UTC"))
+                .format(payment.getUpdatedAt())
+                : "N/A";
+
+        response.setFormattedPaymentDate(formattedPaymentDate);
+
         return response;
     }
-
-
-
 
 }
