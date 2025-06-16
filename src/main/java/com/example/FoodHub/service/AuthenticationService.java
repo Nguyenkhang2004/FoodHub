@@ -1,9 +1,6 @@
 package com.example.FoodHub.service;
 
-import com.example.FoodHub.dto.request.AuthenticationRequest;
-import com.example.FoodHub.dto.request.IntrospectRequest;
-import com.example.FoodHub.dto.request.LogoutRequest;
-import com.example.FoodHub.dto.request.RefreshRequest;
+import com.example.FoodHub.dto.request.*;
 import com.example.FoodHub.dto.response.AuthenticationResponse;
 import com.example.FoodHub.dto.response.IntrospectResponse;
 import com.example.FoodHub.entity.InvalidateToken;
@@ -12,6 +9,7 @@ import com.example.FoodHub.entity.User;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.InvalidateTokenRepository;
+import com.example.FoodHub.repository.RestaurantTableRepository;
 import com.example.FoodHub.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -41,6 +39,7 @@ public class AuthenticationService {
     UserRepository userRepository;
     InvalidateTokenRepository invalidateTokenRepository;
     PasswordEncoder passwordEncoder;
+    RestaurantTableRepository tableRepository;
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -54,10 +53,10 @@ public class AuthenticationService {
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
 
-    public String generateToken(User user) {
+    private String generateToken(User user) {
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getUsername())
+                .subject(user.getEmail())
                 .issuer("FoodHub")
                 .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))
                 .issueTime(new Date())
@@ -82,10 +81,47 @@ public class AuthenticationService {
         if (!authenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
+        if (user.getStatus() == null || !user.getStatus().equals("ACTIVE")) {
+            throw new AppException(ErrorCode.USER_NOT_ACTIVE);
+        }
         String token = generateToken(user);
         return AuthenticationResponse.builder()
                 .token(token)
                 .isAuthenticated(authenticated)
+                .build();
+    }
+
+    private String generateScanQRToken(String tableNumber) {
+        JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
+        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                .subject(tableNumber)
+                .issuer("FoodHub")
+                .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))
+                .issueTime(new Date())
+                .jwtID(UUID.randomUUID().toString())
+                .claim("scope", "SCAN_QR")
+                .build();
+        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+        JWSObject jwsObject = new JWSObject(jwsHeader, payload);
+        try {
+            jwsObject.sign(new MACSigner(SIGNER_KEY));
+            return jwsObject.serialize();
+        } catch (JOSEException e) {
+            log.error("Error signing JWT for QR code: {}", e.getMessage());
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public AuthenticationResponse authenticateForScanQR(ScanRequest request){
+        var table = tableRepository.findByTableNumber(request.getTableNumber())
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+        if (table.getStatus() == null || !table.getStatus().equals("AVAILABLE")) {
+            throw new AppException(ErrorCode.TABLE_NOT_AVAILABLE);
+        }
+        String token = generateScanQRToken(table.getTableNumber());
+        return AuthenticationResponse.builder()
+                .token(token)
+                .isAuthenticated(true)
                 .build();
     }
 

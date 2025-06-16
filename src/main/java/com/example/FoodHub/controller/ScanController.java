@@ -19,20 +19,12 @@ public class ScanController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ScanResponse>> scanQRCode(@RequestBody ScanRequest request) {
-        ScanResponse result = scanService.scanQRCode(request);
+        ScanResponse result = scanService.authenticateForScanQR(request);
         ApiResponse<ScanResponse> response = ApiResponse.<ScanResponse>builder()
                 .result(result)
                 .build();
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/sessions/{sessionId}/close")
-    public ResponseEntity<Void> closeSession(@PathVariable Integer sessionId) {
-        try {
-            scanService.closeSession(sessionId);
-            return ResponseEntity.ok().build(); // Trả về 200 OK khi thành công
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build(); // Trả về 400 Bad Request nếu lỗi
-        }
-    }
+
 }

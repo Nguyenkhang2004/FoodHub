@@ -1,25 +1,36 @@
 package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.ScanRequest;
+import com.example.FoodHub.dto.response.AuthenticationResponse;
 import com.example.FoodHub.dto.response.ScanResponse;
 import com.example.FoodHub.entity.QrScanLog;
+import com.example.FoodHub.exception.AppException;
+import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.OrderSessionRepository;
 import com.example.FoodHub.repository.QrScanLogRepository;
 import com.example.FoodHub.repository.RestaurantTableRepository;
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jwt.JWTClaimsSet;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 import com.example.FoodHub.entity.OrderSession;
 import com.example.FoodHub.entity.RestaurantTable;
 import com.example.FoodHub.enums.SessionStatus;
 import com.example.FoodHub.enums.TableStatus;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -27,64 +38,51 @@ public class ScanService {
     RestaurantTableRepository tableRepository;
     OrderSessionRepository sessionRepository;
     QrScanLogRepository qrScanLogRepository;
+    @NonFinal
+    @Value("${jwt.signerKey}")
+    protected String SIGNER_KEY;
 
-    @Transactional
-    public ScanResponse scanQRCode(ScanRequest request) {
-        RestaurantTable table = tableRepository.findById(request.getTableId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid table ID"));
+    @NonFinal
+    @Value("${jwt.valid-duration}")
+    protected long VALID_DURATION;
 
-        if (!table.getQrCode().equals(request.getQrToken())) {
-            throw new IllegalArgumentException("Invalid QR token");
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected long REFRESHABLE_DURATION;
+
+    private String generateScanQRToken(String tableNumber) {
+        JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
+        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                .subject(tableNumber)
+                .issuer("FoodHub")
+                .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))
+                .issueTime(new Date())
+                .jwtID(UUID.randomUUID().toString())
+                .claim("scope", "SCAN_QR")
+                .build();
+        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+        JWSObject jwsObject = new JWSObject(jwsHeader, payload);
+        try {
+            jwsObject.sign(new MACSigner(SIGNER_KEY));
+            return jwsObject.serialize();
+        } catch (JOSEException e) {
+            log.error("Error signing JWT for QR code: {}", e.getMessage());
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
-
-        // Kiểm tra nếu bàn đang bị khóa
-        Optional<OrderSession> lockedSession = sessionRepository.findByTableIdAndStatus(request.getTableId(), SessionStatus.LOCKED.name());
-        if (lockedSession.isPresent()) {
-            throw new IllegalStateException("Bàn đang được sử dụng, vui lòng chờ");
-        }
-
-        // Tìm phiên ACTIVE nếu có
-        Optional<OrderSession> activeSession = sessionRepository.findByTableIdAndStatus(request.getTableId(), SessionStatus.ACTIVE.name());
-        if (activeSession.isPresent() && activeSession.get().getExpiresAt().isAfter(Instant.now())) {
-            // Khóa phiên ngay lập tức
-            activeSession.get().setStatus(SessionStatus.LOCKED.name());
-            sessionRepository.save(activeSession.get());
-
-            QrScanLog log = new QrScanLog();
-            log.setTable(table);
-            log.setSession(activeSession.get());
-            qrScanLogRepository.save(log);
-
-            return new ScanResponse(activeSession.get().getSessionToken(), activeSession.get().getExpiresAt(), "Phiên đã được khóa để đặt món");
-        }
-
-        // Nếu không có phiên ACTIVE hoặc bàn trống, tạo phiên mới và khóa ngay
-        OrderSession session = new OrderSession();
-        session.setTable(table);
-        session.setSessionToken(UUID.randomUUID().toString());
-        session.setStatus(SessionStatus.LOCKED.name()); // Chuyển thẳng sang LOCKED
-        sessionRepository.save(session);
-
-        table.setStatus(TableStatus.OCCUPIED.name());
-        tableRepository.save(table);
-
-        QrScanLog log = new QrScanLog();
-        log.setTable(table);
-        log.setSession(session);
-        qrScanLogRepository.save(log);
-
-        return new ScanResponse(session.getSessionToken(), session.getExpiresAt(), "Phiên đã được tạo và khóa để đặt món");
     }
 
-    @Transactional
-    public void closeSession(Integer sessionId) {
-        OrderSession session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid session ID"));
-        RestaurantTable table = session.getTable();
-
-        session.setStatus(SessionStatus.CLOSED.name());
-        table.setStatus(TableStatus.AVAILABLE.name());
-        sessionRepository.save(session);
-        tableRepository.save(table);
+    public ScanResponse authenticateForScanQR(ScanRequest request){
+        var table = tableRepository.findByTableNumber(request.getTableNumber())
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+        if (table.getStatus() == null || !table.getStatus().equals("AVAILABLE")) {
+            throw new AppException(ErrorCode.TABLE_NOT_AVAILABLE);
+        }
+        String token = generateScanQRToken(table.getTableNumber());
+        return ScanResponse.builder()
+                .scanQRToken(token)
+                .build();
     }
+
+
+
 }

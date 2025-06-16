@@ -26,6 +26,7 @@ public class SecurityConfig {
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
+            "/scan"
     };
 
 
@@ -34,7 +35,7 @@ public class SecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Bỏ qua xác thực cho OPTIONS
-                        .requestMatchers(HttpMethod.POST, "/auth/**", "/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/**", "/users", "/scan").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(customJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))

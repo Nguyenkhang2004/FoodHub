@@ -85,7 +85,7 @@ public class OrderController {
 
     @GetMapping("/work-shift-orders")
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCurrentOrders(
-            @RequestParam String area,
+            @RequestParam(required = false) String area,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tableNumber,
             @RequestParam(required = false) BigDecimal minPrice,

@@ -101,7 +101,8 @@ public enum ErrorCode {
     SHIFT_NOT_FOUND(1044, "Shift not found", HttpStatus.NOT_FOUND),
     PAST_DATE_NOT_ALLOWED(1046, "You cannot create OR delete a shift in the past", HttpStatus.BAD_REQUEST),
     PAST_SHIFT_TIME(1048, "You cannot create a shift that has already passed", HttpStatus.BAD_REQUEST),
-    INVALID_TIME_FORMAT(1050, "Invalid time format, must be HH:mm", HttpStatus.BAD_REQUEST)
+    INVALID_TIME_FORMAT(1050, "Invalid time format, must be HH:mm", HttpStatus.BAD_REQUEST),
+    USER_NOT_ACTIVE(1052, "User is not active", HttpStatus.BAD_REQUEST)
     ;
 
     private int code;

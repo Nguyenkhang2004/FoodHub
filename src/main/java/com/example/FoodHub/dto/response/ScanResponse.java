@@ -10,7 +10,5 @@ import java.time.Instant;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ScanResponse {
-    String sessionToken;
-    Instant expiresAt;
-    String message;
+    String scanQRToken;
 }
