@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.text.ParseException;
@@ -57,7 +58,7 @@ public class AuthenticationService {
     public String generateToken(User user) {
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getUsername())
+                .subject(user.getEmail())
                 .issuer("FoodHub")
                 .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))
                 .issueTime(new Date())
@@ -76,7 +77,7 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        var user = userRepository.findByUsername(request.getUsername())
+        var user = userRepository.findByEmail(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
@@ -158,5 +159,17 @@ public class AuthenticationService {
             role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
         }
         return stringJoiner.toString();
+    }
+
+    public AuthenticationResponse authenticateByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        String token = generateToken(user); // ✅ Gọi lại chính method của class này
+
+        return AuthenticationResponse.builder()
+                .token(token)
+                .isAuthenticated(true)
+                .build();
     }
 }

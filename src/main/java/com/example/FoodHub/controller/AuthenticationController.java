@@ -13,10 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 
@@ -24,18 +21,24 @@ import java.text.ParseException;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://127.0.0.1:5500") // Cho phép CORS nếu cần (tùy môi trường)
+
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+
 public class AuthenticationController {
     AuthenticationService authenticationService;
     UserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthenticationResponse>> login(@RequestBody AuthenticationRequest request){
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> login(@RequestBody AuthenticationRequest request) {
         AuthenticationResponse result = authenticationService.authenticate(request);
-        ApiResponse<AuthenticationResponse> response = ApiResponse.<AuthenticationResponse>builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok(ApiResponse.<AuthenticationResponse>builder().result(result).build());
+    }
+
+    @PostMapping("/send-otp")
+    public ResponseEntity<ApiResponse<Void>> sendOtp(@RequestBody UserCreationRequest request) {
+        userService.sendOtp(request);
+        return ResponseEntity.ok(ApiResponse.<Void>builder().message("OTP sent to email").build());
     }
 
     @PostMapping("/verify-otp")
@@ -47,26 +50,18 @@ public class AuthenticationController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestBody LogoutRequest request) throws ParseException, JOSEException {
         authenticationService.logout(request);
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
-                .build();
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok(ApiResponse.<Void>builder().build());
     }
 
     @PostMapping("/introspect")
     public ResponseEntity<ApiResponse<IntrospectResponse>> introspect(@RequestBody IntrospectRequest request) throws ParseException, JOSEException {
         IntrospectResponse result = authenticationService.introspect(request);
-        ApiResponse<IntrospectResponse> response = ApiResponse.<IntrospectResponse>builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok(ApiResponse.<IntrospectResponse>builder().result(result).build());
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthenticationResponse>> refresh(@RequestBody RefreshRequest request) throws ParseException, JOSEException {
         AuthenticationResponse result = authenticationService.refreshToken(request);
-        ApiResponse<AuthenticationResponse> response = ApiResponse.<AuthenticationResponse>builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok(ApiResponse.<AuthenticationResponse>builder().result(result).build());
     }
 }

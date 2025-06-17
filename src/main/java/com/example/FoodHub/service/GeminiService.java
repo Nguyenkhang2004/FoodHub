@@ -42,7 +42,7 @@ public class GeminiService {
         handlers.put("khai vị đắt nhất", msg -> handleMostExpensiveByCategory("Khai vị"));
         handlers.put("đồ uống rẻ nhất", msg -> handleCheapestByCategory("Đồ uống"));
         handlers.put("combo ngon nhất", msg -> handleComboRecommendation());
-        // ...
+
     }
 
     public String generateReply(String userMessage) {
