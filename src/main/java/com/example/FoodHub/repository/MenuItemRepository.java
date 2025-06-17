@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page; // Đúng package cho Page
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -70,63 +71,42 @@ Page<MenuItem> findMenuItems(
     // Method để check tồn tại
     boolean existsById(Integer id);
 
-    
 
-    // --------------------------
-    // 🏆 Món đắt nhất / rẻ nhất
-    // --------------------------
+
+    // 🔹 Món đắt nhất và rẻ nhất (tổng thể)
     MenuItem findTopByOrderByPriceDesc();
     MenuItem findTopByOrderByPriceAsc();
 
-    // --------------------------
-    // 🥗 Theo trạng thái (chay, available...)
-    // --------------------------
+    // 🔹 Theo trạng thái (VD: VEGETARIAN, AVAILABLE)
     MenuItem findTopByStatusIgnoreCaseOrderByPriceDesc(String status);
     MenuItem findTopByStatusIgnoreCaseOrderByPriceAsc(String status);
     List<MenuItem> findByStatusIgnoreCase(String status);
     List<MenuItem> findByStatusIgnoreCaseAndPriceLessThanEqual(String status, Integer price);
 
-    // --------------------------
-    // 🍲 Theo danh mục (category name)
-    // --------------------------
-    MenuItem findTopByCategories_NameIgnoreCaseOrderByPriceDesc(String category);
-    MenuItem findTopByCategories_NameIgnoreCaseOrderByPriceAsc(String category);
-    List<MenuItem> findByCategories_NameIgnoreCase(String category);
-    List<MenuItem> findByCategories_NameIgnoreCaseAndPriceLessThanEqual(String category, Integer budget);
+    // 🔹 Theo tên danh mục (VD: 'Lẩu nước', 'Món nướng thịt'...)
+    MenuItem findTopByCategories_NameIgnoreCaseOrderByPriceDesc(String categoryName);
+    MenuItem findTopByCategories_NameIgnoreCaseOrderByPriceAsc(String categoryName);
+    List<MenuItem> findByCategories_NameIgnoreCase(String categoryName);
+    List<MenuItem> findByCategories_NameIgnoreCaseAndPriceLessThanEqual(String categoryName, Integer price);
 
-    // --------------------------
-    // 💰 Theo giá
-    // --------------------------
-    List<MenuItem> findByPriceLessThanEqual(Integer budget);
+    // 🔹 Theo giá
+    List<MenuItem> findByPriceLessThanEqual(Integer price);
     List<MenuItem> findByPriceGreaterThanEqual(Integer price);
-    MenuItem findTopByPriceLessThanEqualOrderByPriceDesc(Integer budget);
-    MenuItem findTopByPriceLessThanEqualOrderByPriceAsc(Integer budget);
+    MenuItem findTopByPriceLessThanEqualOrderByPriceDesc(Integer price);
+    MenuItem findTopByPriceLessThanEqualOrderByPriceAsc(Integer price);
 
-    // --------------------------
-    // 🔤 Theo tên món
-    // --------------------------
+    // 🔹 Theo tên
     List<MenuItem> findByNameContainingIgnoreCase(String keyword);
     List<MenuItem> findByNameStartingWithIgnoreCase(String prefix);
     List<MenuItem> findByNameEndingWithIgnoreCase(String suffix);
 
-    // --------------------------
-    // 🧩 Kết hợp nhiều điều kiện
-    // --------------------------
-    List<MenuItem> findByStatusIgnoreCaseAndCategories_NameIgnoreCase(String status, String category);
-    MenuItem findTopByStatusIgnoreCaseAndCategories_NameIgnoreCaseOrderByPriceAsc(String status, String category);
-    MenuItem findTopByStatusIgnoreCaseAndCategories_NameIgnoreCaseOrderByPriceDesc(String status, String category);
-    List<MenuItem> findByStatusIgnoreCaseAndPriceLessThanEqualAndCategories_NameIgnoreCase(String status, Integer budget, String category);
+    // 🔹 Kết hợp danh mục + trạng thái
+    List<MenuItem> findByStatusIgnoreCaseAndCategories_NameIgnoreCase(String status, String categoryName);
+    MenuItem findTopByStatusIgnoreCaseAndCategories_NameIgnoreCaseOrderByPriceDesc(String status, String categoryName);
+    MenuItem findTopByStatusIgnoreCaseAndCategories_NameIgnoreCaseOrderByPriceAsc(String status, String categoryName);
 
-    // --------------------------
-    // ⏱️ Theo thời gian (nếu entity có trường createdAt / updatedAt)
-    // --------------------------
-    List<MenuItem> findByCreatedAtAfter(LocalDateTime time);
-    List<MenuItem> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
-    MenuItem findTopByOrderByCreatedAtDesc();
+    // 🔹 Kết hợp cả status + category + ngân sách
+    List<MenuItem> findByStatusIgnoreCaseAndPriceLessThanEqualAndCategories_NameIgnoreCase(String status, Integer price, String categoryName);
 
-    // --------------------------
-    // 📊 Tồn tại và đếm
-    // --------------------------
-    long countByStatusIgnoreCase(String status);
-    long countByCategories_NameIgnoreCase(String category);
+
 }

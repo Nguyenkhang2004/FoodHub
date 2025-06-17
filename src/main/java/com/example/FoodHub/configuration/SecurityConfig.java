@@ -43,11 +43,11 @@ public class SecurityConfig {
                                 "/menu", "/menu/**",
                                 "/restaurants", "/restaurants/**",
                                 "/dishes", "/dishes/**",
-                                "/menu-items", "/categories"
+                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST,
-                                "/auth/**", "/users"
+                                "/auth/**", "/users", "/api/gemini/**", "/api/feedback/**"
                         ).permitAll()
 
                         .requestMatchers("/oauth2/**").permitAll()
@@ -63,7 +63,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-//
+
 //    @Bean
 //    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 //        http

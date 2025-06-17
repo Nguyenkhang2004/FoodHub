@@ -150,6 +150,8 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/menu-items")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://127.0.0.1:5500") // Cho phép CORS nếu cần (tùy môi trường)
+
 public class MenuItemController {
 
     private final MenuItemService menuItemService;
