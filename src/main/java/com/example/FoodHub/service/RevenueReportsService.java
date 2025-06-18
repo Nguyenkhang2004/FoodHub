@@ -13,10 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,27 +47,50 @@ public class RevenueReportsService {
                 prevEnd = today.atStartOfDay(utcZone).toInstant();
                 dailyLabels = List.of("6h", "9h", "12h", "15h", "18h", "21h", "24h");
                 break;
+
             case "week":
-                start = today.minusDays(6).atStartOfDay(utcZone).toInstant();
-                end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
-                prevStart = today.minusDays(13).atStartOfDay(utcZone).toInstant();
-                prevEnd = today.minusDays(6).atStartOfDay(utcZone).toInstant();
+                // Tìm thứ 2 của tuần hiện tại
+                LocalDate mondayOfCurrentWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                LocalDate sundayOfCurrentWeek = mondayOfCurrentWeek.plusDays(6);
+
+                start = mondayOfCurrentWeek.atStartOfDay(utcZone).toInstant();
+                end = sundayOfCurrentWeek.plusDays(1).atStartOfDay(utcZone).toInstant(); // Bao gồm cả Chủ nhật
+
+                // Tuần trước
+                LocalDate mondayOfPreviousWeek = mondayOfCurrentWeek.minusDays(7);
+                LocalDate sundayOfPreviousWeek = mondayOfPreviousWeek.plusDays(6);
+                prevStart = mondayOfPreviousWeek.atStartOfDay(utcZone).toInstant();
+                prevEnd = sundayOfPreviousWeek.plusDays(1).atStartOfDay(utcZone).toInstant();
+
                 dailyLabels = List.of("T2", "T3", "T4", "T5", "T6", "T7", "CN");
                 break;
+
             case "month":
                 start = today.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
-                end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
-                prevStart = today.minusMonths(1).withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
-                prevEnd = today.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
+                // FIX: Lấy đến cuối tháng hiện tại
+                end = today.withDayOfMonth(today.lengthOfMonth()).plusDays(1).atStartOfDay(utcZone).toInstant();
+
+                // FIX: Tháng trước cũng lấy đến cuối tháng
+                LocalDate lastMonth = today.minusMonths(1);
+                prevStart = lastMonth.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
+                prevEnd = lastMonth.withDayOfMonth(lastMonth.lengthOfMonth()).plusDays(1).atStartOfDay(utcZone).toInstant();
+
                 dailyLabels = generateMonthLabels(today);
                 break;
+
             case "year":
                 start = today.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
-                end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
-                prevStart = today.minusYears(1).withDayOfYear(1).atStartOfDay(utcZone).toInstant();
-                prevEnd = today.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
+                // FIX: Lấy đến cuối năm hiện tại
+                end = today.withDayOfYear(today.lengthOfYear()).plusDays(1).atStartOfDay(utcZone).toInstant();
+
+                // FIX: Năm trước cũng lấy đến cuối năm
+                LocalDate lastYear = today.minusYears(1);
+                prevStart = lastYear.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
+                prevEnd = lastYear.withDayOfYear(lastYear.lengthOfYear()).plusDays(1).atStartOfDay(utcZone).toInstant();
+
                 dailyLabels = List.of("Th1", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7", "Th8", "Th9", "Th10", "Th11", "Th12");
                 break;
+
             case "specific":
                 if (specificDate == null) {
                     throw new IllegalArgumentException("Specific date is required for period 'specific'");
@@ -77,6 +102,7 @@ public class RevenueReportsService {
                 prevEnd = specific.atStartOfDay(utcZone).toInstant();
                 dailyLabels = List.of("6h", "8h", "10h", "12h", "14h", "16h", "18h", "20h", "22h", "24h");
                 break;
+
             default:
                 throw new IllegalArgumentException("Invalid period: " + period);
         }
@@ -163,18 +189,27 @@ public class RevenueReportsService {
                 start = today.atStartOfDay(utcZone).toInstant();
                 end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
                 break;
+
             case "week":
-                start = today.minusDays(6).atStartOfDay(utcZone).toInstant();
-                end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                // Sử dụng cùng logic với getDashboardData cho consistency
+                LocalDate mondayOfCurrentWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                LocalDate sundayOfCurrentWeek = mondayOfCurrentWeek.plusDays(6);
+                start = mondayOfCurrentWeek.atStartOfDay(utcZone).toInstant();
+                end = sundayOfCurrentWeek.plusDays(1).atStartOfDay(utcZone).toInstant();
                 break;
+
             case "month":
                 start = today.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
-                end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                // FIX: Lấy đến cuối tháng
+                end = today.withDayOfMonth(today.lengthOfMonth()).plusDays(1).atStartOfDay(utcZone).toInstant();
                 break;
+
             case "year":
                 start = today.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
-                end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                // FIX: Lấy đến cuối năm
+                end = today.withDayOfYear(today.lengthOfYear()).plusDays(1).atStartOfDay(utcZone).toInstant();
                 break;
+
             case "specific":
                 if (specificDate == null) {
                     throw new IllegalArgumentException("Specific date is required for period 'specific'");
@@ -183,10 +218,10 @@ public class RevenueReportsService {
                 start = specific.atStartOfDay(utcZone).toInstant();
                 end = specific.plusDays(1).atStartOfDay(utcZone).toInstant();
                 break;
+
             default:
                 throw new IllegalArgumentException("Invalid period: " + period);
         }
-
         List<Object[]> dishData = orderItemRepository.findQuantityByMenuItem(start, end, categoryId);
         List<String> dishNames = new ArrayList<>();
         List<Long> quantities = new ArrayList<>();
@@ -225,25 +260,21 @@ public class RevenueReportsService {
         }
         return labels;
     }
-
     private int getIndexForDailyLabel(Object timeData, String period, ZonedDateTime start) {
         if ("today".equals(period) || "specific".equals(period)) {
             int hour = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
-            if (hour <= 6) return 0;
-            if (hour <= 8) return 1;
-            if (hour <= 10) return 2;
-            if (hour <= 12) return 3;
-            if (hour <= 14) return 4;
-            if (hour <= 16) return 5;
-            if (hour <= 18) return 6;
-            if (hour <= 20) return 7;
-            if (hour <= 22) return 8;
-            return 9;
-        } else if ("week".equals(period)) {
-            // MySQL DAYOFWEEK(): 1=Sunday, 2=Monday, 3=Tuesday, 4=Wednesday, 5=Thursday, 6=Friday, 7=Saturday
-            // dailyLabels: ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] (Monday to Sunday)
-            int dayOfWeek = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
 
+            if (hour >= 0 && hour < 6) return 0;    // 0-5h -> 6h
+            if (hour >= 6 && hour < 9) return 1;    // 6-8h -> 9h
+            if (hour >= 9 && hour < 12) return 2;   // 9-11h -> 12h
+            if (hour >= 12 && hour < 15) return 3;  // 12-14h -> 15h
+            if (hour >= 15 && hour < 18) return 4;  // 15-17h -> 18h
+            if (hour >= 18 && hour < 21) return 5;  // 18-20h -> 21h
+            if (hour >= 21 && hour < 24) return 6;  // 21-23h -> 24h
+            return 6; // Default to last slot
+
+        } else if ("week".equals(period)) {
+            int dayOfWeek = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
             switch (dayOfWeek) {
                 case 1: return 6; // Sunday -> CN (index 6)
                 case 2: return 0; // Monday -> T2 (index 0)
@@ -256,11 +287,12 @@ public class RevenueReportsService {
             }
         } else if ("month".equals(period)) {
             int day = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
-            return day - 1;
+            return day - 1; // Đúng rồi
         } else if ("year".equals(period)) {
             int month = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
-            return month - 1;
+            return month - 1; // Đúng rồi
         }
         return -1;
     }
+
 }
