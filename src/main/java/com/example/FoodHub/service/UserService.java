@@ -3,6 +3,7 @@ package com.example.FoodHub.service;
 import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
 import com.example.FoodHub.dto.request.OtpRequest;
 import com.example.FoodHub.dto.request.UserCreationRequest;
+import com.example.FoodHub.dto.request.UserUpdateRequest;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.entity.OtpVerification;
 import com.example.FoodHub.entity.User;
@@ -189,6 +190,20 @@ public class UserService {
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
+        userRepository.save(user);
+    }
+
+    public void updateCustomer(Integer userId, UserUpdateRequest request) {
+        // B1: Tìm user theo ID
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user ID: " + userId));
+
+
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
+
+        // B3: Lưu lại
         userRepository.save(user);
     }
 

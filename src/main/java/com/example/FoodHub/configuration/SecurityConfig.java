@@ -43,13 +43,15 @@ public class SecurityConfig {
                                 "/menu", "/menu/**",
                                 "/restaurants", "/restaurants/**",
                                 "/dishes", "/dishes/**",
-                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**"
+                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "users/**"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST,
-                                "/auth/**", "/users", "/api/gemini/**", "/api/feedback/**"
+                                "/auth/**", "/users/**", "/api/gemini/**", "/api/feedback/**"
                         ).permitAll()
-
+                        .requestMatchers(HttpMethod.PUT,
+                                "/users/**"
+                        ).permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()

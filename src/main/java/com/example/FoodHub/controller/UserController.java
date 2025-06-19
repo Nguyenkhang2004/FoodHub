@@ -2,6 +2,7 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
 import com.example.FoodHub.dto.request.UserCreationRequest;
+import com.example.FoodHub.dto.request.UserUpdateRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.service.UserService;
@@ -20,6 +21,8 @@ import java.util.List;
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@CrossOrigin(origins = "http://127.0.0.1:5500") // Cho phép CORS nếu cần (tùy môi trường)
+
 public class UserController {
     UserService userService;
 
@@ -107,16 +110,29 @@ public class UserController {
         return ResponseEntity.ok().body(response);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
+
+    @PutMapping("/{userId}")
     public ResponseEntity<ApiResponse<String>> updateUser(
-            @PathVariable Integer id,
+            @PathVariable Integer userId,
             @Valid @RequestBody EmployeeUpdateRequest request) {
-        userService.updateUser(id, request);
+        userService.updateUser(userId, request);
         ApiResponse<String> response = ApiResponse.<String>builder()
                 .code(1000)
                 .message("Cập nhật người dùng thành công")
-                .result("User ID " + id + " đã được cập nhật")
+                .result("User ID " + userId + " đã được cập nhật")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/cus/{userId}")
+    public ResponseEntity<ApiResponse<String>> updateCustomer(
+            @PathVariable Integer userId,
+            @Valid @RequestBody UserUpdateRequest request) {
+        userService.updateCustomer(userId, request);
+        ApiResponse<String> response = ApiResponse.<String>builder()
+                .code(1000)
+                .message("Cập nhật người dùng thành công")
+                .result("User ID " + userId + " đã được cập nhật")
                 .build();
         return ResponseEntity.ok(response);
     }
