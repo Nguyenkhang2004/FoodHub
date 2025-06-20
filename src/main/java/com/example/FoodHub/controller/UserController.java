@@ -42,7 +42,21 @@ public class UserController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
+    @GetMapping("/customers")
+    public ResponseEntity<ApiResponse<Page<UserResponse>>> getCustomer(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "asc") String sortDirection,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
+        Page<UserResponse> customerPage = userService.getCustomers(keyword, sortDirection, page, size);
+
+        ApiResponse<Page<UserResponse>> response = ApiResponse.<Page<UserResponse>>builder()
+                .result(customerPage)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
     @GetMapping("/employees")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getEmployees(
             @RequestParam(required = false) String role,

@@ -131,6 +131,21 @@ public class UserService {
                 .map(userMapper::toUserResponse)
                 .toList();
     }
+    public Page<UserResponse> getCustomers(String keyword, String sortDirection, int page, int size) {
+        log.info("In method getCustomers");
+        // Xác định hướng sắp xếp theo username
+        Sort sort = Sort.by("username");
+        sort = sortDirection.equalsIgnoreCase("desc") ? sort.descending() : sort.ascending();
+
+        // Tạo Pageable với phân trang và sắp xếp
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Lấy danh sách khách hàng từ repository
+        Page<User> customerPage = userRepository.findCustomers(keyword, pageable);
+
+        // Ánh xạ sang DTO
+        return customerPage.map(userMapper::toUserResponse);
+    }
 
     public UserResponse getUserById(Integer id) {
         return userMapper.toUserResponse(userRepository.findById(id)
