@@ -10,7 +10,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {PaymentMapper.class})
 public interface RestaurantOrderMapper {
     @Mapping(source = "table.id", target = "tableId")
     @Mapping(source = "table.tableNumber", target = "tableNumber")

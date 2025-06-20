@@ -12,11 +12,13 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     Optional<Payment> findByOrderId(Integer orderId);
     List<Payment> findByStatus(String status);
-
+    boolean existsByOrderId(Integer orderId);
+    Optional<Payment> findByOrderIdAndStatus(Integer orderId, String status);
     @Query("SELECT p FROM Payment p WHERE p.createdAt BETWEEN :start AND :end")
 
     List<Payment> findByCreatedAtBetween(Instant start, Instant end);
 
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'PAID' AND DATE(p.createdAt) = :date")
     BigDecimal calculateTotalRevenueByDate(Instant date);
+    List<Payment> findByStatusAndCreatedAtBefore(String status, Instant createdAt);
 }

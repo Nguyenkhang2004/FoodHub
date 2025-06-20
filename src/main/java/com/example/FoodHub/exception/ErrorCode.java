@@ -90,7 +90,7 @@ public enum ErrorCode {
     INVALID_DATE_RANGE(1018, "Invalid date range, end date must be after start date", HttpStatus.BAD_REQUEST),
     ORDER_NOT_FOUND(1019, "Order not found", HttpStatus.NOT_FOUND),
     INSUFFICIENT_FUNDS(1020, "Insufficient funds, please use another payment method", HttpStatus.PAYMENT_REQUIRED),
-    ORDER_COMPLETED(1021, "Order cannot be paid in current status: COMPLETED", HttpStatus.BAD_REQUEST),
+    ORDER_NOT_COMPLETED(1021, "Order cannot be paid in current status is not: COMPLETED", HttpStatus.BAD_REQUEST),
     PAYMENT_NOT_FOUND(1022, "Payment record not found", HttpStatus.NOT_FOUND),
     INVALID_ORDER_AMOUNT(1023, "Invalid order amount", HttpStatus.BAD_REQUEST),
     ORDER_ALREADY_CANCELED(1024, "Order has already been canceled", HttpStatus.BAD_REQUEST),
@@ -102,7 +102,11 @@ public enum ErrorCode {
     PAST_DATE_NOT_ALLOWED(1046, "You cannot create OR delete a shift in the past", HttpStatus.BAD_REQUEST),
     PAST_SHIFT_TIME(1048, "You cannot create a shift that has already passed", HttpStatus.BAD_REQUEST),
     INVALID_TIME_FORMAT(1050, "Invalid time format, must be HH:mm", HttpStatus.BAD_REQUEST),
-    USER_NOT_ACTIVE(1052, "User is not active", HttpStatus.BAD_REQUEST)
+    USER_NOT_ACTIVE(1052, "User is not active", HttpStatus.BAD_REQUEST),
+    PAYMENT_ALREADY_EXISTS(1057, "Payment already exists for this order", HttpStatus.BAD_REQUEST),
+    PAYMENT_URL_GENERATION_FAILED(1058, "Failed to generate payment URL", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYMENT_ALREADY_PAID(1059, "Payment has already been paid", HttpStatus.BAD_REQUEST),
+    PAYMENT_EXPIRED(1065, "Payment has expired", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;

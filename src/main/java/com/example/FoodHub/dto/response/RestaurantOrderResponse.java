@@ -29,4 +29,5 @@ public class RestaurantOrderResponse {
     private String username;
     private BigDecimal totalAmount;
     private Set<OrderItemResponse> orderItems;
+    private PaymentResponse payment;
 }

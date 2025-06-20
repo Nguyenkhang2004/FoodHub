@@ -3,12 +3,13 @@ package com.example.FoodHub.mapper;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.entity.Payment;
+import com.example.FoodHub.entity.RestaurantOrder;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-14T22:47:19+0700",
+    date = "2025-06-20T10:15:31+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
@@ -35,12 +36,14 @@ public class PaymentMapperImpl implements PaymentMapper {
 
         PaymentResponse paymentResponse = new PaymentResponse();
 
+        paymentResponse.setOrderId( paymentOrderId( payment ) );
         paymentResponse.setAmount( payment.getAmount() );
         paymentResponse.setPaymentMethod( payment.getPaymentMethod() );
         paymentResponse.setTransactionId( payment.getTransactionId() );
         paymentResponse.setStatus( payment.getStatus() );
         paymentResponse.setCreatedAt( payment.getCreatedAt() );
         paymentResponse.setUpdatedAt( payment.getUpdatedAt() );
+        paymentResponse.setPaymentUrl( payment.getPaymentUrl() );
 
         return paymentResponse;
     }
@@ -52,5 +55,13 @@ public class PaymentMapperImpl implements PaymentMapper {
         }
 
         payment.setPaymentMethod( request.getPaymentMethod() );
+    }
+
+    private Integer paymentOrderId(Payment payment) {
+        RestaurantOrder order = payment.getOrder();
+        if ( order == null ) {
+            return null;
+        }
+        return order.getId();
     }
 }

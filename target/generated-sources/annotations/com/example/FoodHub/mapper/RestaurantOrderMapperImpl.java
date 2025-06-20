@@ -6,21 +6,26 @@ import com.example.FoodHub.dto.response.OrderItemResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.MenuItem;
 import com.example.FoodHub.entity.OrderItem;
+import com.example.FoodHub.entity.Payment;
 import com.example.FoodHub.entity.RestaurantOrder;
 import com.example.FoodHub.entity.RestaurantTable;
 import com.example.FoodHub.entity.User;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.annotation.processing.Generated;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-14T21:10:22+0700",
+    date = "2025-06-20T10:15:31+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
 public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
+
+    @Autowired
+    private PaymentMapper paymentMapper;
 
     @Override
     public RestaurantOrderResponse toRestaurantOrderResponse(RestaurantOrder order) {
@@ -42,6 +47,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
+        restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
 
         return restaurantOrderResponse.build();
     }
@@ -57,6 +63,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrder.setStatus( restaurantOrderRequest.getStatus() );
         restaurantOrder.setNote( restaurantOrderRequest.getNote() );
         restaurantOrder.setOrderType( restaurantOrderRequest.getOrderType() );
+        restaurantOrder.setPayment( paymentMapper.toPayment( restaurantOrderRequest.getPayment() ) );
 
         return restaurantOrder;
     }
@@ -70,6 +77,15 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         order.setStatus( request.getStatus() );
         order.setNote( request.getNote() );
         order.setOrderType( request.getOrderType() );
+        if ( request.getPayment() != null ) {
+            if ( order.getPayment() == null ) {
+                order.setPayment( new Payment() );
+            }
+            paymentMapper.updatePaymentFromRequest( request.getPayment(), order.getPayment() );
+        }
+        else {
+            order.setPayment( null );
+        }
     }
 
     @Override

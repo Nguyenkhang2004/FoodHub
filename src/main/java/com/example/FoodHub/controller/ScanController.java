@@ -25,6 +25,4 @@ public class ScanController {
                 .build();
         return ResponseEntity.ok(response);
     }
-
-
 }

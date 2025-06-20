@@ -1,16 +1,21 @@
 package com.example.FoodHub.controller;
 
+import com.example.FoodHub.dto.request.PayOSRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.InvoiceResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
+import com.example.FoodHub.enums.PaymentStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.service.EmailService;
 import com.example.FoodHub.service.PaymentService;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -25,40 +30,50 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/cashier")
+@RequestMapping("/payments")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentController {
-
-    @Autowired
-    private PaymentService paymentService;
-
-
-    @Autowired
-    private EmailService emailService;
+    PaymentService paymentService;
+    EmailService emailService;
 
     // Thanh toán đơn hàng
-    @PostMapping("/payment")
+    @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
-        PaymentResponse response = paymentService.processPayment(request);
+        PaymentResponse response = paymentService.createPayment(request);
         ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
                 .result(response)
                 .build();
         return ResponseEntity.ok().body(apiResponse);
     }
 
-    // Hủy/Hoàn tiền đơn hàng
-    @PostMapping("/cancel-or-refund/{orderId}")
-    public ResponseEntity<ApiResponse<String>> cancelOrRefundOrder(@PathVariable Integer orderId) {
-        paymentService.cancelOrRefundOrder(orderId);
-        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .result("Đơn hàng đã được hủy thành công")
+
+    @PutMapping("/callback")
+    public ResponseEntity<ApiResponse<PaymentResponse>> paymentCallback(@RequestBody PayOSRequest request) {
+        PaymentResponse response = paymentService.updatePayOSPaymentStatus(request);
+
+        ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
+                .result(response)
                 .build();
-        return ResponseEntity.ok().body(apiResponse);
+        return ResponseEntity.ok(apiResponse);
     }
+
+// Hủy/Hoàn tiền đơn hàng
+//    @PostMapping("/cancel-or-refund/{orderId}")
+//    public ResponseEntity<ApiResponse<String>> cancelOrRefundOrder(@PathVariable Integer orderId) {
+//        paymentService.cancelOrRefundOrder(orderId);
+//        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+//                .result("Đơn hàng đã được hủy thành công")
+//                .build();
+//        return ResponseEntity.ok().body(apiResponse);
+//    }
 
     // Lấy danh sách giao dịch theo ngày
     @GetMapping("/transactions")

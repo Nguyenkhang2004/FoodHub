@@ -23,12 +23,6 @@ public class Payment {
     private Integer id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "order_id", nullable = false)
-    private RestaurantOrder order;
-
-    @NotNull
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
@@ -50,8 +44,18 @@ public class Payment {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "updated_at", nullable = false, updatable = false) // Ngăn JPA cập nhật cột này
+    @Column(name = "updated_at", nullable = false, updatable = false)
     private Instant updatedAt;
+
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "order_id", nullable = false)
+    private RestaurantOrder order;
+
+    @Size(max = 512)
+    @Column(name = "payment_url")
+    private String paymentUrl;
+
 }

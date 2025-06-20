@@ -34,5 +34,7 @@ public class RestaurantOrderRequest {
     @NotEmpty(message = "ORDER_ITEMS_REQUIRED")
     @Valid
     private Set<OrderItemRequest> orderItems;
+
+    private PaymentRequest payment;
 }
 
