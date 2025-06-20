@@ -22,11 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -376,6 +376,7 @@ public class RestaurantOrderService {
 
         return orderMapper.toOrderItemResponse(savedOrderItem);
     }
+
     // Method to cancel specific order item
     public RestaurantOrderResponse cancelOrderItem(Integer orderId, Integer orderItemId, String reason) {
         log.info("Cancelling order item. Order ID: {}, Item ID: {}", orderId, orderItemId);
@@ -420,5 +421,135 @@ public class RestaurantOrderService {
         }
     }
 
+    public Page<RestaurantOrderResponse> getCompletedOrders(
+            String period,
+            Instant startDate,
+            Instant endDate,
+            String search,
+            Pageable pageable) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
 
+        Page<RestaurantOrder> orders = orderRepository.findByStatusAndCreatedAtBetween(
+                "COMPLETED",
+                start,
+                end,
+                search,
+                pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponse);
+    }
+
+    public Page<RestaurantOrderResponse> getCompletedOrdersFiltered(
+            String period,
+            Instant startDate,
+            Instant endDate,
+            String orderType,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String paymentMethod,
+            String search,
+            Pageable pageable) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        Page<RestaurantOrder> orders = orderRepository.findCompletedOrdersFiltered(
+                start,
+                end,
+                orderType,
+                minPrice,
+                maxPrice,
+                paymentMethod,
+                search,
+                pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponse);
+    }
+
+    public Map<String, Object> getOrderSummary(String period, Instant startDate, Instant endDate) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        List<Object[]> summary = orderRepository.countOrdersByDateMySQL("COMPLETED", start, end);
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        List<String> labels = summary.stream()
+                .map(row -> {
+                    LocalDate date;
+                    if (row[0] instanceof java.sql.Date) {
+                        date = ((java.sql.Date) row[0]).toLocalDate();
+                    } else if (row[0] instanceof LocalDate) {
+                        date = (LocalDate) row[0];
+                    } else {
+                        date = LocalDate.parse(row[0].toString());
+                    }
+                    return date.format(DateTimeFormatter.ISO_LOCAL_DATE); // Định dạng: "2025-06-16"
+                })
+                .collect(Collectors.toList());
+
+        List<Long> quantities = summary.stream()
+                .map(row -> {
+                    if (row[1] instanceof Long) {
+                        return (Long) row[1];
+                    } else if (row[1] instanceof Integer) {
+                        return ((Integer) row[1]).longValue();
+                    } else {
+                        return Long.valueOf(row[1].toString());
+                    }
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("labels", labels);
+        result.put("quantities", quantities);
+        return result;
+    }
+    // PHƯƠNG THỨC ĐÃ SỬA ĐỂ XỬ LÝ ĐÚNG NGÀY/TUẦN/THÁNG
+    private Instant getStartDate(String period, Instant startDate) {
+        if ("custom".equals(period) && startDate != null) {
+            return startDate;
+        }
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDateTime now = LocalDateTime.now(zoneId);
+        switch (period != null ? period.toLowerCase() : "month") {
+            case "today":
+                return now.toLocalDate().atStartOfDay(zoneId).toInstant();
+            case "week":
+                LocalDate startOfWeek = now.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                return startOfWeek.atStartOfDay(zoneId).toInstant();
+            case "month":
+                LocalDate startOfMonth = now.toLocalDate().with(TemporalAdjusters.firstDayOfMonth());
+                return startOfMonth.atStartOfDay(zoneId).toInstant();
+            case "year":
+                LocalDate startOfYear = now.toLocalDate().with(TemporalAdjusters.firstDayOfYear());
+                return startOfYear.atStartOfDay(zoneId).toInstant();
+            default:
+                return now.minusDays(30).toLocalDate().atStartOfDay(zoneId).toInstant();
+        }
+    }
+
+    private Instant getEndDate(String period, Instant endDate) {
+        if ("custom".equals(period) && endDate != null) {
+            ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+            LocalDate endLocalDate = endDate.atZone(zoneId).toLocalDate();
+            return endLocalDate.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+        }
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDateTime now = LocalDateTime.now(zoneId);
+        switch (period != null ? period.toLowerCase() : "month") {
+            case "today":
+                return now.toLocalDate().atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+            case "week":
+                LocalDate endOfWeek = now.toLocalDate().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+                return endOfWeek.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+            case "month":
+                LocalDate endOfMonth = now.toLocalDate().with(TemporalAdjusters.lastDayOfMonth());
+                return endOfMonth.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+            case "year":
+                LocalDate endOfYear = now.toLocalDate().with(TemporalAdjusters.lastDayOfYear());
+                return endOfYear.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+            default:
+                return now.toLocalDate().atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+        }
+    }
 }
+
+

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-17T07:25:15+0700",
+    date = "2025-06-20T21:18:41+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.3 (Oracle Corporation)"
 )
 @Component
@@ -41,6 +41,8 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
+
+        restaurantOrderResponse.paymentMethod( order.getPayments().stream().filter(p -> p.getStatus().equals("PAID")).findFirst().map(p -> p.getPaymentMethod()).orElse(null) );
 
         return restaurantOrderResponse.build();
     }

@@ -72,4 +72,52 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
     @Deprecated
     @Query("SELECT HOUR(o.createdAt), SUM(o.totalAmount) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end GROUP BY HOUR(o.createdAt)")
     List<Object[]> findDailyRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    @Query("SELECT o FROM RestaurantOrder o " +
+            "WHERE o.status = :status " +
+            "AND o.createdAt BETWEEN :start AND :end " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "LOWER(COALESCE(o.user.username, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "CAST(o.id AS string) LIKE CONCAT('%', :search, '%'))")
+    Page<RestaurantOrder> findByStatusAndCreatedAtBetween(
+            @Param("status") String status,
+            @Param("start") Instant start,
+            @Param("end") Instant end,
+            @Param("search") String search,
+            Pageable pageable);
+
+    // SỬA QUERY ĐỂ TƯƠNG THÍCH VỚI MÚI GIỜ
+    @Query(value = "SELECT DATE(o.created_at) as date, " +
+            "COUNT(o.id) as count " +
+            "FROM restaurant_order o " +
+            "WHERE o.status = :status " +
+            "AND o.created_at BETWEEN :start AND :end " +
+            "GROUP BY DATE(o.created_at) " +
+            "ORDER BY date", nativeQuery = true)
+    List<Object[]> countOrdersByDateMySQL(
+            @Param("status") String status,
+            @Param("start") Instant start,
+            @Param("end") Instant end);
+
+    @Query("SELECT o FROM RestaurantOrder o " +
+            "LEFT JOIN o.payments p " +
+            "WHERE o.status = 'COMPLETED' " +
+            "AND o.createdAt BETWEEN :start AND :end " +
+            "AND (:orderType IS NULL OR :orderType = '' OR o.orderType = :orderType) " +
+            "AND (:minPrice IS NULL OR o.totalAmount >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR o.totalAmount <= :maxPrice) " +
+            "AND (:paymentMethod IS NULL OR :paymentMethod = '' OR p.paymentMethod = :paymentMethod) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "CAST(o.id AS string) = :search OR " +
+            "LOWER(o.user.username) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "GROUP BY o.id")
+    Page<RestaurantOrder> findCompletedOrdersFiltered(
+            @Param("start") Instant start,
+            @Param("end") Instant end,
+            @Param("orderType") String orderType,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("paymentMethod") String paymentMethod,
+            @Param("search") String search,
+            Pageable pageable);
 }
