@@ -64,4 +64,21 @@ public class AuthenticationController {
         AuthenticationResponse result = authenticationService.refreshToken(request);
         return ResponseEntity.ok(ApiResponse.<AuthenticationResponse>builder().result(result).build());
     }
+
+    @PostMapping("/forgot-password/send-otp")
+    public ResponseEntity<ApiResponse<Void>> sendOtpToResetPassword(@RequestBody ForgotPasswordRequest request) {
+        userService.sendOtpForPasswordReset(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .message("OTP đã được gửi tới email")
+                .build());
+    }
+
+    @PostMapping("/forgot-password/verify")
+    public ResponseEntity<ApiResponse<String>> resetPasswordWithOtp(@RequestBody ResetPasswordWithOtpRequest request) {
+        userService.resetPasswordWithOtp(request);
+        return ResponseEntity.ok(ApiResponse.<String>builder()
+                .message("Mật khẩu đã được cập nhật thành công")
+                .result("Đặt lại mật khẩu thành công")
+                .build());
+    }
 }

@@ -1,8 +1,6 @@
 package com.example.FoodHub.controller;
 
-import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
-import com.example.FoodHub.dto.request.UserCreationRequest;
-import com.example.FoodHub.dto.request.UserUpdateRequest;
+import com.example.FoodHub.dto.request.*;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.service.UserService;
@@ -15,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -146,4 +145,35 @@ public class UserController {
                 .result(totalItems)
                 .build();
     }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            Principal principal) {
+
+        String email = principal.getName(); // CHẮC CHẮN là email đã đăng nhập
+        userService.changePassword(email, request);
+
+        return ResponseEntity.ok(ApiResponse.<String>builder()
+                .code(1000)
+                .message("Đổi mật khẩu thành công")
+                .result("Mật khẩu đã được cập nhật")
+                .build());
+    }
+
+    @PostMapping("/forgot-password/send-otp")
+    public ResponseEntity<ApiResponse<Void>> sendResetPasswordOtp(@RequestBody ForgotPasswordRequest request) {
+        userService.sendOtpForPasswordReset(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.<Void>builder().message("OTP đã gửi về email").build());
+    }
+
+    @PostMapping("/forgot-password/verify")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody ResetPasswordWithOtpRequest request) {
+        userService.resetPasswordWithOtp(request);
+        return ResponseEntity.ok(ApiResponse.<String>builder()
+                .message("Mật khẩu đã được cập nhật")
+                .result("Đổi mật khẩu thành công")
+                .build());
+    }
+
 }

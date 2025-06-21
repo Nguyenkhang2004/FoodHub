@@ -43,18 +43,29 @@ public class SecurityConfig {
                                 "/menu", "/menu/**",
                                 "/restaurants", "/restaurants/**",
                                 "/dishes", "/dishes/**",
-                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "users/**"
+                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST,
                                 "/auth/**", "/users/**", "/api/gemini/**", "/api/feedback/**"
                         ).permitAll()
+
                         .requestMatchers(HttpMethod.PUT,
                                 "/users/**"
-                        ).permitAll()
+                        ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
+
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .anyRequest().authenticated()
+                )
+
+                // ✅ Thêm dòng này để bật JWT Bearer support
+                .oauth2ResourceServer(resource -> resource
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                                .decoder(customJwtDecoder) // nếu bạn có custom decoder
+                        )
                 )
 
                 .oauth2Login(oauth2 -> oauth2
