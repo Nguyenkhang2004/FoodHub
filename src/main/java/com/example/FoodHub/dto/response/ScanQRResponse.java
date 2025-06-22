@@ -9,6 +9,8 @@ import java.time.Instant;
 @Builder
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ScanResponse {
-    String scanQRToken;
+public class ScanQRResponse {
+    String token;
+    String tableNumber;
+    Instant expiryTime;
 }

@@ -26,7 +26,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@Valid @RequestBody RestaurantOrderRequest request) {
         RestaurantOrderResponse orderResponse = orderService.createOrder(request);
-        ApiResponse response = ApiResponse.<RestaurantOrderResponse>builder()
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponse)
                 .build();
         return ResponseEntity.ok().body(response);

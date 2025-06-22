@@ -21,9 +21,6 @@ public class RestaurantOrderRequest {
     @Positive(message = "USER_ID_INVALID")
     private Integer userId;
 
-    @Size(max = 500, message = "NOTE_TOO_LONG")
-    private String note;
-
     @Pattern(regexp = "DINE_IN|TAKEAWAY|DELIVERY", message = "ORDER_TYPE_INVALID")
     private String orderType;
 

@@ -100,7 +100,7 @@ public class PaymentService {
             throw new AppException(ErrorCode.ORDER_ALREADY_CANCELED);
         }
         if (!OrderStatus.COMPLETED.name().equals(order.getStatus())) {
-            throw new AppException(ErrorCode.ORDER_NOT_COMPLETED);
+            throw new AppException(ErrorCode.ORDER_NOT_EXISTED);
         }
 
         // Check existing payment

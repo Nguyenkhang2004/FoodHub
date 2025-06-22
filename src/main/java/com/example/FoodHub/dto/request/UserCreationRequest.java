@@ -1,5 +1,6 @@
 package com.example.FoodHub.dto.request;
 
+import com.example.FoodHub.entity.Role;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

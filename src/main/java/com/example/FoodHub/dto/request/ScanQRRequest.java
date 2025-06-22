@@ -8,6 +8,6 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ScanRequest {
-    String tableNumber;
+public class ScanQRRequest {
+    String qrCode;
 }

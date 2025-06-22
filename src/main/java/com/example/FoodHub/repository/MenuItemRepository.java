@@ -31,7 +31,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> , J
 //                                           Pageable pageable);
 //
 //    @Query("SELECT m FROM MenuItem m " +
-////            "WHERE (:keyword IS NULL OR LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+    ////            "WHERE (:keyword IS NULL OR LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
 //            "ORDER BY CASE WHEN :sortField = 'name' AND :isAsc = true THEN m.name END ASC, " +
 //            "CASE WHEN :sortField = 'name' AND :isAsc = false THEN m.name END DESC, " +
 //            "CASE WHEN :sortField = 'price' AND :isAsc = true THEN m.price END ASC, " +
@@ -40,23 +40,23 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> , J
 //                                  @Param("isAsc") boolean isAsc,
 //                                  @Param("keyword") String keyword,
 //                                  Pageable pageable);
-@Query("SELECT m FROM MenuItem m " +
-        "LEFT JOIN m.categories c ON (:categoryId IS NULL OR c.id = :categoryId) " +
-        "WHERE (:categoryId IS NULL OR c.id IS NOT NULL) " +
-        "AND (:keyword IS NULL OR LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-        "ORDER BY " +
-        "CASE WHEN :sortField = 'name' AND :isAsc = true THEN m.name END ASC, " +
-        "CASE WHEN :sortField = 'name' AND :isAsc = false THEN m.name END DESC, " +
-        "CASE WHEN :sortField = 'price' AND :isAsc = true THEN m.price END ASC, " +
-        "CASE WHEN :sortField = 'price' AND :isAsc = false THEN m.price END DESC, " +
-        "m.id ASC")
-Page<MenuItem> findMenuItems(
-        @Param("sortField") String sortField,
-        @Param("isAsc") boolean isAsc,
-        @Param("categoryId") Integer categoryId,
-        @Param("keyword") String keyword,
-        Pageable pageable
-);
+    @Query("SELECT m FROM MenuItem m " +
+            "LEFT JOIN m.categories c ON (:categoryId IS NULL OR c.id = :categoryId) " +
+            "WHERE (:categoryId IS NULL OR c.id IS NOT NULL) " +
+            "AND (:keyword IS NULL OR LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "ORDER BY " +
+            "CASE WHEN :sortField = 'name' AND :isAsc = true THEN m.name END ASC, " +
+            "CASE WHEN :sortField = 'name' AND :isAsc = false THEN m.name END DESC, " +
+            "CASE WHEN :sortField = 'price' AND :isAsc = true THEN m.price END ASC, " +
+            "CASE WHEN :sortField = 'price' AND :isAsc = false THEN m.price END DESC, " +
+            "m.id ASC")
+    Page<MenuItem> findMenuItems(
+            @Param("sortField") String sortField,
+            @Param("isAsc") boolean isAsc,
+            @Param("categoryId") Integer categoryId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
     @Query("SELECT COUNT(m) > 0 FROM MenuItem m WHERE LOWER(TRIM(m.name)) = LOWER(TRIM(:name))")
     boolean existsByNameIgnoreCase(@Param("name") String name);
 

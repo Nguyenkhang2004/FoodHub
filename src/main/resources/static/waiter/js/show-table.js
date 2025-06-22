@@ -705,6 +705,15 @@ async function assignTable(tableId) {
 // Hàm xem đơn hàng của bàn
 async function viewTableOrders(tableId) {
     try {
+<<<<<<< HEAD
+<<<<<<< HEAD
+        // Hiển thị loading notification
+        showNotification('Đang tải dữ liệu đơn hàng...', 'info');
+
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         // Gọi API để lấy đơn hàng hiện tại của bàn
         const data = await apiFetch(`/orders/table/${tableId}/current`,{
             method: 'GET'
@@ -726,6 +735,14 @@ async function viewTableOrders(tableId) {
         // Hiển thị thông tin đơn hàng
         displayTableOrder(order, tableId);
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+        showNotification('Tải dữ liệu đơn hàng thành công!', 'success');
+
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     } catch (error) {
         console.error('Error fetching table orders:', error);
         showNotification('Có lỗi xảy ra khi tải đơn hàng: ' + error.message, 'error');
@@ -734,6 +751,105 @@ async function viewTableOrders(tableId) {
 
 // Hàm hiển thị thông tin đơn hàng (đã được sửa để xử lý một đơn hàng duy nhất)
 // Hàm hiển thị thông tin đơn hàng (đã được cập nhật với CSS mới)
+<<<<<<< HEAD
+<<<<<<< HEAD
+function displayTableOrder(order, tableId) {
+    const statusText = getStatusText(order.status);
+    const formattedDate = new Date(order.createdAt).toLocaleString('vi-VN');
+
+    // Tạo HTML cho modal với backdrop
+    let orderHTML = `
+        <div class="order-modal-backdrop" onclick="closeOrderModal()">
+            <div class="order-modal" onclick="event.stopPropagation()">
+                <div class="order-header">
+                    <h3>Đơn hàng của bàn ${order.tableNumber}</h3>
+                    <button onclick="closeOrderModal()" class="close-btn">&times;</button>
+                </div>
+                <div class="order-content">
+                    <div class="order-item">
+                        <div class="order-info">
+                            <p><strong>Mã đơn:</strong> #${order.id}</p>
+                            <p><strong>Trạng thái:</strong> <span class="status ${order.status.toLowerCase()}">${statusText}</span></p>
+                            <p><strong>Loại đơn:</strong> ${order.orderType === 'DINE_IN' ? 'Tại chỗ' : order.orderType}</p>
+                            <p><strong>Thời gian:</strong> ${formattedDate}</p>
+                            <p><strong>Nhân viên:</strong> ${order.username}</p>
+                            ${order.note ? `<p><strong>Ghi chú:</strong> ${order.note}</p>` : ''}
+                            <p><strong>Tổng tiền:</strong> <span class="total-amount">${formatCurrency(order.totalAmount)}</span></p>
+                        </div>
+                        
+                        <div class="order-items">
+                            <h4>Chi tiết món ăn</h4>
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Món ăn</th>
+                                        <th>Số lượng</th>
+                                        <th>Đơn giá</th>
+                                        <th>Thành tiền</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+    `;
+
+    order.orderItems.forEach(item => {
+        const itemTotal = item.quantity * item.price;
+        const itemStatusText = getStatusText(item.status);
+
+        orderHTML += `
+            <tr>
+                <td data-label="Món ăn">${item.menuItemName}</td>
+                <td data-label="Số lượng">${item.quantity}</td>
+                <td data-label="Đơn giá">${formatCurrency(item.price)}</td>
+                <td data-label="Thành tiền">${formatCurrency(itemTotal)}</td>
+                <td data-label="Trạng thái"><span class="status ${item.status.toLowerCase()}">${itemStatusText}</span></td>
+            </tr>
+        `;
+    });
+
+    orderHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Hiển thị modal
+    showOrderModal(orderHTML);
+}
+
+// Hàm hiển thị modal
+function showOrderModal(html) {
+    // Tạo và thêm modal vào body
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'order-modal-container';
+    modalContainer.innerHTML = html;
+    document.body.appendChild(modalContainer);
+
+    // Ngăn scroll body khi modal mở
+    document.body.style.overflow = 'hidden';
+}
+
+// Hàm đóng modal
+function closeOrderModal() {
+    const modalContainer = document.getElementById('order-modal-container');
+    if (modalContainer) {
+        // Thêm animation fade out
+        modalContainer.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => {
+            modalContainer.remove();
+            // Khôi phục scroll body
+            document.body.style.overflow = 'auto';
+        }, 300);
+    }
+}
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Thêm CSS animation cho fade out
 const fadeOutStyle = document.createElement('style');
@@ -745,8 +861,36 @@ fadeOutStyle.textContent = `
 `;
 document.head.appendChild(fadeOutStyle);
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Hàm helper để lấy text trạng thái (nếu chưa có)
+function getStatusText(status) {
+    const statusMap = {
+        'PENDING': 'Chờ xử lý',
+        'CONFIRMED': 'Đã xác nhận',
+        'PREPARING': 'Đang chuẩn bị',
+        'READY': 'Sẵn sàng',
+        'COMPLETED': 'Hoàn thành',
+        'CANCELLED': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+}
+
+// Hàm helper để format tiền tệ (nếu chưa có)
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+    }).format(amount);
+}
+=======
 
 
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Đóng modal khi nhấn ESC
 document.addEventListener('keydown', function(event) {
@@ -806,7 +950,21 @@ function createModalContainer() {
     return modal;
 }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Hàm đóng modal
+function closeOrderModal() {
+    const modal = document.getElementById('orderModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+=======
 
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Hàm thanh toán bàn
 function checkoutTable(tableId) {
@@ -872,8 +1030,34 @@ function refreshTables() {
     showTables(currentFilters, currentSort);
 }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Add CSS animations and responsive styles
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+=======
 const style = document.createElement('style');
 style.textContent = `    
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+const style = document.createElement('style');
+style.textContent = `    
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     .tables-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -999,6 +1183,16 @@ style.textContent = `
         animation: float 6s ease-in-out infinite;
     }
     
+<<<<<<< HEAD
+<<<<<<< HEAD
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
+    }
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     
     .table-overlay {
         position: absolute;

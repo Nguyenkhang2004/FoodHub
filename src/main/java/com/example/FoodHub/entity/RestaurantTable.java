@@ -1,6 +1,5 @@
 package com.example.FoodHub.entity;
 
-import com.example.FoodHub.enums.TableStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -8,23 +7,17 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "restaurant_table")
-public class RestaurantTable {
+public class    RestaurantTable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
-
-    @Size(max = 10)
-    @NotNull
-    @Column(name = "area", nullable = false, length = 10)
-    private String area;
 
     @Size(max = 50)
     @NotNull
@@ -36,16 +29,22 @@ public class RestaurantTable {
     @Column(name = "qr_code", nullable = false)
     private String qrCode;
 
+    @Size(max = 10)
+    @NotNull
+    @Column(name = "area", nullable = false, length = 10)
+    private String area;
+
     @NotNull
     @ColumnDefault("'AVAILABLE'")
-//    @Enumerated(EnumType.STRING)
+    @Lob
     @Column(name = "status", nullable = false)
     private String status;
 
-    @OneToMany(mappedBy = "table")
-    private Set<ChatMessage> chatMessages = new LinkedHashSet<>();
+    @Size(max = 512)
+    @Column(name = "current_token")
+    private String currentToken;
 
-    @OneToMany(mappedBy = "table")
-    private Set<RestaurantOrder> restaurantOrders = new LinkedHashSet<>();
+    @Column(name = "token_expiry")
+    private Instant tokenExpiry;
 
 }

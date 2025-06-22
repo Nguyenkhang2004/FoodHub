@@ -114,18 +114,6 @@ public class AuthenticationService {
         }
     }
 
-    public AuthenticationResponse authenticateForScanQR(ScanRequest request){
-        var table = tableRepository.findByTableNumber(request.getTableNumber())
-                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
-        if (table.getStatus() == null || !table.getStatus().equals("AVAILABLE")) {
-            throw new AppException(ErrorCode.TABLE_NOT_AVAILABLE);
-        }
-        String token = generateScanQRToken(table.getTableNumber());
-        return AuthenticationResponse.builder()
-                .token(token)
-                .isAuthenticated(true)
-                .build();
-    }
 
     public IntrospectResponse introspect(IntrospectRequest request) throws ParseException, JOSEException {
         String token = request.getToken();

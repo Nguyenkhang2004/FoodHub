@@ -11,6 +11,9 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
+
+
+    @Mapping(target = "roleName", ignore = true)
     User toUser(UserCreationRequest request);
 
     @Mapping(target = "roleName", expression = "java(user.getRoleName() != null ? toRoleResponse(user.getRoleName()) : null)")

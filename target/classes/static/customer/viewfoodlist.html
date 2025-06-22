@@ -87,6 +87,18 @@
             margin-bottom: 1rem;
         }
 
+        .menu-item.unavailable {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .menu-item.unavailable .btn {
+            pointer-events: auto;
+            background: #6c757d;
+            border-color: #6c757d;
+            cursor: not-allowed;
+        }
+
         .menu-item img {
             width: 96px;
             height: 96px;
@@ -251,6 +263,27 @@
             font-size: 2rem;
         }
 
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .pagination-btn {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+        }
+
+        .pagination-btn:disabled {
+            background: #e9ecef;
+            color: #6c757d;
+            border-color: #dee2e6;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 576px) {
             .container-custom {
                 max-width: 100%;
@@ -270,7 +303,7 @@
                     <i class="fas fa-utensils"></i>
                 </div>
                 <div>
-                    <h1 class="h5 mb-0 fw-bold">Nhà hàng ABC</h1>
+                    <h1 class="h5 mb-0 fw-bold">FoodHub</h1>
                     <small class="text-muted">
                         <i class="fas fa-map-marker-alt me-1"></i>
                         Bàn số <span id="tableNumber">05</span> • <span id="guestCount">2</span> khách
@@ -305,7 +338,7 @@
         <button class="category-btn active" data-category="all" onclick="selectCategory('all', this)">
             🍽️ Tất cả
         </button>
-        <!-- Categories will be populated by JavaScript -->
+        <!-- Other categories will be populated by JavaScript -->
     </div>
 </div>
 
@@ -327,6 +360,16 @@
             </button>
         </div>
         <!-- Menu items will be populated by JavaScript -->
+    </div>
+    <!-- Pagination Controls -->
+    <div id="paginationContainer" class="pagination-container d-none">
+        <button id="prevPage" class="btn btn-outline-primary pagination-btn" onclick="changePage(-1)">
+            <i class="fas fa-chevron-left me-1"></i>Trang trước
+        </button>
+        <span id="pageInfo" class="text-muted"></span>
+        <button id="nextPage" class="btn btn-outline-primary pagination-btn" onclick="changePage(1)">
+            Trang sau<i class="fas fa-chevron-right ms-1"></i>
+        </button>
     </div>
 </div>
 
@@ -383,63 +426,87 @@
     let searchTerm = '';
     let menuItems = [];
     let categories = [];
+    let currentPage = 0;
+    let totalPages = 0;
+    let pageSize = 10;
 
     // API Configuration
-    const API_BASE_URL = 'http://localhost:8080/foodhub';
+    const API_BASE_URL = 'http://localhost:8080/foodhub/menu-items';
+    const CATEGORIES_API_URL = 'http://localhost:8080/foodhub/categories';
 
-    // Emoji mapping for categories
-    const categoryEmojis = {
-        'Lẩu nước': '🍲',
-        'Nguyên liệu nhúng lẩu': '🥩',
-        'Món nướng thịt': '🥓',
-        'Món nướng hải sản': '🦐',
-        'Món nướng rau củ': '🥬',
-        'Món khai vị': '🥗',
-        'Món ăn kèm': '🍚',
-        'Nước chấm': '🥄',
-        'Đồ uống không cồn': '🥤',
-        'Đồ uống có cồn': '🍺'
-    };
+    // Default placeholder for images
+    const DEFAULT_EMOJI = '🍽️';
 
-    // Get placeholder image based on category
+    // Get placeholder image for items without image
     function getPlaceholderImage(categoryName) {
-        const emoji = categoryEmojis[categoryName] || '🍽️';
-        return `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" fill="%23f8f9fa"/><text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="32">${emoji}</text></svg>`;
+        return `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" fill="%23f8f9fa"/><text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="32">${DEFAULT_EMOJI}</text></svg>`;
+    }
+
+    // Load categories from API
+    async function loadCategories() {
+        try {
+            const response = await fetch(CATEGORIES_API_URL);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.result) {
+                categories = data.result.map(category => category.name);
+                renderCategories();
+            } else {
+                throw new Error('Invalid categories response format');
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
     }
 
     // Load menu data from API
-    async function loadMenuData() {
+    async function loadMenuData(page = 0) {
         try {
             showLoading(true);
             hideError();
 
-            const data = await apiFetch('/menu',{
-                method: 'GET'
-            });
+            if (categories.length === 0) {
+                await loadCategories();
+            }
 
-            if (data.code === 0 && data.result) {
-                // Transform API data to match our app structure
-                menuItems = data.result.map((item, index) => ({
-                    id: index + 1,
+            let url = `${API_BASE_URL}?page=${page}&size=${pageSize}`;
+            if (selectedCategory !== 'all') {
+                url = `${API_BASE_URL}/by-category?name=${encodeURIComponent(selectedCategory)}&page=${page}&size=${pageSize}`;
+                console.log('Encoded category:', encodeURIComponent(selectedCategory));
+            }
+
+            console.log('Fetching menu from:', url);
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Menu data:', data); // Di chuyển log xuống đây
+            if (data.result && data.result.content) {
+                menuItems = data.result.content.map((item, index) => ({
+                    id: item.id || (page * pageSize + index + 1),
                     name: item.name,
-                    category: item.categoryNames[0] || 'Khác',
+                    category: Array.from(item.categoryNames)[0] || 'Khác',
                     price: item.price,
                     image: item.imageUrl || getPlaceholderImage(item.categoryNames[0]),
-                    description: item.description,
+                    description: item.description || 'Không có mô tả',
                     status: item.status,
-                    rating: 4.5 + Math.random() * 0.5, // Random rating between 4.5-5.0
-                    time: Math.floor(5 + Math.random() * 15) + ' phút' // Random time 5-20 minutes
+                    rating: 4.5 + Math.random() * 0.5,
+                    time: Math.floor(5 + Math.random() * 15) + ' phút'
                 }));
 
-                // Extract unique categories
-                categories = [...new Set(menuItems.map(item => item.category))];
+                currentPage = data.result.number;
+                totalPages = data.result.totalPages;
 
-                renderCategories();
                 renderMenuItems();
+                updatePaginationUI();
             } else {
                 throw new Error('Invalid API response format');
             }
-
         } catch (error) {
             console.error('Error loading menu data:', error);
             showError();
@@ -451,7 +518,11 @@
     // Show/hide loading spinner
     function showLoading(show) {
         const spinner = document.getElementById('loadingSpinner');
-        spinner.style.display = show ? 'flex' : 'none';
+        if (spinner) {
+            spinner.style.display = show ? 'flex' : 'none';
+        } else {
+            console.warn('Loading spinner element not found');
+        }
     }
 
     // Show/hide error message
@@ -466,20 +537,23 @@
     // Render categories
     function renderCategories() {
         const container = document.getElementById('categoriesContainer');
-        const allButton = container.querySelector('[data-category="all"]');
+        container.innerHTML = ''; // Clear existing categories
 
-        // Clear existing categories except "Tất cả"
-        const existingCategories = container.querySelectorAll('.category-btn:not([data-category="all"])');
-        existingCategories.forEach(btn => btn.remove());
+        // Add "Tất cả" first
+        const allButton = document.createElement('button');
+        allButton.className = `category-btn ${selectedCategory === 'all' ? 'active' : ''}`;
+        allButton.setAttribute('data-category', 'all');
+        allButton.onclick = () => selectCategory('all', allButton);
+        allButton.innerHTML = '🍽️ Tất cả';
+        container.appendChild(allButton);
 
-        // Add new categories
+        // Add dynamic categories
         categories.forEach(category => {
-            const emoji = categoryEmojis[category] || '🍽️';
             const button = document.createElement('button');
-            button.className = 'category-btn';
+            button.className = `category-btn ${selectedCategory === category ? 'active' : ''}`;
             button.setAttribute('data-category', category);
             button.onclick = () => selectCategory(category, button);
-            button.innerHTML = `${emoji} ${category}`;
+            button.innerHTML = `${category}`; // No emoji, just category name
             container.appendChild(button);
         });
     }
@@ -497,11 +571,9 @@
     // Filter items function
     function getFilteredItems() {
         return menuItems.filter(item => {
-            const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
             const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.description.toLowerCase().includes(searchTerm.toLowerCase());
-            const isAvailable = item.status === 'AVAILABLE';
-            return matchesCategory && matchesSearch && isAvailable;
+            return matchesSearch;
         });
     }
 
@@ -510,53 +582,94 @@
         const container = document.getElementById('menuContainer');
         const filteredItems = getFilteredItems();
 
-        if (filteredItems.length === 0) {
-            container.innerHTML = `
-                    <div class="text-center py-5">
-                        <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-2">Không tìm thấy món ăn nào</p>
-                    </div>
-                `;
-            return;
-        }
+        // Giữ lại loadingSpinner và errorMessage
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorMessage = document.getElementById('errorMessage');
+        const menuContent = document.createElement('div');
+        menuContent.id = 'menuItemsContent';
 
-        container.innerHTML = filteredItems.map(item => `
-                <div class="menu-item">
-                    <div class="d-flex">
-                        ${item.image.startsWith('data:') ?
-            `<div class="placeholder-image">${categoryEmojis[item.category] || '🍽️'}</div>` :
-            `<img src="${item.image}" alt="${item.name}" onerror="this.outerHTML='<div class=\\'placeholder-image\\'>${categoryEmojis[item.category] || '🍽️'}</div>'" />`
-        }
-                        <div class="flex-fill p-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-semibold mb-0">${item.name}</h6>
-                                <span class="price-text">${formatPrice(item.price)}</span>
+        if (filteredItems.length === 0) {
+            menuContent.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Không tìm thấy món ăn nào</p>
+            </div>
+        `;
+        } else {
+            menuContent.innerHTML = filteredItems.map(item => `
+            <div class="menu-item ${item.status !== 'AVAILABLE' ? 'unavailable' : ''}">
+                <div class="d-flex">
+                    ${item.image.startsWith('data:') ?
+                `<div class="placeholder-image">${DEFAULT_EMOJI}</div>` :
+                `<img src="${item.image}" alt="${item.name}" onerror="this.outerHTML='<div class=\\'placeholder-image\\'>${DEFAULT_EMOJI}</div>'" />`
+            }
+                    <div class="flex-fill p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="fw-semibold mb-0">${item.name}</h6>
+                            <span class="price-text">${formatPrice(item.price)}</span>
+                        </div>
+                        <p class="text-muted small mb-2 line-clamp-2">${item.description}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-star rating-star me-1"></i>
+                                    ${item.rating.toFixed(1)}
+                                </small>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    ${item.time}
+                                </small>
                             </div>
-                            <p class="text-muted small mb-2 line-clamp-2">${item.description}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex gap-3">
-                                    <small class="text-muted">
-                                        <i class="fas fa-star rating-star me-1"></i>
-                                        ${item.rating.toFixed(1)}
-                                    </small>
-                                    <small class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>
-                                        ${item.time}
-                                    </small>
-                                </div>
-                                <button class="btn btn-primary btn-sm px-3" onclick="addToCart(${item.id})">
-                                    Thêm
-                                </button>
-                            </div>
+                            <button class="btn btn-primary btn-sm px-3"
+                                    onclick="${item.status === 'AVAILABLE' ? `addToCart(${item.id})` : ''}"
+                                    ${item.status !== 'AVAILABLE' ? 'disabled' : ''}>
+                                ${item.status === 'AVAILABLE' ? 'Thêm' : 'Hết hàng'}
+                            </button>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            </div>
+        `).join('');
+        }
+
+        // Xóa nội dung cũ, giữ loadingSpinner và errorMessage
+        container.innerHTML = '';
+        container.appendChild(loadingSpinner);
+        container.appendChild(errorMessage);
+        container.appendChild(menuContent);
+    }
+
+    // Update pagination UI
+    function updatePaginationUI() {
+        const paginationContainer = document.getElementById('paginationContainer');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const pageInfo = document.getElementById('pageInfo');
+
+        if (totalPages <= 1) {
+            paginationContainer.classList.add('d-none');
+            return;
+        }
+
+        paginationContainer.classList.remove('d-none');
+        pageInfo.textContent = `Trang ${currentPage + 1} / ${totalPages}`;
+        prevPageBtn.disabled = currentPage === 0;
+        nextPageBtn.disabled = currentPage >= totalPages - 1;
+    }
+
+    // Change page
+    function changePage(delta) {
+        const newPage = currentPage + delta;
+        if (newPage >= 0 && newPage < totalPages) {
+            currentPage = newPage;
+            loadMenuData(currentPage);
+        }
     }
 
     // Add to cart function
     function addToCart(itemId) {
         const item = menuItems.find(item => item.id === itemId);
+        if (item.status !== 'AVAILABLE') return;
         const existingItem = cart.find(cartItem => cartItem.id === itemId);
 
         if (existingItem) {
@@ -634,8 +747,8 @@
                     <div class="cart-item">
                         <div class="d-flex align-items-center gap-3">
                             ${item.image && !item.image.startsWith('data:') ?
-                `<img src="${item.image}" alt="${item.name}" onerror="this.outerHTML='<div class=\\'placeholder-image\\" style=\\'width: 48px; height: 48px; font-size: 1rem;\\'>${categoryEmojis[item.category] || '🍽️'}</div>'" />` :
-                `<div class="placeholder-image" style="width: 48px; height: 48px; font-size: 1rem;">${categoryEmojis[item.category] || '🍽️'}</div>`
+                `<img src="${item.image}" alt="${item.name}" onerror="this.outerHTML='<div class=\\'placeholder-image\\" style=\\'width: 48px; height: 48px; font-size: 1rem;\\'>${DEFAULT_EMOJI}</div>'" />` :
+                `<div class="placeholder-image" style="width: 48px; height: 48px; font-size: 1rem;">${DEFAULT_EMOJI}</div>`
             }
                             <div class="flex-fill">
                                 <h6 class="small fw-medium mb-0">${item.name}</h6>
@@ -665,18 +778,20 @@
     // Select category
     function selectCategory(category, button) {
         selectedCategory = category;
+        currentPage = 0; // Reset to first page
 
         // Update active button
         document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
 
-        renderMenuItems();
+        loadMenuData(0);
     }
 
     // Filter items
     function filterItems() {
         searchTerm = document.getElementById('searchInput').value;
         renderMenuItems();
+        updatePaginationUI();
     }
 
     // Close modal when clicking outside
@@ -688,10 +803,9 @@
 
     // Initialize app
     document.addEventListener('DOMContentLoaded', function() {
-        loadMenuData();
+        loadMenuData(0);
         updateCartUI();
     });
 </script>
-<script src="../js/fetch-api.js"></script>
 </body>
 </html>
