@@ -504,10 +504,23 @@ public class RestaurantOrderService {
     }
     // PHƯƠNG THỨC ĐÃ SỬA ĐỂ XỬ LÝ ĐÚNG NGÀY/TUẦN/THÁNG
     private Instant getStartDate(String period, Instant startDate) {
-        if ("custom".equals(period) && startDate != null) {
-            return startDate;
-        }
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        if ("custom".equals(period) && startDate != null) {
+            System.out.println("Received startDate: " + startDate);
+
+            // Lấy LocalDateTime từ Instant với múi giờ Vietnam
+            LocalDateTime localDateTime = startDate.atZone(zoneId).toLocalDateTime();
+
+            // Tạo lại thành UTC time với cùng date/time
+            // Ví dụ: nếu nhận được 12/06 00:00 +07 -> tạo thành 12/06 00:00 UTC
+            LocalDate localDate = localDateTime.toLocalDate();
+            Instant adjustedStart = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+
+            System.out.println("Adjusted startDate: " + adjustedStart);
+            return adjustedStart;
+        }
+
         LocalDateTime now = LocalDateTime.now(zoneId);
         switch (period != null ? period.toLowerCase() : "month") {
             case "today":
@@ -527,12 +540,23 @@ public class RestaurantOrderService {
     }
 
     private Instant getEndDate(String period, Instant endDate) {
-        if ("custom".equals(period) && endDate != null) {
-            ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
-            LocalDate endLocalDate = endDate.atZone(zoneId).toLocalDate();
-            return endLocalDate.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
-        }
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        if ("custom".equals(period) && endDate != null) {
+            System.out.println("Received endDate: " + endDate);
+
+            // Lấy LocalDateTime từ Instant với múi giờ Vietnam
+            LocalDateTime localDateTime = endDate.atZone(zoneId).toLocalDateTime();
+
+            // Tạo lại thành UTC time với cùng date/time
+            // Ví dụ: nếu nhận được 17/06 23:59 +07 -> tạo thành 17/06 23:59 UTC
+            LocalDate localDate = localDateTime.toLocalDate();
+            Instant adjustedEnd = localDate.atTime(23, 59, 59, 999_999_999).atOffset(ZoneOffset.UTC).toInstant();
+
+            System.out.println("Adjusted endDate: " + adjustedEnd);
+            return adjustedEnd;
+        }
+
         LocalDateTime now = LocalDateTime.now(zoneId);
         switch (period != null ? period.toLowerCase() : "month") {
             case "today":

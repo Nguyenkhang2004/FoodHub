@@ -147,9 +147,18 @@ public class UserController {
         return ResponseEntity.ok(response);
 
     }
-    @GetMapping("/count")
+    @GetMapping("/countEmployees")
     public ApiResponse<Long> getUserCount() {
-        Long totalItems = userService.countUser();
+        Long totalItems = userService.getTotalEmployees();
+        return ApiResponse.<Long>builder()
+                .code(1000)
+                .message("Thành công")
+                .result(totalItems)
+                .build();
+    }
+    @GetMapping("/countCustomers")
+    public ApiResponse<Long> getCustomerCount() {
+        Long totalItems = userService.getTotalCustomers();
         return ApiResponse.<Long>builder()
                 .code(1000)
                 .message("Thành công")

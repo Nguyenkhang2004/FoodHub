@@ -174,8 +174,13 @@ public class UserService {
 
         userRepository.save(user);
     }
-    public long countUser() {
-        return userRepository.count();
+    public long getTotalCustomers() {
+        return userRepository.countCustomers();
+    }
+
+
+    public long getTotalEmployees() {
+        return userRepository.countEmployees();
     }
 }
 

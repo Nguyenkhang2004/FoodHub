@@ -42,6 +42,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT COUNT(m) > 0 FROM User m WHERE LOWER(TRIM(m.username)) = LOWER(TRIM(:username)) AND m.id != :id")
     boolean existsByNameIgnoreCaseAndIdNot(@Param("username") String username, @Param("id") Integer id);
     List<User> findByRoleName_NameAndStatus(String roleName, String status);
+    @Query("SELECT COUNT(u) FROM User u WHERE u.roleName.name = 'CUSTOMER'")
+    long countCustomers();
 
+    // Đếm tổng số nhân viên (tất cả role khác CUSTOMER và ADMIN)
+    @Query("SELECT COUNT(u) FROM User u WHERE u.roleName.name NOT IN ('CUSTOMER')")
+    long countEmployees();
 
 }
