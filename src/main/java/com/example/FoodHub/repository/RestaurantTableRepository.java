@@ -12,7 +12,9 @@ import java.util.Optional;
 public interface RestaurantTableRepository extends JpaRepository<RestaurantTable, Integer>, JpaSpecificationExecutor<RestaurantTable> {
     // Custom query methods can be defined here if needed
     List<RestaurantTable> findByStatus(String status);
-    Optional<RestaurantTable> findByTableNumber(String TableNumber);
+    Optional<RestaurantTable> findByTableNumber(String tableNumber);
     List<RestaurantTable> findByArea(String area);
     List<RestaurantTable> findByAreaAndStatus(String area, String status);
+    Optional<RestaurantTable> findByQrCode(String qrCode);
+    Optional<RestaurantTable> findByCurrentToken(String token);
 }

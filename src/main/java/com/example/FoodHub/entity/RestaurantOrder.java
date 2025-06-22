@@ -23,7 +23,6 @@ public class RestaurantOrder {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -32,9 +31,6 @@ public class RestaurantOrder {
     @ColumnDefault("'PENDING'")
     @Column(name = "status", nullable = false)
     private String status;
-
-    @Column(name = "note")
-    private String note;
 
     @NotNull
     @ColumnDefault("'DINE_IN'")

@@ -30,7 +30,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@Valid @RequestBody RestaurantOrderRequest request) {
         RestaurantOrderResponse orderResponse = orderService.createOrder(request);
-        ApiResponse response = ApiResponse.<RestaurantOrderResponse>builder()
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponse)
                 .build();
         return ResponseEntity.ok().body(response);
@@ -56,16 +56,6 @@ public class OrderController {
         return ResponseEntity.ok().body(response);
     }
 
-    @PutMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrder(
-            @PathVariable Integer orderId, @Valid @RequestBody RestaurantOrderRequest request) {
-        RestaurantOrderResponse updatedOrder = orderService.updateOrder(orderId, request);
-        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
-                .result(updatedOrder)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
-
     @PutMapping("/status/{orderId}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderStatus(
             @PathVariable Integer orderId, @RequestParam String status) {
@@ -77,10 +67,10 @@ public class OrderController {
     }
 
     @PutMapping("/items/status/{orderItemId}")
-    public ResponseEntity<ApiResponse<OrderItemResponse>> updateOrderItemStatus(
-            @PathVariable Integer orderItemId, @RequestParam String status) {
-        OrderItemResponse updatedOrderItemStatus = orderService.updateOrderItemStatus(orderItemId, status);
-        ApiResponse<OrderItemResponse> response = ApiResponse.<OrderItemResponse>builder()
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderItemStatus(
+            @PathVariable Integer orderItemId, @RequestParam String status, @RequestParam(required = false) String note) {
+        RestaurantOrderResponse updatedOrderItemStatus = orderService.updateOrderItemStatus(orderItemId, status);
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(updatedOrderItemStatus)
                 .build();
         return ResponseEntity.ok().body(response);
@@ -102,6 +92,16 @@ public class OrderController {
         RestaurantOrderResponse orderResponse = orderService.getOrdersByOrderId(orderId);
         ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponse)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+    @PostMapping("/{orderId}/items")
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> addItemsToOrder(
+            @PathVariable Integer orderId, @Valid @RequestBody RestaurantOrderRequest request) {
+        RestaurantOrderResponse updatedOrder = orderService.addItemsToOrder(orderId, request);
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
+                .result(updatedOrder)
                 .build();
         return ResponseEntity.ok().body(response);
     }

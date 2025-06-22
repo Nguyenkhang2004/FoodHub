@@ -25,12 +25,15 @@ public class CategoryController {
     CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategories() {
-        log.info("Fetching all categories");
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
         List<CategoryResponse> categories = categoryService.getAllCategories();
-        return ResponseEntity.ok(ApiResponse.<List<CategoryResponse>>builder()
+
+        ApiResponse<List<CategoryResponse>> response = ApiResponse.<List<CategoryResponse>>builder()
+                .code(1000)
+                .message("Lấy danh sách danh mục thành công")
                 .result(categories)
-                .message(categories.isEmpty() ? "No categories found" : null)
-                .build());
+                .build();
+
+        return ResponseEntity.ok().body(response);
     }
 }

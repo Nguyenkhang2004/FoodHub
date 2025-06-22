@@ -40,7 +40,7 @@ public class ApplicationInitConfig {
                         .build();
                 userRepository.save(user);
 
-                log.warn("User admin has been created with default password: gm, please change its password immediately.");
+                log.warn("User admin has been created with default password: admin, please change its password immediately.");
             }
         };
     }

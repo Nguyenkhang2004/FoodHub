@@ -6,6 +6,7 @@ import com.example.FoodHub.dto.request.MenuItemRequest;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.service.MenuItemService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,10 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/menu-items")
+@RequiredArgsConstructor
 public class MenuItemController {
 
-    @Autowired
-    private MenuItemService menuItemService;
+    private final MenuItemService menuItemService;
 
     //    @GetMapping
 //    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getMenuItems(

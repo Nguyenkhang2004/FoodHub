@@ -8,5 +8,13 @@ public class CategoryResponse {
     private Integer id;
     private String name;
 
+    public CategoryResponse(Category category) {
+        this.id = category.getId();
+        this.name = category.getName();
+    }
+    public CategoryResponse() {
+        // Default constructor
+    }
+
 
 }

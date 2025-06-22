@@ -13,14 +13,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 
-
+@CrossOrigin(origins = "http://127.0.0.1:5500")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -38,13 +35,10 @@ public class AuthenticationController {
         return ResponseEntity.ok().body(response);
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserResponse>> register(@RequestBody UserCreationRequest request) throws ParseException, JOSEException {
-        UserResponse result = userService.createUser(request);
-        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(response);
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ApiResponse<UserResponse>> verifyOtp(@RequestBody OtpRequest request) {
+        UserResponse result = userService.verifyOtpAndCreateUser(request);
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder().result(result).build());
     }
 
     @PostMapping("/logout")

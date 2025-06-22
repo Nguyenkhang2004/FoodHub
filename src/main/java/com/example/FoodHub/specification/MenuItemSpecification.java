@@ -1,10 +1,12 @@
-package com.example.FoodHub.Specification;
+package com.example.FoodHub.specification;
 
 import com.example.FoodHub.entity.Category;
 import com.example.FoodHub.entity.MenuItem;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -12,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MenuItemSpecification {
-
     public static Specification<MenuItem> buildSpecification(Integer categoryId, String normalizedKeyword, String status) {
         return (root, query, criteriaBuilder) -> {
             // Start with a true predicate (no filtering)
@@ -44,8 +45,6 @@ public class MenuItemSpecification {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
-
-    // Optional: Separate methods for individual specifications
     public static Specification<MenuItem> hasCategory(Integer categoryId) {
         return (root, query, criteriaBuilder) -> {
             if (categoryId == null) {
@@ -65,4 +64,5 @@ public class MenuItemSpecification {
                                 "%" + normalizedKeyword.toLowerCase() + "%"
                         );
     }
+
 }

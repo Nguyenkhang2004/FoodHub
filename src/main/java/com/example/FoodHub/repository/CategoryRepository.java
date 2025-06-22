@@ -9,6 +9,5 @@ import java.util.List;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
-    @Query("SELECT DISTINCT c.name FROM Category c JOIN c.menuItems m")
-    List<String> findDistinctCategoryNames();
+
 }

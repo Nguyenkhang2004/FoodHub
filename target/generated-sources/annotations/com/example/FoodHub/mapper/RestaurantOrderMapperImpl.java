@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-11T11:22:27+0700",
-    comments = "version: 1.6.0, compiler: javac, environment: Java 21.0.5 (Oracle Corporation)"
+    date = "2025-06-21T18:48:11+0700",
+    comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.5 (Oracle Corporation)"
 )
 @Component
 public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
@@ -38,7 +38,6 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.status( order.getStatus() );
         restaurantOrderResponse.orderType( order.getOrderType() );
         restaurantOrderResponse.createdAt( order.getCreatedAt() );
-        restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
 
@@ -54,7 +53,6 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         RestaurantOrder restaurantOrder = new RestaurantOrder();
 
         restaurantOrder.setStatus( restaurantOrderRequest.getStatus() );
-        restaurantOrder.setNote( restaurantOrderRequest.getNote() );
         restaurantOrder.setOrderType( restaurantOrderRequest.getOrderType() );
 
         return restaurantOrder;
@@ -67,7 +65,6 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         }
 
         order.setStatus( request.getStatus() );
-        order.setNote( request.getNote() );
         order.setOrderType( request.getOrderType() );
     }
 
@@ -80,6 +77,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         OrderItem orderItem = new OrderItem();
 
         orderItem.setQuantity( orderItemRequest.getQuantity() );
+        orderItem.setNote( orderItemRequest.getNote() );
         orderItem.setStatus( orderItemRequest.getStatus() );
 
         return orderItem;
@@ -99,6 +97,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         orderItemResponse.quantity( orderItem.getQuantity() );
         orderItemResponse.price( orderItem.getPrice() );
         orderItemResponse.status( orderItem.getStatus() );
+        orderItemResponse.note( orderItem.getNote() );
 
         return orderItemResponse.build();
     }
@@ -110,6 +109,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         }
 
         orderItem.setQuantity( orderItemRequest.getQuantity() );
+        orderItem.setNote( orderItemRequest.getNote() );
         orderItem.setStatus( orderItemRequest.getStatus() );
     }
 
