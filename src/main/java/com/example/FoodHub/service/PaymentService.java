@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final RestaurantOrderRepositoryPaymentBill orderRepository;
+    private final RestaurantOrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final RestaurantTableRepository tableRepository;
     private final UserRepository userRepository;
@@ -154,22 +154,7 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
-    // Thêm phương thức search theo orderId
-    public List<PaymentResponse> searchByOrderId(Integer orderId) {
-        log.info("Searching payments by order ID: {}", orderId);
-        return paymentRepository.findByOrderId(orderId)
-                .map(payment -> List.of(mapToPaymentResponse(payment)))
-                .orElse(List.of());
-    }
 
-    // Thêm phương thức search theo transactionId
-    public List<PaymentResponse> searchByTransactionId(String transactionId) {
-        log.info("Searching payments by transaction ID: {}", transactionId);
-        List<Payment> payments = paymentRepository.findByTransactionIdContaining(transactionId);
-        return payments.stream()
-                .map(this::mapToPaymentResponse)
-                .collect(Collectors.toList());
-    }
 
 
     public List<String> getTransactionSuggestions(Instant start, Instant end, String query) {
@@ -184,25 +169,6 @@ public class PaymentService {
                 .map(p -> String.valueOf(p.getOrder().getId()) + " - " + (p.getTransactionId() != null ? p.getTransactionId() : "N/A"))
                 .distinct()
                 .limit(5) // Giới hạn 5 gợi ý
-                .collect(Collectors.toList());
-    }
-
-    // Thêm phương thức autocomplete
-    public List<PaymentResponse> getSuggestions(String query, String type) {
-        log.info("Fetching suggestions for query: {}, type: {}", query, type);
-        List<Payment> payments;
-        if ("orderId".equalsIgnoreCase(type)) {
-            payments = paymentRepository.findSuggestionsByOrderId(query);
-        } else if ("transactionId".equalsIgnoreCase(type)) {
-            payments = paymentRepository.findSuggestionsByTransactionId(query);
-        } else {
-            List<Payment> orderSuggestions = paymentRepository.findSuggestionsByOrderId(query);
-            List<Payment> transactionSuggestions = paymentRepository.findSuggestionsByTransactionId(query);
-            orderSuggestions.addAll(transactionSuggestions);
-            payments = orderSuggestions;
-        }
-        return payments.stream()
-                .map(this::mapToPaymentResponse)
                 .collect(Collectors.toList());
     }
 
@@ -280,25 +246,6 @@ public class PaymentService {
         return response;
     }
 
-    // Existing PaymentService methods
-    public List<Payment> getPendingPayments() {
-        log.info("Fetching pending payments");
-        return paymentRepository.findByStatus("PENDING");
-    }
-
-    public Payment refundPayment(Integer paymentId) {
-        log.info("Refunding payment with ID: {}", paymentId);
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
-        payment.setStatus("REFUNDED");
-        payment.setUpdatedAt(Instant.now());
-        return paymentRepository.save(payment);
-    }
-
-    public List<Payment> getAllTransactions() {
-        log.info("Fetching all transactions");
-        return paymentRepository.findAll();
-    }
 
     public InvoiceResponse getOrderDetails(Integer orderId) {
         // Lấy thông tin đơn hàng
