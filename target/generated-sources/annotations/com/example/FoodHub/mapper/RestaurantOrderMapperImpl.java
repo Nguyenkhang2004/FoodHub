@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-23T07:53:58+0700",
+    date = "2025-06-23T10:12:46+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.3 (Oracle Corporation)"
 )
 @Component
@@ -47,6 +47,32 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
         restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
+
+        return restaurantOrderResponse.build();
+    }
+
+    @Override
+    public RestaurantOrderResponse toRestaurantOrderResponse1(RestaurantOrder order) {
+        if ( order == null ) {
+            return null;
+        }
+
+        RestaurantOrderResponse.RestaurantOrderResponseBuilder restaurantOrderResponse = RestaurantOrderResponse.builder();
+
+        restaurantOrderResponse.tableId( orderTableId( order ) );
+        restaurantOrderResponse.tableNumber( orderTableTableNumber( order ) );
+        restaurantOrderResponse.userId( orderUserId( order ) );
+        restaurantOrderResponse.username( orderUserUsername( order ) );
+        restaurantOrderResponse.id( order.getId() );
+        restaurantOrderResponse.status( order.getStatus() );
+        restaurantOrderResponse.orderType( order.getOrderType() );
+        restaurantOrderResponse.createdAt( order.getCreatedAt() );
+        restaurantOrderResponse.updatedAt( order.getUpdatedAt() );
+        restaurantOrderResponse.totalAmount( order.getTotalAmount() );
+        restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
+        restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
+
+        restaurantOrderResponse.paymentMethod( order.getPayment() != null && "PAID".equals(order.getPayment().getStatus()) ? order.getPayment().getPaymentMethod() : null );
 
         return restaurantOrderResponse.build();
     }

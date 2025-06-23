@@ -1,5 +1,6 @@
 package com.example.FoodHub.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -21,13 +22,12 @@ public class RestaurantOrderResponse {
     private Instant createdAt;
     private Instant updatedAt;
     private String note;
-
     private Integer tableId;
     private String tableNumber;
-
     private Integer userId;
     private String username;
     private BigDecimal totalAmount;
+    private String paymentMethod;
     private Set<OrderItemResponse> orderItems;
     private PaymentResponse payment;
 }
