@@ -1,5 +1,7 @@
 package com.example.FoodHub.configuration;
 
+import com.example.FoodHub.security.CustomOAuth2UserService;
+import com.example.FoodHub.security.OAuth2AuthenticationSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +21,10 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
     @Autowired
+    private CustomOAuth2UserService customOAuth2UserService;
+    @Autowired
+    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    @Autowired
     private CustomJwtDecoder customJwtDecoder;
     private final String[] PUBLIC_ENDPOINTS = {
             "/users",
@@ -26,23 +32,51 @@ public class SecurityConfig {
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
-            "/scan"
     };
 
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .authorizeHttpRequests(requests -> requests
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Bỏ qua xác thực cho OPTIONS
-                        .requestMatchers(HttpMethod.POST, "/auth/**", "/users", "/scan").permitAll()
-                        .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.decoder(customJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
-                .csrf(AbstractHttpConfigurer::disable);
-        return httpSecurity.build();
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET,
+                                "/menu", "/menu/**",
+                                "/restaurants", "/restaurants/**",
+                                "/dishes", "/dishes/**",
+                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth/**", "/users/**", "/api/gemini/**", "/api/feedback/**"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.PUT,
+                                "/users/**"
+                        ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
+
+                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .anyRequest().authenticated()
+                )
+
+                // ✅ Thêm dòng này để bật JWT Bearer support
+                .oauth2ResourceServer(resource -> resource
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                                .decoder(customJwtDecoder) // nếu bạn có custom decoder
+                        )
+                )
+
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                );
+
+        return http.build();
     }
+
+
 //    @Bean
 //    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 //        http

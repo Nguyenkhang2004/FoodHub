@@ -222,6 +222,7 @@ import com.example.FoodHub.entity.Category;
 import com.example.FoodHub.entity.MenuItem;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
+import com.example.FoodHub.mapper.MenuItemMapper;
 import com.example.FoodHub.repository.CategoryRepository;
 import com.example.FoodHub.repository.MenuItemRepository;
 import com.example.FoodHub.specification.MenuItemSpecification;
@@ -246,6 +247,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class MenuItemService {
 
+    private final MenuItemMapper menuItemMapper;
     @Value("${app.upload.dir}")
     private String uploadDir;
 
@@ -253,16 +255,6 @@ public class MenuItemService {
     private final CategoryRepository categoryRepository;
 
 
-//    public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, String sortBy, String sortDirection, int page, int size) {
-//        String sortField = validateSortBy(sortBy);
-//        boolean isAsc = "asc".equalsIgnoreCase(sortDirection);
-//        Pageable pageable = PageRequest.of(page, size);
-//
-//        String normalizedKeyword = (keyword != null) ? normalizeKeyword(keyword) : null;
-//
-//        Page<MenuItem> menuItems = menuItemRepository.findMenuItems(sortField, isAsc, categoryId, normalizedKeyword, pageable);
-//        return menuItems.map(MenuItemResponse::new);
-//    }
 
     public Page<MenuItemResponse> getMenuItems(Integer categoryId, String keyword, String status, String sortBy, String sortDirection, int page, int size) {
         // Validate page and size
@@ -321,7 +313,7 @@ public class MenuItemService {
     public MenuItemResponse getMenuItemById(Integer id) {
         MenuItem menuItem = menuItemRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MENU_ITEM_NOT_FOUND));
-        return new MenuItemResponse(menuItem);
+        return menuItemMapper.toMenuItemResponse(menuItem);
     }
 
     @Transactional

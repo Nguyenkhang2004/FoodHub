@@ -217,9 +217,9 @@ public class RestaurantOrderService {
         }
 
         // 3. Update thông tin order nếu có thay đổi (note, orderType...)
-        if (request.getNote() != null) {
-            existingOrder.setNote(request.getNote());
-        }
+//        if (request.getNote() != null) {
+//            existingOrder.setNote(request.getNote());
+//        }
         if (request.getOrderType() != null) {
             existingOrder.setOrderType(request.getOrderType());
         }

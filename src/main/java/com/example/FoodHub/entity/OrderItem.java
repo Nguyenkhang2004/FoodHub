@@ -39,6 +39,9 @@ public class OrderItem {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "note")
+    private String note;
+
     @NotNull
     @ColumnDefault("'PENDING'")
     @Column(name = "status", nullable = false)

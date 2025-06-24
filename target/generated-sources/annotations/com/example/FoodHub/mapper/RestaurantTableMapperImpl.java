@@ -8,7 +8,11 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
+<<<<<<< HEAD
     date = "2025-06-23T15:37:19+0700",
+=======
+    date = "2025-06-23T15:46:28+0700",
+>>>>>>> development
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
@@ -39,9 +43,9 @@ public class RestaurantTableMapperImpl implements RestaurantTableMapper {
 
         RestaurantTable restaurantTable = new RestaurantTable();
 
-        restaurantTable.setArea( restaurantTableRequest.getArea() );
         restaurantTable.setTableNumber( restaurantTableRequest.getTableNumber() );
         restaurantTable.setQrCode( restaurantTableRequest.getQrCode() );
+        restaurantTable.setArea( restaurantTableRequest.getArea() );
         restaurantTable.setStatus( restaurantTableRequest.getStatus() );
 
         return restaurantTable;
@@ -53,9 +57,9 @@ public class RestaurantTableMapperImpl implements RestaurantTableMapper {
             return;
         }
 
-        restaurantTable.setArea( restaurantTableRequest.getArea() );
         restaurantTable.setTableNumber( restaurantTableRequest.getTableNumber() );
         restaurantTable.setQrCode( restaurantTableRequest.getQrCode() );
+        restaurantTable.setArea( restaurantTableRequest.getArea() );
         restaurantTable.setStatus( restaurantTableRequest.getStatus() );
     }
 }

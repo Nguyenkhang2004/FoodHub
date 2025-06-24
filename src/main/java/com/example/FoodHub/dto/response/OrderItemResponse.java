@@ -19,4 +19,5 @@ public class OrderItemResponse {
     Integer quantity;
     BigDecimal price;
     String status;
+    String note;
 }

@@ -21,14 +21,14 @@ public class RestaurantOrderRequest {
     @Positive(message = "USER_ID_INVALID")
     private Integer userId;
 
-    @Size(max = 500, message = "NOTE_TOO_LONG")
-    private String note;
-
     @Pattern(regexp = "DINE_IN|TAKEAWAY|DELIVERY", message = "ORDER_TYPE_INVALID")
     private String orderType;
 
     @Pattern(regexp = "PENDING|CONFIRMED|READY|CANCELLED|COMPLETED", message = "ORDER_STATUS_INVALID")
     private String status = "PENDING";
+
+    @Size(max = 500, message = "NOTE_TOO_LONG")
+    private String note;
 
     @NotNull(message = "ORDER_ITEMS_REQUIRED")
     @NotEmpty(message = "ORDER_ITEMS_REQUIRED")

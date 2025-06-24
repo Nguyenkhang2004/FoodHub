@@ -1,4 +1,218 @@
 async function showOrders() {
+<<<<<<< HEAD
+<<<<<<< HEAD
+    // Update page title and toggle visibility
+    document.getElementById('pageTitle').textContent = 'Quản lý đơn hàng';
+    document.getElementById('dashboardContent').style.display = 'none';
+    document.getElementById('dynamicContent').style.display = 'block';
+
+    // Render the enhanced orders table HTML with filters and sorting
+    document.getElementById('dynamicContent').innerHTML = `
+      <div class="orders-container">
+        <!-- Enhanced Header Section -->
+        <div class="orders-header">
+          <div class="d-flex justify-content-between align-items-center w-100 flex-wrap">
+            <h3>
+              <i class="fas fa-clipboard-list"></i>
+              Tất cả đơn hàng
+            </h3>
+            <div class="orders-actions">
+              <button class="btn-orders-action btn-success" onclick="takeNewOrder()">
+                <i class="fas fa-plus"></i>
+                Nhận đơn mới
+              </button>
+              <button class="btn-orders-action btn-outline-primary" onclick="refreshOrders()">
+                <i class="fas fa-sync-alt"></i>
+                Làm mới
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter and Sort Section -->
+        <div class="orders-filter-section card mb-3">
+          <div class="card-body">
+            <div class="row g-3">
+              <!-- Status Filter -->
+              <div class="col-md-3">
+                <label class="form-label">
+                  <i class="fas fa-filter me-1"></i>
+                  Trạng thái
+                </label>
+                <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="PENDING">Chờ xử lý</option>
+                  <option value="CONFIRMED">Đã xác nhận</option>
+                  <option value="READY">Sẵn sàng</option>
+                  <option value="COMPLETED">Hoàn thành</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                </select>
+              </div>
+
+              <!-- Table Filter -->
+              <div class="col-md-3">
+                <label class="form-label">
+                  <i class="fas fa-chair me-1"></i>
+                  Bàn số
+                </label>
+                <input type="number" class="form-control" id="tableIdFilter" 
+                       placeholder="Chọn bàn" onchange="applyFilters()">
+              </div>
+
+              <!-- Min Price Filter -->
+              <div class="col-md-3">
+                <label class="form-label">
+                  <i class="fas fa-money-bill me-1"></i>
+                  Giá tối thiểu (VNĐ)
+                </label>
+                <input type="number" class="form-control" id="minPriceFilter" 
+                       placeholder="0" onchange="applyFilters()">
+              </div>
+
+              <!-- Max Price Filter -->
+              <div class="col-md-3">
+                <label class="form-label">
+                  <i class="fas fa-money-bill me-1"></i>
+                  Giá tối đa (VNĐ)
+                </label>
+                <input type="number" class="form-control" id="maxPriceFilter" 
+                       placeholder="1000000" onchange="applyFilters()">
+              </div>
+
+              <!-- Sort Field -->
+              <div class="col-md-4">
+                <label class="form-label">
+                  <i class="fas fa-sort me-1"></i>
+                  Sắp xếp theo
+                </label>
+                <select class="form-select" id="sortByFilter" onchange="applyFilters()">
+                  <option value="createdAt">Thời gian tạo</option>
+                  <option value="totalAmount">Tổng tiền</option>
+                  <option value="id">Mã đơn hàng</option>
+                  <option value="status">Trạng thái</option>
+                </select>
+              </div>
+
+              <!-- Sort Direction -->
+              <div class="col-md-4">
+                <label class="form-label">
+                  <i class="fas fa-sort-amount-down me-1"></i>
+                  Thứ tự
+                </label>
+                <select class="form-select" id="sortDirectionFilter" onchange="applyFilters()">
+                  <option value="DESC">Giảm dần</option>
+                  <option value="ASC">Tăng dần</option>
+                </select>
+              </div>
+
+              <!-- Page Size -->
+              <div class="col-md-4">
+                <label class="form-label">
+                  <i class="fas fa-list me-1"></i>
+                  Số đơn/trang
+                </label>
+                <select class="form-select" id="pageSizeFilter" onchange="applyFilters()">
+                  <option value="5">5 đơn</option>
+                  <option value="10" selected>10 đơn</option>
+                  <option value="20">20 đơn</option>
+                  <option value="50">50 đơn</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Filter Actions -->
+            <div class="row mt-3">
+              <div class="col-12">
+                <div class="d-flex gap-2 justify-content-end">
+                  <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times me-1"></i>
+                    Xóa bộ lọc
+                  </button>
+                  <button class="btn btn-primary" onclick="applyFilters()">
+                    <i class="fas fa-search me-1"></i>
+                    Áp dụng
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="orders-summary mb-3">
+          <div class="alert alert-info d-flex align-items-center">
+            <i class="fas fa-info-circle me-2"></i>
+            <span id="ordersSummary">Đang tải...</span>
+          </div>
+        </div>
+
+        <!-- Enhanced Orders Table -->
+        <div class="orders-table-card card">
+          <div class="card-body">
+            <div class="orders-table-wrapper">
+              <table class="orders-table table">
+                <thead>
+                  <tr>
+                    <th><i class="fas fa-hashtag me-2"></i>Mã đơn</th>
+                    <th><i class="fas fa-chair me-2"></i>Bàn</th>
+                    <th><i class="fas fa-clock me-2"></i>Thời gian</th>
+                    <th><i class="fas fa-money-bill me-2"></i>Tổng tiền</th>
+                    <th><i class="fas fa-info-circle me-2"></i>Trạng thái</th>
+                    <th><i class="fas fa-utensils me-2"></i>Loại</th>
+                    <th><i class="fas fa-cogs me-2"></i>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="orderTableBody">
+                  <!-- Loading state -->
+                  <tr>
+                    <td colspan="7">
+                      <div class="orders-loading">
+                        <div class="spinner"></div>
+                        <p>Đang tải danh sách đơn hàng...</p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enhanced Pagination - Only pagination controls -->
+        <div class="pagination-container mt-3">
+          <div class="d-flex justify-content-center">
+            <div class="pagination-controls">
+              <nav aria-label="Phân trang đơn hàng">
+                <ul class="pagination mb-0" id="paginationList">
+                  <!-- Pagination buttons will be generated here -->
+                </ul>
+              </nav>
+            </div>
+          </div>
+          
+          <!-- Quick Jump (only show when total pages > 10) -->
+          <div class="pagination-jump mt-2" id="paginationJump" style="display: none;">
+            <div class="d-flex justify-content-center align-items-center gap-2">
+              <span class="text-muted">Chuyển đến trang:</span>
+              <input type="number" class="form-control form-control-sm" id="jumpToPage" 
+                     style="width: 80px;" min="1" max="1" placeholder="1">
+              <button class="btn btn-sm btn-outline-primary" onclick="jumpToPage()">
+                <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Initialize and load orders
+    await loadOrders();
+
+    // Update navigation active state
+    updateActiveNavigation('showOrders()');
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     try {
         // Update page title and toggle visibility
         document.getElementById('pageTitle').textContent = 'Quản lý đơn hàng';
@@ -74,6 +288,10 @@ function setupEventListeners() {
             element.addEventListener('change', applyFilters);
         }
     });
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 }
 
 // Global variables for pagination
@@ -84,6 +302,19 @@ let totalElements = 0;
 // Load orders from API with filters and pagination
 async function loadOrders() {
     try {
+<<<<<<< HEAD
+<<<<<<< HEAD
+        // Get filter values
+        const status = document.getElementById('statusFilter')?.value || '';
+        const tableId = document.getElementById('tableIdFilter')?.value || '';
+        const minPrice = document.getElementById('minPriceFilter')?.value || '';
+        const maxPrice = document.getElementById('maxPriceFilter')?.value || '';
+        const sortBy = document.getElementById('sortByFilter')?.value || 'createdAt';
+        const sortDirection = document.getElementById('sortDirectionFilter')?.value || 'DESC';
+        const pageSize = document.getElementById('pageSizeFilter')?.value || '10';
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         // Get filter values - với null checks
         const statusFilter = document.getElementById('statusFilter');
         const tableNumberFilter = document.getElementById('tableNumberFilter'); // Thay đổi từ tableIdFilter
@@ -100,11 +331,23 @@ async function loadOrders() {
         const sortBy = sortByFilter ? sortByFilter.value || 'createdAt' : 'createdAt';
         const sortDirection = sortDirectionFilter ? sortDirectionFilter.value || 'DESC' : 'DESC';
         const pageSize = pageSizeFilter ? pageSizeFilter.value || '10' : '10';
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
         // Build query parameters
         const params = new URLSearchParams();
         if (status) params.append('status', status);
+<<<<<<< HEAD
+<<<<<<< HEAD
+        if (tableId) params.append('tableId', tableId);
+=======
         if (tableNumber) params.append('tableNumber', tableNumber); // Thay đổi từ tableId thành tableNumber
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+        if (tableNumber) params.append('tableNumber', tableNumber); // Thay đổi từ tableId thành tableNumber
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         if (minPrice) params.append('minPrice', minPrice);
         if (maxPrice) params.append('maxPrice', maxPrice);
         params.append('page', currentPage.toString());
@@ -140,6 +383,22 @@ async function loadOrders() {
 function applyFilters() {
     currentPage = 0; // Reset to first page when applying filters
     loadOrders();
+<<<<<<< HEAD
+<<<<<<< HEAD
+}
+
+// Clear all filters
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('tableIdFilter').value = '';
+    document.getElementById('minPriceFilter').value = '';
+    document.getElementById('maxPriceFilter').value = '';
+    document.getElementById('sortByFilter').value = 'createdAt';
+    document.getElementById('sortDirectionFilter').value = 'DESC';
+    document.getElementById('pageSizeFilter').value = '10';
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     // Tạm dừng auto refresh khi người dùng thao tác filter
     pauseAutoRefreshTemporarily();
 }
@@ -163,6 +422,10 @@ function clearFilters() {
             element.value = filter.value;
         }
     });
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
     applyFilters();
 }
@@ -171,11 +434,20 @@ function clearFilters() {
 function renderOrders(orders) {
     const orderTableBody = document.getElementById('orderTableBody');
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     if (!orderTableBody) {
         console.error('orderTableBody element not found');
         return;
     }
 
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     if (orders.length === 0) {
         // Show empty state
         orderTableBody.innerHTML = `
@@ -245,6 +517,13 @@ function renderOrders(orders) {
                             title="Xem chi tiết">
                         <i class="fas fa-eye"></i>
                     </button>
+<<<<<<< HEAD
+<<<<<<< HEAD
+                    ${getActionButton(order)}
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
                 </div>
             </td>
         `;
@@ -255,8 +534,16 @@ function renderOrders(orders) {
 // Update summary information
 function updateSummary(orderPage) {
     const summaryElement = document.getElementById('ordersSummary');
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
     if (!summaryElement) return;
 
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+    if (!summaryElement) return;
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     const pageSize = orderPage.size;
     const currentPageNum = orderPage.number + 1; // Display 1-based page number
     const startItem = orderPage.number * pageSize + 1;
@@ -269,7 +556,15 @@ function updateSummary(orderPage) {
     `;
 }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Update pagination controls with smart pagination - Removed pagination info display
+=======
 // Update pagination controls with smart pagination
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+// Update pagination controls with smart pagination
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 function updatePagination() {
     // Generate pagination buttons
     generatePaginationButtons();
@@ -278,11 +573,25 @@ function updatePagination() {
     const jumpContainer = document.getElementById('paginationJump');
     const jumpInput = document.getElementById('jumpToPage');
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+    if (totalPages > 10) {
+        jumpContainer.style.display = 'block';
+        jumpInput.max = totalPages;
+        jumpInput.placeholder = `1-${totalPages}`;
+    } else {
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     if (jumpContainer && jumpInput && totalPages > 10) {
         jumpContainer.style.display = 'block';
         jumpInput.max = totalPages;
         jumpInput.placeholder = `1-${totalPages}`;
     } else if (jumpContainer) {
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         jumpContainer.style.display = 'none';
     }
 }
@@ -290,8 +599,16 @@ function updatePagination() {
 // Generate smart pagination buttons (max 10 visible pages)
 function generatePaginationButtons() {
     const paginationList = document.getElementById('paginationList');
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
     if (!paginationList) return;
 
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+    if (!paginationList) return;
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     paginationList.innerHTML = '';
 
     if (totalPages <= 1) return;
@@ -406,8 +723,16 @@ function goToPage(pageIndex) {
 // Jump to page functionality
 function jumpToPage() {
     const jumpInput = document.getElementById('jumpToPage');
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
     if (!jumpInput) return;
 
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+    if (!jumpInput) return;
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     const pageNumber = parseInt(jumpInput.value);
 
     if (pageNumber && pageNumber >= 1 && pageNumber <= totalPages) {
@@ -422,6 +747,35 @@ function jumpToPage() {
     }
 }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Allow Enter key in jump input
+document.addEventListener('DOMContentLoaded', function() {
+    // This will be called when the page is ready
+    setTimeout(() => {
+        const jumpInput = document.getElementById('jumpToPage');
+        if (jumpInput) {
+            jumpInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    jumpToPage();
+                }
+            });
+        }
+    }, 100);
+});
+
+// Change page (legacy support)
+function changePage(direction) {
+    const newPage = currentPage + direction;
+    goToPage(newPage);
+}
+
+// Refresh orders
+function refreshOrders() {
+    loadOrders();
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Refresh orders
 async function refreshOrders() {
     const refreshBtn = document.querySelector('[onclick="refreshOrders()"]');
@@ -439,10 +793,20 @@ async function refreshOrders() {
     } else {
         await loadOrders();
     }
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 }
 
 // Show error state
 function showErrorState(message) {
+<<<<<<< HEAD
+<<<<<<< HEAD
+    document.getElementById('orderTableBody').innerHTML = `
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     const orderTableBody = document.getElementById('orderTableBody');
     if (!orderTableBody) {
         console.error('orderTableBody element not found for error state');
@@ -450,6 +814,10 @@ function showErrorState(message) {
     }
 
     orderTableBody.innerHTML = `
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
         <tr>
             <td colspan="7">
                 <div class="empty-orders-state">
@@ -500,6 +868,23 @@ function formatCurrency(amount) {
         currency: 'VND'
     }).format(amount);
 }
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Helper function to get enhanced status badge classes
+function getStatusBadgeClass(status) {
+    const statusMap = {
+        'PENDING': 'badge-pending',
+        'CONFIRMED': 'badge-confirmed',
+        'PREPARING': 'badge-preparing',
+        'READY': 'badge-ready',
+        'COMPLETED': 'badge-completed'
+    };
+    return statusMap[status] || 'badge-pending';
+}
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Helper function to get status icons
 function getStatusIcon(status) {
@@ -513,6 +898,61 @@ function getStatusIcon(status) {
     return iconMap[status] || '<i class="fas fa-clock me-1"></i>';
 }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Helper function to get Vietnamese status text
+function getStatusText(status) {
+    const textMap = {
+        'PENDING': 'Chờ xác nhận',
+        'CONFIRMED': 'Đã xác nhận',
+        'PREPARING': 'Đang chuẩn bị',
+        'READY': 'Sẵn sàng',
+        'COMPLETED': 'Hoàn thành'
+    };
+    return textMap[status] || 'Không xác định';
+}
+
+// Enhanced action button generator
+function getActionButton(order) {
+    const actionMap = {
+        'PENDING': `
+            <button class="action-btn btn-success" 
+                    onclick="event.stopPropagation(); confirmOrder(${order.id})"
+                    title="Xác nhận đơn hàng">
+                <i class="fas fa-check"></i>
+            </button>`,
+        'CONFIRMED': `
+            <button class="action-btn btn-warning" 
+                    onclick="event.stopPropagation(); startPreparing(${order.id})"
+                    title="Bắt đầu chuẩn bị">
+                <i class="fas fa-play"></i>
+            </button>`,
+        'PREPARING': `
+            <button class="action-btn btn-success" 
+                    onclick="event.stopPropagation(); markReady(${order.id})"
+                    title="Đánh dấu hoàn thành">
+                <i class="fas fa-flag-checkered"></i>
+            </button>`,
+        'READY': `
+            <button class="action-btn btn-info" 
+                    onclick="event.stopPropagation(); completeOrder(${order.id})"
+                    title="Hoàn thành giao hàng">
+                <i class="fas fa-truck"></i>
+            </button>`,
+        'COMPLETED': `
+            <button class="action-btn btn-secondary" 
+                    onclick="event.stopPropagation(); viewOrderDetails(${order.id})"
+                    title="Xem lại" disabled>
+                <i class="fas fa-archive"></i>
+            </button>`
+    };
+    return actionMap[order.status] || '';
+}
+
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Helper function to update navigation active state
 function updateActiveNavigation(currentFunction) {
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -524,6 +964,31 @@ function updateActiveNavigation(currentFunction) {
     }
 }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Refresh orders function
+async function refreshOrders() {
+    const refreshBtn = document.querySelector('[onclick="refreshOrders()"]');
+    if (refreshBtn) {
+        const originalHTML = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tải...';
+        refreshBtn.disabled = true;
+
+        try {
+            await showOrders();
+        } finally {
+            refreshBtn.innerHTML = originalHTML;
+            refreshBtn.disabled = false;
+        }
+    } else {
+        await showOrders();
+    }
+}
+
+=======
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Hàm định dạng thời gian
 function formatDateTime(dateString) {
     const date = new Date(dateString);
@@ -553,7 +1018,14 @@ function formatDateTime(dateString) {
         }) + ` ${timeStr}`;
     }
 }
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
 
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 // Hàm xác định class cho badge trạng thái
 function getStatusBadgeClass(status) {
     const statusClasses = {
@@ -578,6 +1050,88 @@ function getStatusText(status) {
     return statusTexts[status] || status;
 }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+// Hàm tạo nút hành động dựa trên trạng thái đơn hàng
+function getActionButton(order) {
+    switch (order.status) {
+        case 'PENDING':
+            return `
+                <button class="btn btn-sm btn-success" onclick="confirmOrder(${order.id})">
+                    <i class="fas fa-check me-1"></i>Xác nhận
+                </button>`;
+        case 'READY':
+            return `
+                <button class="btn btn-sm btn-primary" onclick="serveOrder(${order.id})">
+                    <i class="fas fa-utensils me-1"></i>Phục vụ
+                </button>`;
+        case 'COMPLETED':
+            return `
+                <button class="btn btn-sm btn-secondary" disabled>
+                    <i class="fas fa-check-circle me-1"></i>Đã hoàn thành
+                </button>`;
+        default:
+            return '';
+    }
+}
+
+// Hàm xem chi tiết đơn hàng
+function viewOrderDetails(orderId) {
+    // TODO: Implement view order details
+    alert('Chức năng xem chi tiết đơn hàng sẽ được cập nhật sau!');
+}
+
+// Hàm xác nhận đơn hàng
+function confirmOrder(orderId) {
+    if (confirm('Xác nhận đơn hàng này?')) {
+        fetch(`/api/orders/${orderId}/confirm`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    showOrders(); // Refresh danh sách
+                    alert('Đã xác nhận đơn hàng thành công!');
+                } else {
+                    throw new Error('Không thể xác nhận đơn hàng');
+                }
+            })
+            .catch(error => {
+                console.error('Error confirming order:', error);
+                alert('Không thể xác nhận đơn hàng. Vui lòng thử lại sau.');
+            });
+    }
+}
+
+// Hàm phục vụ đơn hàng
+function serveOrder(orderId) {
+    if (confirm('Xác nhận phục vụ đơn hàng này?')) {
+        fetch(`/api/orders/${orderId}/serve`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    showOrders(); // Refresh danh sách
+                    alert('Đã cập nhật trạng thái phục vụ thành công!');
+                } else {
+                    throw new Error('Không thể cập nhật trạng thái phục vụ');
+                }
+            })
+            .catch(error => {
+                console.error('Error serving order:', error);
+                alert('Không thể cập nhật trạng thái phục vụ. Vui lòng thử lại sau.');
+            });
+    }
+}
+
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 async function viewTableOrders(tableId) {
     try {
         console.log('Fetching table orders for table ID:', tableId);
@@ -843,10 +1397,21 @@ function updateOrderStatus(orderId) {
         alert('Chức năng cập nhật trạng thái sẽ được hoàn thiện sau!');
     }
 }
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
 
 // Hàm nhận đơn mới
 function takeNewOrder() {
     // TODO: Implement take new order functionality
+<<<<<<< HEAD
+<<<<<<< HEAD
+    alert('Chức năng nhận đơn mới sẽ được cập nhật sau!');
+}
+=======
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154
     alert('Chức năng nhận đơn mới sẽ được hoàn thiện sau!');
 }
 
@@ -943,3 +1508,7 @@ document.addEventListener('visibilitychange', function() {
 
 
 
+<<<<<<< HEAD
+>>>>>>> 85a9d72998aebcafc87fb519939c803a0c691b90
+=======
+>>>>>>> 03c09e629f78b756aa2ce6ac6bc83e3eae094154

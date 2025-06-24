@@ -26,7 +26,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@Valid @RequestBody RestaurantOrderRequest request) {
         RestaurantOrderResponse orderResponse = orderService.createOrder(request);
-        ApiResponse response = ApiResponse.<RestaurantOrderResponse>builder()
+        ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponse)
                 .build();
         return ResponseEntity.ok().body(response);
@@ -39,7 +39,7 @@ public class OrderController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort
     ) {

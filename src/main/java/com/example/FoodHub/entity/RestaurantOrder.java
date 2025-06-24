@@ -32,9 +32,6 @@ public class RestaurantOrder {
     @Column(name = "status", nullable = false)
     private String status;
 
-    @Column(name = "note")
-    private String note;
-
     @NotNull
     @ColumnDefault("'DINE_IN'")
     @Column(name = "order_type", nullable = false)

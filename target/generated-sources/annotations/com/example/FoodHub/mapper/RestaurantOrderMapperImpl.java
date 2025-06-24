@@ -18,7 +18,11 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
+<<<<<<< HEAD
     date = "2025-06-23T15:37:18+0700",
+=======
+    date = "2025-06-23T15:46:28+0700",
+>>>>>>> development
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
@@ -44,7 +48,6 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.orderType( order.getOrderType() );
         restaurantOrderResponse.createdAt( order.getCreatedAt() );
         restaurantOrderResponse.updatedAt( order.getUpdatedAt() );
-        restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
         restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
@@ -61,7 +64,6 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         RestaurantOrder restaurantOrder = new RestaurantOrder();
 
         restaurantOrder.setStatus( restaurantOrderRequest.getStatus() );
-        restaurantOrder.setNote( restaurantOrderRequest.getNote() );
         restaurantOrder.setOrderType( restaurantOrderRequest.getOrderType() );
         restaurantOrder.setPayment( paymentMapper.toPayment( restaurantOrderRequest.getPayment() ) );
 
@@ -75,7 +77,6 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         }
 
         order.setStatus( request.getStatus() );
-        order.setNote( request.getNote() );
         order.setOrderType( request.getOrderType() );
         if ( request.getPayment() != null ) {
             if ( order.getPayment() == null ) {
@@ -97,6 +98,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         OrderItem orderItem = new OrderItem();
 
         orderItem.setQuantity( orderItemRequest.getQuantity() );
+        orderItem.setNote( orderItemRequest.getNote() );
         orderItem.setStatus( orderItemRequest.getStatus() );
 
         return orderItem;
@@ -116,6 +118,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         orderItemResponse.quantity( orderItem.getQuantity() );
         orderItemResponse.price( orderItem.getPrice() );
         orderItemResponse.status( orderItem.getStatus() );
+        orderItemResponse.note( orderItem.getNote() );
 
         return orderItemResponse.build();
     }
@@ -127,6 +130,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         }
 
         orderItem.setQuantity( orderItemRequest.getQuantity() );
+        orderItem.setNote( orderItemRequest.getNote() );
         orderItem.setStatus( orderItemRequest.getStatus() );
     }
 

@@ -3,7 +3,6 @@ package com.example.FoodHub.controller;
 import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
-import com.example.FoodHub.enums.TableStatus;
 import com.example.FoodHub.service.RestaurantTableService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
