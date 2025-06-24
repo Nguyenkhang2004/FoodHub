@@ -47,6 +47,7 @@ public class UserService {
         if (!roleRepository.existsByName(request.getRoleName())) {
             throw new AppException(ErrorCode.INVALID_ROLE);
         }
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
@@ -57,6 +58,12 @@ public class UserService {
         User user = userMapper.toUser(request);
         String plainPassword = request.getPassword();
         user.setPassword(passwordEncoder.encode(plainPassword));
+
+
+        log.info("role request {}", request.getRoleName());
+        log.info("role entity {}",user.getRoleName());
+
+
         user.setStatus("ACTIVE");
         user.setRegistrationDate(LocalDateTime.now().atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant());
         user.setIsAuthUser(false);
