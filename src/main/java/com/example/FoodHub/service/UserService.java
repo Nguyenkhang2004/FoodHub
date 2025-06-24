@@ -143,7 +143,7 @@ public class UserService {
                 .map(userMapper::toUserResponse)
                 .toList();
     }
-    public Page<UserResponse> getCustomers(String keyword, String sortDirection, int page, int size) {
+    public Page<UserResponse> getCustomers(String keyword, String status ,String sortDirection, int page, int size) {
         log.info("In method getCustomers");
         // Xác định hướng sắp xếp theo username
         Sort sort = Sort.by("username");
@@ -153,7 +153,7 @@ public class UserService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         // Lấy danh sách khách hàng từ repository
-        Page<User> customerPage = userRepository.findCustomers(keyword, pageable);
+        Page<User> customerPage = userRepository.findCustomers(keyword,status, pageable);
 
         // Ánh xạ sang DTO
         return customerPage.map(userMapper::toUserResponse);
@@ -182,7 +182,7 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
     public Page<UserResponse> getEmployees(
-            String role, String keyword, String sortDirection, int page, int size) {
+            String role, String keyword, String status, String sortDirection, int page, int size) {
 
         // Xác định hướng sắp xếp theo username
         Sort sort = Sort.by("username");
@@ -192,7 +192,7 @@ public class UserService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         // Lấy danh sách nhân viên từ repository
-        Page<User> employeePage = userRepository.findEmployees(role, keyword, pageable);
+        Page<User> employeePage = userRepository.findEmployees(role, keyword, status, pageable);
 
         // Ánh xạ sang DTO
         return employeePage.map(userMapper::toUserResponse);

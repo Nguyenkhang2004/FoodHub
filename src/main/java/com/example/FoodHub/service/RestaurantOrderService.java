@@ -528,6 +528,8 @@ public class RestaurantOrderService {
         Instant start = getStartDate(period, startDate);
         Instant end = getEndDate(period, endDate);
 
+        log.info("Fetching completed orders with period: {}, start: {}, end: {}, search: {}", period, start, end, search);
+
         Page<RestaurantOrder> orders = orderRepository.findByStatusAndCreatedAtBetween(
                 "COMPLETED",
                 start,
@@ -550,6 +552,9 @@ public class RestaurantOrderService {
         Instant start = getStartDate(period, startDate);
         Instant end = getEndDate(period, endDate);
 
+        log.info("Fetching filtered completed orders with period: {}, start: {}, end: {}, orderType: {}, minPrice: {}, maxPrice: {}, paymentMethod: {}, search: {}",
+                period, start, end, orderType, minPrice, maxPrice, paymentMethod, search);
+
         Page<RestaurantOrder> orders = orderRepository.findCompletedOrdersFiltered(
                 start,
                 end,
@@ -566,6 +571,8 @@ public class RestaurantOrderService {
         Instant start = getStartDate(period, startDate);
         Instant end = getEndDate(period, endDate);
 
+        log.info("Fetching order summary with period: {}, start: {}, end: {}", period, start, end);
+
         List<Object[]> summary = orderRepository.countOrdersByDateMySQL("COMPLETED", start, end);
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
 
@@ -577,9 +584,14 @@ public class RestaurantOrderService {
                     } else if (row[0] instanceof LocalDate) {
                         date = (LocalDate) row[0];
                     } else {
-                        date = LocalDate.parse(row[0].toString());
+                        try {
+                            date = LocalDate.parse(row[0].toString(), DateTimeFormatter.ISO_LOCAL_DATE);
+                        } catch (Exception e) {
+                            log.error("Invalid date format: {}, using fallback parsing", row[0], e);
+                            date = LocalDate.parse(row[0].toString());
+                        }
                     }
-                    return date.format(DateTimeFormatter.ISO_LOCAL_DATE); // Định dạng: "2025-06-16"
+                    return date.format(DateTimeFormatter.ISO_LOCAL_DATE);
                 })
                 .collect(Collectors.toList());
 
@@ -590,7 +602,12 @@ public class RestaurantOrderService {
                     } else if (row[1] instanceof Integer) {
                         return ((Integer) row[1]).longValue();
                     } else {
-                        return Long.valueOf(row[1].toString());
+                        try {
+                            return Long.parseLong(row[1].toString());
+                        } catch (NumberFormatException e) {
+                            log.error("Invalid quantity format: {}, returning 0", row[1], e);
+                            return 0L;
+                        }
                     }
                 })
                 .collect(Collectors.toList());
@@ -601,76 +618,78 @@ public class RestaurantOrderService {
         return result;
     }
 
-    // PHƯƠNG THỨC ĐÃ SỬA ĐỂ XỬ LÝ ĐÚNG NGÀY/TUẦN/THÁNG
     private Instant getStartDate(String period, Instant startDate) {
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId utcZone = ZoneId.of("UTC");
+        LocalDate today = LocalDate.now(zoneId);
 
-        if ("custom".equals(period) && startDate != null) {
-            System.out.println("Received startDate: " + startDate);
-
-            // Lấy LocalDateTime từ Instant với múi giờ Vietnam
+        if ("specific".equals(period) && startDate != null) {
             LocalDateTime localDateTime = startDate.atZone(zoneId).toLocalDateTime();
-
-            // Tạo lại thành UTC time với cùng date/time
-            // Ví dụ: nếu nhận được 12/06 00:00 +07 -> tạo thành 12/06 00:00 UTC
-            LocalDate localDate = localDateTime.toLocalDate();
-            Instant adjustedStart = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-
-            System.out.println("Adjusted startDate: " + adjustedStart);
+            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
+            log.info("Specific period - Received startDate: {}, Adjusted startDate: {}", startDate, adjustedStart);
             return adjustedStart;
         }
 
-        LocalDateTime now = LocalDateTime.now(zoneId);
         switch (period != null ? period.toLowerCase() : "month") {
             case "today":
-                return now.toLocalDate().atStartOfDay(zoneId).toInstant();
+                Instant startToday = today.atStartOfDay(utcZone).toInstant();
+                log.info("Today period - Start: {}", startToday);
+                return startToday;
             case "week":
-                LocalDate startOfWeek = now.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-                return startOfWeek.atStartOfDay(zoneId).toInstant();
+                LocalDate mondayOfCurrentWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                Instant startWeek = mondayOfCurrentWeek.atStartOfDay(utcZone).toInstant();
+                log.info("Week period - Start: {}", startWeek);
+                return startWeek;
             case "month":
-                LocalDate startOfMonth = now.toLocalDate().with(TemporalAdjusters.firstDayOfMonth());
-                return startOfMonth.atStartOfDay(zoneId).toInstant();
+                Instant startMonth = today.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
+                log.info("Month period - Start: {}", startMonth);
+                return startMonth;
             case "year":
-                LocalDate startOfYear = now.toLocalDate().with(TemporalAdjusters.firstDayOfYear());
-                return startOfYear.atStartOfDay(zoneId).toInstant();
+                Instant startYear = today.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
+                log.info("Year period - Start: {}", startYear);
+                return startYear;
             default:
-                return now.minusDays(30).toLocalDate().atStartOfDay(zoneId).toInstant();
+                Instant defaultStart = today.minusDays(30).atStartOfDay(utcZone).toInstant();
+                log.info("Default period - Start: {}", defaultStart);
+                return defaultStart;
         }
     }
 
     private Instant getEndDate(String period, Instant endDate) {
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId utcZone = ZoneId.of("UTC");
+        LocalDate today = LocalDate.now(zoneId);
 
-        if ("custom".equals(period) && endDate != null) {
-            System.out.println("Received endDate: " + endDate);
 
-            // Lấy LocalDateTime từ Instant với múi giờ Vietnam
+        if ("specific".equals(period) && endDate != null) {
             LocalDateTime localDateTime = endDate.atZone(zoneId).toLocalDateTime();
-
-            // Tạo lại thành UTC time với cùng date/time
-            // Ví dụ: nếu nhận được 17/06 23:59 +07 -> tạo thành 17/06 23:59 UTC
-            LocalDate localDate = localDateTime.toLocalDate();
-            Instant adjustedEnd = localDate.atTime(23, 59, 59, 999_999_999).atOffset(ZoneOffset.UTC).toInstant();
-
-            System.out.println("Adjusted endDate: " + adjustedEnd);
-            return adjustedEnd;
+            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
+            log.info("Specific period - Received startDate: {}, Adjusted startDate: {}", endDate, adjustedStart);
+            return adjustedStart;
         }
 
-        LocalDateTime now = LocalDateTime.now(zoneId);
         switch (period != null ? period.toLowerCase() : "month") {
             case "today":
-                return now.toLocalDate().atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+                Instant endToday = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Today period - End: {}", endToday);
+                return endToday;
             case "week":
-                LocalDate endOfWeek = now.toLocalDate().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
-                return endOfWeek.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+                LocalDate sundayOfCurrentWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+                Instant endWeek = sundayOfCurrentWeek.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Week period - End: {}", endWeek);
+                return endWeek;
             case "month":
-                LocalDate endOfMonth = now.toLocalDate().with(TemporalAdjusters.lastDayOfMonth());
-                return endOfMonth.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+                Instant endMonth = today.withDayOfMonth(today.lengthOfMonth()).plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Month period - End: {}", endMonth);
+                return endMonth;
             case "year":
-                LocalDate endOfYear = now.toLocalDate().with(TemporalAdjusters.lastDayOfYear());
-                return endOfYear.atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+                Instant endYear = today.withDayOfYear(today.lengthOfYear()).plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Year period - End: {}", endYear);
+                return endYear;
             default:
-                return now.toLocalDate().atTime(23, 59, 59, 999_999_999).atZone(zoneId).toInstant();
+                Instant defaultEnd = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Default period - End: {}", defaultEnd);
+                return defaultEnd;
         }
     }
     @Transactional

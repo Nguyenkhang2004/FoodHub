@@ -25,14 +25,17 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     @Query("SELECT u FROM User u WHERE u.roleName.name = 'CUSTOMER' " +
-            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<User> findCustomers(@Param("keyword") String keyword, Pageable pageable);
+            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')))"+
+            "AND (:status IS NULL OR u.status = :status)")
+    Page<User> findCustomers(@Param("keyword") String keyword,@Param("status") String status, Pageable pageable);
     @Query("SELECT u FROM User u WHERE u.roleName.name != 'CUSTOMER' " +
             "AND (:role IS NULL OR u.roleName.name = :role) " +
-            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:status IS NULL OR u.status = :status)")
     Page<User> findEmployees(
             @Param("role") String role,
             @Param("keyword") String keyword,
+            @Param("status") String status,
             Pageable pageable);
     @Modifying
     @Transactional

@@ -44,11 +44,12 @@ public class UserController {
     @GetMapping("/customers")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getCustomer(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "asc") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<UserResponse> customerPage = userService.getCustomers(keyword, sortDirection, page, size);
+        Page<UserResponse> customerPage = userService.getCustomers(keyword, status,sortDirection, page, size);
 
         ApiResponse<Page<UserResponse>> response = ApiResponse.<Page<UserResponse>>builder()
                 .result(customerPage)
@@ -60,12 +61,13 @@ public class UserController {
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getEmployees(
             @RequestParam(required = false) String role,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "asc") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         // Gọi service để lấy danh sách nhân viên
-        Page<UserResponse> employeePage = userService.getEmployees(role, keyword, sortDirection, page, size);
+        Page<UserResponse> employeePage = userService.getEmployees(role, keyword, status, sortDirection, page, size);
 
         // Xây dựng response với ApiResponse
         ApiResponse<Page<UserResponse>> response = ApiResponse.<Page<UserResponse>>builder()
