@@ -534,7 +534,7 @@ public class RestaurantOrderService {
                 end,
                 search,
                 pageable);
-        return orders.map(orderMapper::toRestaurantOrderResponse1);
+        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
     }
 
     public Page<RestaurantOrderResponse> getCompletedOrdersFiltered(
@@ -559,7 +559,7 @@ public class RestaurantOrderService {
                 paymentMethod,
                 search,
                 pageable);
-        return orders.map(orderMapper::toRestaurantOrderResponse1);
+        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
     }
 
     public Map<String, Object> getOrderSummary(String period, Instant startDate, Instant endDate) {

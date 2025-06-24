@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-23T10:12:46+0700",
+    date = "2025-06-23T20:51:17+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.3 (Oracle Corporation)"
 )
 @Component
@@ -52,7 +52,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
     }
 
     @Override
-    public RestaurantOrderResponse toRestaurantOrderResponse1(RestaurantOrder order) {
+    public RestaurantOrderResponse toRestaurantOrderResponsePaidOnly(RestaurantOrder order) {
         if ( order == null ) {
             return null;
         }

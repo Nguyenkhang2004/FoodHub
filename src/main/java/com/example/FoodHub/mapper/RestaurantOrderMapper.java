@@ -25,7 +25,7 @@ public interface RestaurantOrderMapper {
     @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "user.username", target = "username")
     @Mapping(expression = "java(order.getPayment() != null && \"PAID\".equals(order.getPayment().getStatus()) ? order.getPayment().getPaymentMethod() : null)", target = "paymentMethod")
-    RestaurantOrderResponse toRestaurantOrderResponse1(RestaurantOrder order);
+    RestaurantOrderResponse toRestaurantOrderResponsePaidOnly(RestaurantOrder order);
 
 
 
