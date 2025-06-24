@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     Optional<Payment> findByOrderId(Integer orderId);
     List<Payment> findByStatus(String status);
-    boolean existsByOrderId(Integer orderId);
+    boolean existsByOrderIdAndStatus(Integer orderId, String status);
     Optional<Payment> findByOrderIdAndStatus(Integer orderId, String status);
     @Query("SELECT p FROM Payment p WHERE p.createdAt BETWEEN :start AND :end")
 

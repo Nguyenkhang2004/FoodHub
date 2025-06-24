@@ -1,5 +1,3 @@
-# Gỡ theo dõi file .env (giữ file nhưng không commit nữa)
-git rm --cached .env
+.env
 
-# Gỡ theo dõi cả thư mục target
-git rm -r --cached target/
+target/

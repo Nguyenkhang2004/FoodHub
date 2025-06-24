@@ -36,7 +36,6 @@ public class    RestaurantTable {
 
     @NotNull
     @ColumnDefault("'AVAILABLE'")
-    @Lob
     @Column(name = "status", nullable = false)
     private String status;
 

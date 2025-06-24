@@ -1,6 +1,7 @@
 package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.OrderItemRequest;
+import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
@@ -178,31 +179,30 @@ public class RestaurantOrderService {
         if (OrderType.DELIVERY.name().equals(request.getOrderType())
                 || OrderType.TAKEAWAY.name().equals(request.getOrderType())) {
 
-            Payment payment = paymentMapper.toPayment(request.getPayment());
-            payment.setOrder(order);
-            payment.setAmount(totalAmount);
-            payment.setCreatedAt(Instant.now());
-
-            boolean isCash = PaymentMethod.CASH.name()
-                    .equals(request.getPayment().getPaymentMethod());
-            payment.setStatus(isCash ? PaymentStatus.UNPAID.name()
-                    : PaymentStatus.PENDING.name());
-            if (!isCash) {
-                String paymentUrl = payOSUtils.generatePaymentUrl(payment);
-                log.info("Generating payment url: {}", paymentUrl );
-                String transactionId = payOSUtils.getTransactionId(paymentUrl);
-                log.info("Generating transaction id: {}", transactionId);
-                payment.setPaymentUrl(paymentUrl);
-                payment.setTransactionId(transactionId);
-            } else {
-                log.info("Payment method is CASH, no payment URL generated.");
-            }
-            paymentRepository.save(payment);
+            Payment payment = createPaymentForOrder(order, request.getPayment());
             order.setPayment(payment);
         }
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
+    private Payment createPaymentForOrder(RestaurantOrder order, PaymentRequest paymentRequest) {
+        Payment payment = paymentMapper.toPayment(paymentRequest);
+        payment.setOrder(order);
+        payment.setAmount(order.getTotalAmount());
+        payment.setCreatedAt(Instant.now());
+
+        boolean isCash = PaymentMethod.CASH.name().equals(paymentRequest.getPaymentMethod());
+        payment.setStatus(isCash ? PaymentStatus.UNPAID.name() : PaymentStatus.PENDING.name());
+
+        if (!isCash) {
+            String paymentUrl = payOSUtils.generatePaymentUrl(payment);
+            String transactionId = payOSUtils.getTransactionId(paymentUrl);
+            payment.setPaymentUrl(paymentUrl);
+            payment.setTransactionId(transactionId);
+        }
+
+        return paymentRepository.save(payment);
+    }
 
 
     @Transactional
@@ -212,14 +212,11 @@ public class RestaurantOrderService {
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
 
         // 2. Kiểm tra trạng thái order có thể thêm món không
-        if ("CANCELLED".equals(existingOrder.getStatus()) || "COMPLETED".equals(existingOrder.getStatus())) {
-            throw new IllegalStateException("Cannot add items to cancelled or completed order");
+        if (OrderStatus.CANCELLED.name().equals(existingOrder.getStatus())
+                || paymentRepository.existsByOrderIdAndStatus(orderId, PaymentStatus.PAID.name())) {
+            throw new AppException(ErrorCode.ORDER_COMPLETED);
         }
 
-        // 3. Update thông tin order nếu có thay đổi (note, orderType...)
-//        if (request.getNote() != null) {
-//            existingOrder.setNote(request.getNote());
-//        }
         if (request.getOrderType() != null) {
             existingOrder.setOrderType(request.getOrderType());
         }
@@ -312,6 +309,21 @@ public class RestaurantOrderService {
 
         // Set new status for the order
         order.setStatus(newStatus);
+
+        // Nếu là CANCELLED và là TAKEAWAY hoặc DELIVERY thì huỷ luôn payment nếu có
+        if (OrderStatus.CANCELLED.name().equals(newStatus)
+                && (OrderType.DELIVERY.name().equals(order.getOrderType())
+                || OrderType.TAKEAWAY.name().equals(order.getOrderType()))) {
+
+            Payment payment = order.getPayment();
+            if (payment != null && !PaymentStatus.PAID.name().equals(payment.getStatus())) {
+                log.info("Cancelling payment for order ID: {}", orderId);
+                payment.setStatus(PaymentStatus.CANCELLED.name());
+                payment.setUpdatedAt(Instant.now());
+                paymentRepository.save(payment);
+            }
+        }
+
 
         // Update status of order items, excluding those in CANCELLED or COMPLETED status
         List<OrderItem> updatedItems = order.getOrderItems().stream()
