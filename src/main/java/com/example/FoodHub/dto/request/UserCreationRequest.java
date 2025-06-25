@@ -39,5 +39,5 @@ public class UserCreationRequest {
 
     @NotBlank(message="ROLE_NAME_NOT_BLANK")
     @Size(min=2, message="ROLE_NAME_SIZE")
-    String roleName;
+    String roleName = "CUSTOMER";
 }

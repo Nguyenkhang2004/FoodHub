@@ -20,12 +20,12 @@ public interface RestaurantOrderMapper {
     @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "user.username", target = "username")
     RestaurantOrderResponse toRestaurantOrderResponse(RestaurantOrder order);
-    @Mapping(source = "table.id", target = "tableId")
-    @Mapping(source = "table.tableNumber", target = "tableNumber")
-    @Mapping(source = "user.id", target = "userId")
-    @Mapping(source = "user.username", target = "username")
-    @Mapping(expression = "java(order.getPayment() != null && \"PAID\".equals(order.getPayment().getStatus()) ? order.getPayment().getPaymentMethod() : null)", target = "paymentMethod")
-    RestaurantOrderResponse toRestaurantOrderResponsePaidOnly(RestaurantOrder order);
+        @Mapping(source = "table.id", target = "tableId")
+        @Mapping(source = "table.tableNumber", target = "tableNumber")
+        @Mapping(source = "user.id", target = "userId")
+        @Mapping(source = "user.username", target = "username")
+        @Mapping(expression = "java(order.getPayment() != null && \"PAID\".equals(order.getPayment().getStatus()) ? order.getPayment().getPaymentMethod() : null)", target = "paymentMethod")
+        RestaurantOrderResponse toRestaurantOrderResponsePaidOnly(RestaurantOrder order);
 
 
 
