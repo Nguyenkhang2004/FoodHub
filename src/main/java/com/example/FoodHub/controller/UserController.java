@@ -2,12 +2,14 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.*;
 import com.example.FoodHub.dto.response.ApiResponse;
+import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @CrossOrigin(origins = "http://127.0.0.1:5500") // Cho phép CORS nếu cần (tùy môi trường)
-
+@Slf4j
 public class UserController {
     UserService userService;
 
@@ -189,5 +191,7 @@ public class UserController {
                 .result("Đổi mật khẩu thành công")
                 .build());
     }
+
+
 
 }

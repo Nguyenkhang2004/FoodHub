@@ -405,4 +405,12 @@ public class RestaurantOrderService {
         }
     }
 
+    public Page<RestaurantOrderResponse> getAllOrdersByUserId(Integer userId, Pageable pageable) {
+        log.info("Fetching all orders for user ID: {}", userId);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        Page<RestaurantOrder> orders = orderRepository.findByUserId(userId, pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponse);
+    }
+
 }

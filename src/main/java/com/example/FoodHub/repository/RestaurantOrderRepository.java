@@ -48,4 +48,6 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
     @Deprecated
     @Query("SELECT HOUR(o.createdAt), SUM(o.totalAmount) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end GROUP BY HOUR(o.createdAt)")
     List<Object[]> findDailyRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    Page<RestaurantOrder> findByUserId(@Param("userId") Integer userId, Pageable pageable);
 }

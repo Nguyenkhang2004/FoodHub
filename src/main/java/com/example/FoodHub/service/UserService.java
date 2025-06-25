@@ -58,6 +58,8 @@ public class UserService {
         String plainPassword = request.getPassword();
         user.setPassword(passwordEncoder.encode(plainPassword));
         user.setStatus("ACTIVE");
+        user.setRoleName(roleRepository.findById(request.getRoleName())
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_ROLE)));
         user.setRegistrationDate(LocalDateTime.now().atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant());
         user.setIsAuthUser(false);
         User savedUser = userRepository.save(user);

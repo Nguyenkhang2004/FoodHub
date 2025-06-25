@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import java.math.BigDecimal;
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class OrderController {
     RestaurantOrderService orderService;
 
@@ -122,5 +124,21 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
-
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getOrdersByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "DESC") String sort
+    ) {
+        log.info("Fetching orders for user ID: {}", userId);
+        Sort.Direction direction = Sort.Direction.fromString(sort);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
+        Page< RestaurantOrderResponse> orderResponses = orderService.getAllOrdersByUserId(userId, pageable);
+        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+                .result(orderResponses)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
 }
