@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-24T20:18:30+0700",
+    date = "2025-06-25T15:21:58+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 21.0.4 (Oracle Corporation)"
 )
 @Component
@@ -39,6 +39,8 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.tableNumber( orderTableTableNumber( order ) );
         restaurantOrderResponse.userId( orderUserId( order ) );
         restaurantOrderResponse.username( orderUserUsername( order ) );
+        restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
+        restaurantOrderResponse.paymentStatus( orderPaymentStatus( order ) );
         restaurantOrderResponse.id( order.getId() );
         restaurantOrderResponse.status( order.getStatus() );
         restaurantOrderResponse.orderType( order.getOrderType() );
@@ -46,7 +48,6 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.updatedAt( order.getUpdatedAt() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
-        restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
 
         return restaurantOrderResponse.build();
     }
@@ -160,6 +161,14 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
             return null;
         }
         return user.getUsername();
+    }
+
+    private String orderPaymentStatus(RestaurantOrder restaurantOrder) {
+        Payment payment = restaurantOrder.getPayment();
+        if ( payment == null ) {
+            return null;
+        }
+        return payment.getStatus();
     }
 
     protected Set<OrderItemResponse> orderItemSetToOrderItemResponseSet(Set<OrderItem> set) {
