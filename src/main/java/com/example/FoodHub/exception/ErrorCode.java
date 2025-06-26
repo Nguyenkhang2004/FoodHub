@@ -98,7 +98,16 @@ public enum ErrorCode {
     PAYMENT_ALREADY_PROCESSED(1025, "Payment has already been processed", HttpStatus.BAD_REQUEST),
     INVALID_PAYMENT_METHOD(1026, "Invalid payment method", HttpStatus.BAD_REQUEST),
     WORK_SCHEDULE_NOT_FOUND(1041, "Work schedule not found", HttpStatus.NOT_FOUND),
+<<<<<<< HEAD
     INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED);
+=======
+    PAST_SHIFT(1041, "You cannot customize past calendars", HttpStatus.BAD_REQUEST),
+    SHIFT_NOT_FOUND(1044, "Shift not found", HttpStatus.NOT_FOUND),
+    PAST_DATE_NOT_ALLOWED(1046, "You cannot create OR delete a shift in the past", HttpStatus.BAD_REQUEST),
+    PAST_SHIFT_TIME(1048, "You cannot create a shift that has already passed", HttpStatus.BAD_REQUEST),
+    INVALID_TIME_FORMAT(1050, "Invalid time format, must be HH:mm", HttpStatus.BAD_REQUEST)
+    ;
+>>>>>>> dc295ec239a30ee36e7c449577db64f0973f9c6c
 
     private int code;
     private String message;

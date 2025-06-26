@@ -58,4 +58,7 @@ public class RestaurantOrder {
     @JoinColumn(name = "table_id")
     private RestaurantTable table;
 
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
 }

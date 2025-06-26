@@ -2,7 +2,6 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
-import com.example.FoodHub.dto.response.OrderItemResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.service.RestaurantOrderService;
 import jakarta.validation.Valid;
@@ -15,10 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
@@ -87,6 +83,27 @@ public class OrderController {
         return ResponseEntity.ok().body(response);
     }
 
+    @GetMapping("/work-shift-orders")
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCurrentOrders(
+            @RequestParam String area,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String tableNumber,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam String startTime,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "ASC") String sort
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
+        Page<RestaurantOrderResponse> orderResponses = orderService.getMyWorkShiftOrders(area, status, tableNumber, minPrice, maxPrice, startTime, pageable);
+        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+                .result(orderResponses)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getOrderById(@PathVariable Integer orderId) {
         RestaurantOrderResponse orderResponse = orderService.getOrdersByOrderId(orderId);
@@ -105,28 +122,5 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
-
-//    @GetMapping("/area/{area}/current")
-//    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCurrentOrders(
-//            @PathVariable String area,
-//            @RequestParam(required = false) String status,
-//            @RequestParam(required = false) Integer tableId,
-//            @RequestParam(required = false) BigDecimal minPrice,
-//            @RequestParam(required = false) BigDecimal maxPrice,
-//            @RequestParam(required = false) Instant startTime,
-//            @RequestParam(required = false) Instant endTime,
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size,
-//            @RequestParam(defaultValue = "createdAt") String SorderBy,
-//            @RequestParam(defaultValue = "ASC") String sort
-//    ) {
-//        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), SorderBy));
-//        Page<RestaurantOrderResponse> orderResponses = orderService.getCurrentWorkShiftOrders(area, status, tableId, minPrice, maxPrice, startTime, pageable);
-//        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
-//                .result(orderResponses)
-//                .build();
-//        return ResponseEntity.ok().body(response);
-//    }
-
 
 }

@@ -24,7 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +43,8 @@ public class RestaurantOrderService {
     RestaurantOrderMapper orderMapper;
     RestaurantTableRepository tableRepository;
     UserRepository userRepository;
-    private final MenuItemRepository menuItemRepository;
+    MenuItemRepository menuItemRepository;
+    WorkScheduleRepository workScheduleRepository;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -63,6 +66,45 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
+    public Page<RestaurantOrderResponse> getMyWorkShiftOrders(
+            String area,
+            String status,
+            String tableNumber,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String startTime,
+            Pageable pageable) {
+
+        log.info("Fetching orders for area: {}, status: {}, tableId: {}, minPrice: {}, maxPrice: {}, startTime: {}",
+                area, status, tableNumber, minPrice, maxPrice, startTime);
+
+        // Convert startTime string "HH:mm" to LocalDateTime of today
+        LocalDateTime startTimeLocal = null;
+        if (startTime != null && !startTime.trim().isEmpty()) {
+            try {
+                // Parse time string "08:30" to LocalTime
+                LocalTime time = LocalTime.parse(startTime.trim(), DateTimeFormatter.ofPattern("HH:mm"));
+
+                // Combine with today's date to create LocalDateTime
+                startTimeLocal = LocalDateTime.of(LocalDate.now(), time);
+
+                log.info("Parsed startTime: {} to LocalDateTime: {}", startTime, startTimeLocal);
+            } catch (DateTimeParseException e) {
+                log.warn("Invalid startTime format: {}. Expected format: HH:mm (e.g., 08:30)", startTime);
+                throw new AppException(ErrorCode.INVALID_TIME_FORMAT);
+            }
+        }
+
+        // Use OrderSpecifications to filter orders
+        Page<RestaurantOrder> orders = orderRepository.findAll(
+                OrderSpecifications.filterWorkShiftOrders(
+                        area, status, tableNumber, minPrice, maxPrice, startTimeLocal
+                ),
+                pageable
+        );
+
+        return orders.map(orderMapper::toRestaurantOrderResponse);
+    }
 
     public RestaurantOrderResponse getCurrentOrdersByTableId(Integer tableId) {
         log.info("Fetching orders for table ID: {}", tableId);
@@ -72,58 +114,7 @@ public class RestaurantOrderService {
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
-//    public Page<RestaurantOrderResponse> getCurrentWorkShiftOrders(
-//            String area,
-//            String status,
-//            Integer tableId,
-//            BigDecimal minPrice,
-//            BigDecimal maxPrice,
-//            Instant startTime,
-//            Pageable pageable) {
-//
-//        log.info("Fetching current work shift orders for area: {}, status: {}", area, status);
-//
-//        // Get current user's area (assuming you have authentication context)
-//
-//        // Define pending statuses that should be shown from previous shifts
-//        List<String> pendingStatuses = List.of(
-//                OrderStatus.PENDING.name(),
-//                OrderStatus.CONFIRMED.name()
-//        );
-//
-//        // Calculate shift times
-//        LocalDateTime previousShiftStart = getPreviousShiftStartTime(); // You need to implement this
-//        LocalDateTime previousShiftEnd = getPreviousShiftEndTime(); // You need to implement this
-//
-//        // Convert Instant to LocalDateTime if provided
-//        LocalDateTime startTimeLocal = null;
-//        if (startTime != null) {
-//            startTimeLocal = LocalDateTime.ofInstant(startTime, ZoneId.systemDefault());
-//        }
-//
-//        // Convert tableId to tableNumber if needed
-//        String tableNumber = null;
-//        if (tableId != null) {
-//            tableNumber = tableId.toString(); // Or get actual table number from tableId
-//        }
-//
-//        // Call repository with correct parameters
-//        Page<RestaurantOrder> orders = orderRepository.findCurrentAndPreviousOrdersByArea(
-//                area,
-//                pendingStatuses,
-//                startTime,
-//                previousShiftStart,
-//                previousShiftEnd,
-//                status,
-//                tableNumber,
-//                minPrice,
-//                maxPrice,
-//                startTimeLocal,
-//                pageable
-//        );
-//
-//        return orders.map(orderMapper::toRestaurantOrderResponse);
-//    }
+
 
 
     public RestaurantOrderResponse getOrdersByOrderId(Integer id) {
@@ -262,6 +253,7 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         existingOrder.setTotalAmount(totalAmount);
         existingOrder.setOrderItems(currentOrderItems);
+        existingOrder.setUpdatedAt(Instant.now());
 
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
@@ -308,7 +300,7 @@ public class RestaurantOrderService {
         // Recalculate total amount
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-
+        order.setUpdatedAt(Instant.now());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
@@ -334,7 +326,7 @@ public class RestaurantOrderService {
         // Recalculate total amount if necessary
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-
+        order.setUpdatedAt(Instant.now());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
