@@ -5,6 +5,8 @@ import com.example.FoodHub.enums.PaymentStatus;
 import com.example.FoodHub.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,21 +20,27 @@ import java.util.List;
 public class PaymentScheduler {
     private final PaymentRepository paymentRepository;
 
-    @Scheduled(fixedRate = 5 * 60 * 1000) // mỗi 5 phút
+    @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void cancelExpiredPayments() {
         Instant tenMinutesAgo = Instant.now().minus(Duration.ofMinutes(10));
-        List<Payment> expiredPayments = paymentRepository.findByStatusAndCreatedAtBefore(
-                PaymentStatus.PENDING.name(), tenMinutesAgo
-        );
+        PageRequest pageRequest = PageRequest.of(0, 1000);
 
-        for (Payment payment : expiredPayments) {
+        Page<Payment> expiredPayments = paymentRepository
+                .findByStatusInAndCreatedAtBefore(
+                        PaymentStatus.cancellableStatuses(), tenMinutesAgo, pageRequest
+                );
+
+        List<Payment> paymentsToCancel = expiredPayments.getContent();
+
+        for (Payment payment : paymentsToCancel) {
             payment.setStatus(PaymentStatus.CANCELLED.name());
         }
 
-        if (!expiredPayments.isEmpty()) {
-            paymentRepository.saveAll(expiredPayments);
-            log.info("Cancelled {} expired payment(s).", expiredPayments.size());
+        if (!paymentsToCancel.isEmpty()) {
+            paymentRepository.saveAll(paymentsToCancel);
+            log.info("Huỷ {} payment quá hạn.", paymentsToCancel.size());
         }
     }
+
 }

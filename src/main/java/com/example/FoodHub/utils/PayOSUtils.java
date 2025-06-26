@@ -27,7 +27,7 @@ public class PayOSUtils {
             PaymentData data = PaymentData.builder()
                     .orderCode(payment.getOrder().getId().longValue())
                     .amount(payment.getAmount().intValue())
-                    .description("Thanh toán đơn hàng #" + payment.getOrder().getId())
+                    .description("THANH TOAN DON HANG #" + payment.getOrder().getId())
                     .returnUrl("http://127.0.0.1:5500/payment/result.html?orderId=" + payment.getOrder().getId())
                     .cancelUrl("http://127.0.0.1:5500/payment/result.html?orderId=" + payment.getOrder().getId())
                     .build();

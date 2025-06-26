@@ -99,9 +99,6 @@ public class PaymentService {
         if (OrderStatus.CANCELLED.name().equals(order.getStatus())) {
             throw new AppException(ErrorCode.ORDER_ALREADY_CANCELED);
         }
-        if (!OrderStatus.COMPLETED.name().equals(order.getStatus())) {
-            throw new AppException(ErrorCode.ORDER_NOT_EXISTED);
-        }
 
         // Check existing payment
         Payment payment = paymentRepository.findByOrderId(request.getOrderId())
@@ -172,6 +169,12 @@ public class PaymentService {
         return paymentMapper.toPaymentResponse(payment);
     }
 
+    public PaymentResponse getUncompletedPaymentByOrderId(Integer orderId) {
+        log.info("Fetching payment for order ID: {}", orderId);
+        Payment payment = paymentRepository.findByOrderIdAndStatus(orderId, PaymentStatus.PENDING.name())
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+        return paymentMapper.toPaymentResponse(payment);
+    }
     // Cancel or refund an order
 //    @Transactional
 //    public void cancelOrRefundOrder(int orderId) {

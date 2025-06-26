@@ -57,6 +57,7 @@ public class UserService {
         User user = userMapper.toUser(request);
         String plainPassword = request.getPassword();
         user.setPassword(passwordEncoder.encode(plainPassword));
+
         user.setStatus("ACTIVE");
         user.setRegistrationDate(LocalDateTime.now().atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant());
         user.setIsAuthUser(false);

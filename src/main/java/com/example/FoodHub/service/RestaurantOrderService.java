@@ -62,23 +62,21 @@ public class RestaurantOrderService {
         }
 
         Page<RestaurantOrder> orders = orderRepository.findAll(
-                OrderSpecifications.filterOrders(status, tableId, minPrice, maxPrice),
+                OrderSpecifications.filterOrders(status, tableId),
                 pageable
         );
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
-    public Page<RestaurantOrderResponse> getMyWorkShiftOrders(
+    public Page<RestaurantOrderResponse> getWaiterWorkShiftOrders(
             String area,
             String status,
             String tableNumber,
-            BigDecimal minPrice,
-            BigDecimal maxPrice,
             String startTime,
             Pageable pageable) {
 
-        log.info("Fetching orders for area: {}, status: {}, tableId: {}, minPrice: {}, maxPrice: {}, startTime: {}",
-                area, status, tableNumber, minPrice, maxPrice, startTime);
+        log.info("Fetching orders for area: {}, status: {}, tableId: {}, startTime: {}",
+                area, status, tableNumber, startTime);
 
         // Convert startTime string "HH:mm" to LocalDateTime of today
         LocalDateTime startTimeLocal = null;
@@ -99,8 +97,45 @@ public class RestaurantOrderService {
 
         // Use OrderSpecifications to filter orders
         Page<RestaurantOrder> orders = orderRepository.findAll(
-                OrderSpecifications.filterWorkShiftOrders(
-                        area, status, tableNumber, minPrice, maxPrice, startTimeLocal
+                OrderSpecifications.filterWaiterOrders(
+                        status, tableNumber, area, startTimeLocal
+                ),
+                pageable
+        );
+
+        return orders.map(orderMapper::toRestaurantOrderResponse);
+    }
+
+    public Page<RestaurantOrderResponse> getChefWorkShiftOrders(
+            String status,
+            String tableNumber,
+            String startTime,
+            Pageable pageable) {
+
+        log.info("Fetching orders for status: {}, tableId: {}, startTime: {}",
+                status, tableNumber, startTime);
+
+        // Convert startTime string "HH:mm" to LocalDateTime of today
+        LocalDateTime startTimeLocal = null;
+        if (startTime != null && !startTime.trim().isEmpty()) {
+            try {
+                // Parse time string "08:30" to LocalTime
+                LocalTime time = LocalTime.parse(startTime.trim(), DateTimeFormatter.ofPattern("HH:mm"));
+
+                // Combine with today's date to create LocalDateTime
+                startTimeLocal = LocalDateTime.of(LocalDate.now(), time);
+
+                log.info("Parsed startTime: {} to LocalDateTime: {}", startTime, startTimeLocal);
+            } catch (DateTimeParseException e) {
+                log.warn("Invalid startTime format: {}. Expected format: HH:mm (e.g., 08:30)", startTime);
+                throw new AppException(ErrorCode.INVALID_TIME_FORMAT);
+            }
+        }
+
+        // Use OrderSpecifications to filter orders
+        Page<RestaurantOrder> orders = orderRepository.findAll(
+                OrderSpecifications.filterChefOrders(
+                        status, tableNumber, startTimeLocal
                 ),
                 pageable
         );

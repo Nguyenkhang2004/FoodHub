@@ -6,12 +6,10 @@ import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.InvoiceResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
-import com.example.FoodHub.enums.PaymentStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.service.EmailService;
 import com.example.FoodHub.service.PaymentService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -30,8 +28,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +55,15 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentCallback(@RequestBody PayOSRequest request) {
         PaymentResponse response = paymentService.updatePayOSPaymentStatus(request);
 
+        ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
+                .result(response)
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<ApiResponse<PaymentResponse>> getUncompletedPaymentByOrderId(@PathVariable Integer orderId) {
+        PaymentResponse response = paymentService.getUncompletedPaymentByOrderId(orderId);
         ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
                 .result(response)
                 .build();

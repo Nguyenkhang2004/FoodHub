@@ -1,5 +1,7 @@
 package com.example.FoodHub.enums;
 
+import java.util.List;
+
 public enum PaymentStatus {
     PENDING,
     UNPAID,
@@ -7,4 +9,8 @@ public enum PaymentStatus {
     CANCELLED,
     FAILED,
     REFUNDED
+    ;
+    public static List<String> cancellableStatuses() {
+        return List.of(PENDING.name(), UNPAID.name(), FAILED.name());
+    }
 }

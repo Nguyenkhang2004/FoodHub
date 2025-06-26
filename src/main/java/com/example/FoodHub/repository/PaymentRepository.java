@@ -1,9 +1,12 @@
 package com.example.FoodHub.repository;
 
 import com.example.FoodHub.entity.Payment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import javax.swing.text.html.Option;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -20,5 +23,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'PAID' AND DATE(p.createdAt) = :date")
     BigDecimal calculateTotalRevenueByDate(Instant date);
-    List<Payment> findByStatusAndCreatedAtBefore(String status, Instant createdAt);
+    Page<Payment> findByStatusInAndCreatedAtBefore(List<String> statuses, Instant createdAt, Pageable pageable);
+    Optional<Payment> findFirstByOrderIdAndStatus(Integer orderId, String status);
 }
