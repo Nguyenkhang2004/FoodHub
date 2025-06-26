@@ -209,6 +209,7 @@ public class RestaurantOrderService {
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
         order.setCreatedAt(LocalDateTime.now());
+
         orderRepository.save(order);               // order & id
         orderItems.forEach(orderItemRepository::save);
 
@@ -473,34 +474,6 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
     }
 
-    public Page<RestaurantOrderResponse> getCompletedOrdersFiltered(
-            String period,
-            Instant startDate,
-            Instant endDate,
-            String orderType,
-            BigDecimal minPrice,
-            BigDecimal maxPrice,
-            String paymentMethod,
-            String search,
-            Pageable pageable) {
-        Instant start = getStartDate(period, startDate);
-        Instant end = getEndDate(period, endDate);
-
-        log.info("Fetching filtered completed orders with period: {}, start: {}, end: {}, orderType: {}, minPrice: {}, maxPrice: {}, paymentMethod: {}, search: {}",
-                period, start, end, orderType, minPrice, maxPrice, paymentMethod, search);
-
-        Page<RestaurantOrder> orders = orderRepository.findCompletedOrdersFiltered(
-                start,
-                end,
-                orderType,
-                minPrice,
-                maxPrice,
-                paymentMethod,
-                search,
-                pageable);
-        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
-    }
-
     public Map<String, Object> getOrderSummary(String period, Instant startDate, Instant endDate) {
         Instant start = getStartDate(period, startDate);
         Instant end = getEndDate(period, endDate);
@@ -551,6 +524,35 @@ public class RestaurantOrderService {
         result.put("quantities", quantities);
         return result;
     }
+
+    public Page<RestaurantOrderResponse> getCompletedOrdersFiltered(
+            String period,
+            Instant startDate,
+            Instant endDate,
+            String orderType,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String paymentMethod,
+            String search,
+            Pageable pageable) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        log.info("Fetching filtered completed orders with period: {}, start: {}, end: {}, orderType: {}, minPrice: {}, maxPrice: {}, paymentMethod: {}, search: {}",
+                period, start, end, orderType, minPrice, maxPrice, paymentMethod, search);
+
+        Page<RestaurantOrder> orders = orderRepository.findCompletedOrdersFiltered(
+                start,
+                end,
+                orderType,
+                minPrice,
+                maxPrice,
+                paymentMethod,
+                search,
+                pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
+    }
+
 
     private Instant getStartDate(String period, Instant startDate) {
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
@@ -626,6 +628,5 @@ public class RestaurantOrderService {
                 return defaultEnd;
         }
     }
-
 
 }
