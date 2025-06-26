@@ -6,19 +6,23 @@ import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
 import com.example.FoodHub.entity.WorkSchedule;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-26T20:05:44+0700",
+    date = "2025-06-26T23:12:05+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
 public class WorkScheduleMapperImpl implements WorkScheduleMapper {
 
+    private final DateTimeFormatter dateTimeFormatter_yyyy_MM_dd_0159776256 = DateTimeFormatter.ofPattern( "yyyy-MM-dd" );
+    private final DateTimeFormatter dateTimeFormatter_HH_mm_168697690 = DateTimeFormatter.ofPattern( "HH:mm" );
+
     @Override
-    public ShiftResponse toShiftResponse(WorkSchedule workSchedule, LocalDate workDate) {
+    public ShiftResponse toShiftResponse(WorkSchedule workSchedule) {
         if ( workSchedule == null ) {
             return null;
         }
@@ -27,11 +31,17 @@ public class WorkScheduleMapperImpl implements WorkScheduleMapper {
 
         shiftResponse.setName( workScheduleUserUsername( workSchedule ) );
         shiftResponse.setRole( workScheduleUserRoleNameName( workSchedule ) );
-        shiftResponse.setDate( localDateToInstant( workSchedule.getWorkDate() ) );
+        if ( workSchedule.getWorkDate() != null ) {
+            shiftResponse.setDate( dateTimeFormatter_yyyy_MM_dd_0159776256.format( workSchedule.getWorkDate() ) );
+        }
         shiftResponse.setShift( workSchedule.getShiftType() );
         shiftResponse.setArea( workSchedule.getArea() );
-        shiftResponse.setStartTime( localTimeToInstant( workSchedule.getStartTime(), workDate ) );
-        shiftResponse.setEndTime( localTimeToInstant( workSchedule.getEndTime(), workDate ) );
+        if ( workSchedule.getStartTime() != null ) {
+            shiftResponse.setStartTime( dateTimeFormatter_HH_mm_168697690.format( workSchedule.getStartTime() ) );
+        }
+        if ( workSchedule.getEndTime() != null ) {
+            shiftResponse.setEndTime( dateTimeFormatter_HH_mm_168697690.format( workSchedule.getEndTime() ) );
+        }
         shiftResponse.setId( workSchedule.getId() );
 
         return shiftResponse;
@@ -45,7 +55,9 @@ public class WorkScheduleMapperImpl implements WorkScheduleMapper {
 
         WorkSchedule workSchedule = new WorkSchedule();
 
-        workSchedule.setWorkDate( stringToLocalDate( shiftRequest.getDate() ) );
+        if ( shiftRequest.getDate() != null ) {
+            workSchedule.setWorkDate( LocalDate.parse( shiftRequest.getDate() ) );
+        }
         workSchedule.setShiftType( shiftRequest.getShift() );
         if ( shiftRequest.getRole().equalsIgnoreCase("waiter") && shiftRequest.getArea() != null ) {
             workSchedule.setArea( shiftRequest.getArea() );

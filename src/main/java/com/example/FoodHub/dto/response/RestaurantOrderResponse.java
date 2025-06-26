@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -19,8 +20,8 @@ public class RestaurantOrderResponse {
     private Integer id;
     private String status;
     private String orderType;
-    private Instant createdAt;
-    private Instant updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private String note;
     private Integer tableId;
     private String tableNumber;

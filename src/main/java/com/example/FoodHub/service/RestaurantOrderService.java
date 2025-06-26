@@ -208,8 +208,7 @@ public class RestaurantOrderService {
 
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
-        order.setCreatedAt(Instant.now());
-
+        order.setCreatedAt(LocalDateTime.now());
         orderRepository.save(order);               // order & id
         orderItems.forEach(orderItemRepository::save);
 
@@ -226,7 +225,7 @@ public class RestaurantOrderService {
         Payment payment = paymentMapper.toPayment(paymentRequest);
         payment.setOrder(order);
         payment.setAmount(order.getTotalAmount());
-        payment.setCreatedAt(Instant.now());
+        payment.setCreatedAt(LocalDateTime.now());
 
         boolean isCash = PaymentMethod.CASH.name().equals(paymentRequest.getPaymentMethod());
         payment.setStatus(isCash ? PaymentStatus.UNPAID.name() : PaymentStatus.PENDING.name());
@@ -316,7 +315,7 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         existingOrder.setTotalAmount(totalAmount);
         existingOrder.setOrderItems(currentOrderItems);
-        existingOrder.setUpdatedAt(Instant.now());
+        existingOrder.setUpdatedAt(LocalDateTime.now());
 
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
@@ -356,7 +355,7 @@ public class RestaurantOrderService {
             if (payment != null && !PaymentStatus.PAID.name().equals(payment.getStatus())) {
                 log.info("Cancelling payment for order ID: {}", orderId);
                 payment.setStatus(PaymentStatus.CANCELLED.name());
-                payment.setUpdatedAt(Instant.now());
+                payment.setUpdatedAt(LocalDateTime.now());
                 paymentRepository.save(payment);
             }
         }
@@ -378,7 +377,7 @@ public class RestaurantOrderService {
         // Recalculate total amount
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(Instant.now());
+        order.setUpdatedAt(LocalDateTime.now());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
@@ -404,7 +403,7 @@ public class RestaurantOrderService {
         // Recalculate total amount if necessary
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(Instant.now());
+        order.setUpdatedAt(LocalDateTime.now());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 

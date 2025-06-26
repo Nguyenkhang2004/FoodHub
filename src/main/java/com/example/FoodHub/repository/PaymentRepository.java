@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +24,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'PAID' AND DATE(p.createdAt) = :date")
     BigDecimal calculateTotalRevenueByDate(Instant date);
-    Page<Payment> findByStatusInAndCreatedAtBefore(List<String> statuses, Instant createdAt, Pageable pageable);
+    Page<Payment> findByStatusInAndCreatedAtBefore(List<String> statuses, LocalDateTime createdAt, Pageable pageable);
     @Query("SELECT p FROM Payment p WHERE " +
             "(:status IS NULL OR p.status = :status) AND " +
             "p.createdAt BETWEEN :start AND :end AND " +

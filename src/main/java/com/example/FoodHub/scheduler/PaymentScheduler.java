@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 @Slf4j
 @Component
@@ -23,12 +25,19 @@ public class PaymentScheduler {
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void cancelExpiredPayments() {
-        Instant tenMinutesAgo = Instant.now().minus(Duration.ofMinutes(10));
+        // Chuyển Instant.now().minus(Duration.ofMinutes(10)) sang LocalDateTime với múi giờ Asia/Ho_Chi_Minh
+        LocalDateTime tenMinutesAgo = Instant.now()
+                .minus(Duration.ofMinutes(10))
+                .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
+                .toLocalDateTime();
         PageRequest pageRequest = PageRequest.of(0, 1000);
 
+        // Sử dụng LocalDateTime trong truy vấn
         Page<Payment> expiredPayments = paymentRepository
                 .findByStatusInAndCreatedAtBefore(
-                        PaymentStatus.cancellableStatuses(), tenMinutesAgo, pageRequest
+                        PaymentStatus.cancellableStatuses(),
+                        tenMinutesAgo,
+                        pageRequest
                 );
 
         List<Payment> paymentsToCancel = expiredPayments.getContent();

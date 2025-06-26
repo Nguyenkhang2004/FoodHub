@@ -133,7 +133,7 @@ public class PaymentService {
         payment.setStatus(request.getPaymentMethod().equals(PaymentMethod.BANKING.name())
                 ? PaymentStatus.PENDING.name()
                 : PaymentStatus.UNPAID.name());
-        payment.setCreatedAt(Instant.now());
+        payment.setCreatedAt(LocalDateTime.now());
 
         if (request.getPaymentMethod().equals(PaymentMethod.BANKING.name())) {
             String paymentUrl = payOSUtils.generatePaymentUrl(payment);
@@ -154,7 +154,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(newStatus);
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
         return paymentMapper.toPaymentResponse(payment);
     }
@@ -169,7 +169,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(request.getOrderCode())
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(finalStatus);
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
         return paymentMapper.toPaymentResponse(payment);
     }
@@ -318,7 +318,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(PaymentStatus.REFUNDED.name());
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(LocalDateTime.now());
         return paymentRepository.save(payment);
     }
 
@@ -377,7 +377,7 @@ public class PaymentService {
         // Tạo response
         InvoiceResponse response = new InvoiceResponse();
         response.setOrderId(order.getId());
-        response.setPaymentDate(payment.getUpdatedAt());
+//        response.setPaymentDate(payment.getUpdatedAt());
         response.setTableNumber(table.getTableNumber());
         response.setCustomerName(user.getUsername());
         response.setCustomerEmail(user.getEmail());
