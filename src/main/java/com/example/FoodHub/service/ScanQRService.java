@@ -46,7 +46,7 @@ public class ScanQRService {
     public ScanQRResponse scanQRCode(ScanQRRequest request){
         // Tìm bàn theo QR code
         log.info("Processing QR scan request for code: {}", request.getQrCode());
-        RestaurantTable table = tableRepository.findByQrCode(request.getQrCode())
+        RestaurantTable table = tableRepository.findByQrCodeWithLock(request.getQrCode())
                 .orElseThrow(() -> new AppException(ErrorCode.QR_CODE_INVALID));
 
         // Kiểm tra bàn đã có người ngồi chưa
@@ -57,7 +57,7 @@ public class ScanQRService {
 
             // Kiểm tra token có bị invalidate chưa (sử dụng JWT ID)
             String currentJwtId = jwtUtil.getJwtIdFromToken(table.getCurrentToken());
-            if (!invalidTokenRepository.existsByToken(currentJwtId)) {
+            if (!invalidTokenRepository.existsByToken(currentJwtId) && jwtUtil.isTokenValid(table.getCurrentToken())) {
                 throw new AppException(ErrorCode.OCCUPIED_TABLE);
             }
         }
@@ -69,7 +69,6 @@ public class ScanQRService {
         // Cập nhật thông tin bàn
         table.setCurrentToken(newToken);
         table.setTokenExpiry(expiry);
-//        table.setStatus(TableStatus.OCCUPIED.name());
         tableRepository.save(table);
 
         log.info("Generated new table token for table: {} with QR: {}", table.getTableNumber(), request.getQrCode());
@@ -220,20 +219,13 @@ public class ScanQRService {
     /**
      * Cleanup expired tokens (chạy theo schedule)
      */
-    @Scheduled(fixedRate = 3600000) // Chạy mỗi giờ
+    @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút
     public void cleanupExpiredTokens() {
         try {
             Instant now = Instant.now();
-
-            // Xóa expired tokens từ invalid_tokens table
             invalidTokenRepository.deleteExpiredTokens(now);
 
-            // Cập nhật các bàn có token hết hạn
-            List<RestaurantTable> expiredTables = tableRepository.findAll().stream()
-                    .filter(table -> table.getTokenExpiry() != null &&
-                            table.getTokenExpiry().isBefore(now.atZone(ZoneId.systemDefault()).toInstant()))
-                    .collect(Collectors.toList());
-
+            List<RestaurantTable> expiredTables = tableRepository.findByTokenExpiryBefore(now);
             for (RestaurantTable table : expiredTables) {
                 table.setStatus(TableStatus.AVAILABLE.name());
                 table.setCurrentToken(null);
@@ -244,9 +236,9 @@ public class ScanQRService {
                 tableRepository.saveAll(expiredTables);
                 log.info("Cleaned up {} expired table sessions", expiredTables.size());
             }
-
         } catch (Exception e) {
             log.error("Error during table token cleanup: {}", e.getMessage());
         }
     }
+
 }

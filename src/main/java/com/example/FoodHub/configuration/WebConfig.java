@@ -16,8 +16,8 @@ public class WebConfig {
                 registry.addMapping("/**")
                         .allowedOrigins("http://127.0.0.1:5500",
                                         "http://10.12.48.109:5500",
-                                        "http://172.20.10.2:5500",
-                                        "http://192.168.1.6:5500")
+                                        "http://172.20.10.2:5500",//phone
+                                        "http://192.168.1.2:5500")//home
                         .allowedMethods("*")
                         .allowedHeaders("*")
                         .allowCredentials(true); // Cho phép gửi token/cookie

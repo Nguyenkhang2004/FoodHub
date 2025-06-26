@@ -55,7 +55,7 @@ public class JwtUtil {
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
 
         try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY));
+            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {
             log.error("Error signing table JWT: {}", e.getMessage());
@@ -63,33 +63,7 @@ public class JwtUtil {
         }
     }
 
-//    public IntrospectResponse introspect(IntrospectRequest request) throws ParseException, JOSEException {
-//        String token = request.getToken();
-//        boolean isValid = true;
-//        try {
-//            verifyToken(token, false);
-//        } catch (AppException e) {
-//            isValid = false;
-//        }
-//        return IntrospectResponse.builder()
-//                .isValid(isValid)
-//                .build();
-//    }
-//
-//    public SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
-//        JWSVerifier verifier = new MACVerifier(SIGNER_KEY);
-//        SignedJWT signedJWT = SignedJWT.parse(token);
-//        Date expiryTime = isRefresh
-//                ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
-//                .toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
-//                : signedJWT.getJWTClaimsSet().getExpirationTime();
-//        boolean verified = signedJWT.verify(verifier);
-//        if (!(verified && expiryTime.after(new Date()))
-//                || invalidateTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
-//            throw new AppException(ErrorCode.UNAUTHENTICATED);
-//        }
-//        return signedJWT;
-//    }
+
 
     public String getTableNumberFromToken(String token) {
         try {
