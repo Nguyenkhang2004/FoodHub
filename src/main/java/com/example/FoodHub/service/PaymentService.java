@@ -4,6 +4,7 @@ import com.example.FoodHub.dto.request.PayOSRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.response.InvoiceResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
+import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.*;
 import com.example.FoodHub.enums.OrderStatus;
@@ -12,6 +13,8 @@ import com.example.FoodHub.enums.PaymentStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.PaymentMapper;
+import com.example.FoodHub.mapper.RestaurantOrderMapper;
+import com.example.FoodHub.mapper.RestaurantTableMapper;
 import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.utils.PayOSUtils;
@@ -19,12 +22,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
+import java.time.*;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,6 +44,7 @@ public class PaymentService {
     OrderItemRepository orderItemRepository;
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
+    RestaurantOrderMapper restaurantOrderMapper;
 
     // Process payment for an order
 
@@ -381,5 +386,104 @@ public class PaymentService {
 
         return response;
     }
+    public Page<PaymentResponse> getPayments(
+            String period, Instant startDate, Instant endDate, String status, String transactionId, Pageable pageable) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        // Xử lý transactionId rỗng
+        if (transactionId != null && transactionId.trim().isEmpty()) {
+            transactionId = null;
+        }
+
+        log.info("Fetching payments with period: {}, start: {}, end: {}, status: {}, transactionId: {}",
+                period, start, end, status, transactionId);
+
+        Page<Payment> payments = paymentRepository.findByStatusAndCreatedAtBetween(start, end, status, transactionId, pageable);
+        log.info("Found {} payments", payments.getTotalElements());
+        return payments.map(paymentMapper::toPaymentResponse);
+    }
+
+    // Phương thức: Xem chi tiết giao dịch
+    public RestaurantOrderResponse getPaymentDetails(String transactionId) {
+        log.info("Fetching payment details for transactionId: {}", transactionId);
+        Payment payment = paymentRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch: " + transactionId));
+        return restaurantOrderMapper.toRestaurantOrderResponse(payment.getOrder());
+    }
+
+    private Instant getStartDate(String period, Instant startDate) {
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId utcZone = ZoneId.of("UTC");
+        LocalDate today = LocalDate.now(zoneId);
+
+        if ("specific".equals(period) && startDate != null) {
+            LocalDateTime localDateTime = startDate.atZone(zoneId).toLocalDateTime();
+            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
+            log.info("Specific period - Received startDate: {}, Adjusted startDate: {}", startDate, adjustedStart);
+            return adjustedStart;
+        }
+
+        switch (period != null ? period.toLowerCase() : "today") {
+            case "today":
+                Instant startToday = today.atStartOfDay(utcZone).toInstant();
+                log.info("Today period - Start: {}", startToday);
+                return startToday;
+            case "week":
+                LocalDate mondayOfCurrentWeek = today.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+                Instant startWeek = mondayOfCurrentWeek.atStartOfDay(utcZone).toInstant();
+                log.info("Week period - Start: {}", startWeek);
+                return startWeek;
+            case "month":
+                Instant startMonth = today.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
+                log.info("Month period - Start: {}", startMonth);
+                return startMonth;
+            case "year":
+                Instant startYear = today.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
+                log.info("Year period - Start: {}", startYear);
+                return startYear;
+            default:
+                Instant defaultStart = today.minusDays(30).atStartOfDay(utcZone).toInstant();
+                log.info("Default period - Start: {}", defaultStart);
+                return defaultStart;
+        }
+    }
+
+    private Instant getEndDate(String period, Instant endDate) {
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId utcZone = ZoneId.of("UTC");
+        LocalDate today = LocalDate.now(zoneId);
+
+        if ("specific".equals(period) && endDate != null) {
+            LocalDateTime localDateTime = endDate.atZone(zoneId).toLocalDateTime();
+            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
+            log.info("Specific period - Received enddate: {}, Adjusted enddate: {}", endDate, adjustedStart);
+            return adjustedStart;
+        }
+        switch (period != null ? period.toLowerCase() : "today") {
+            case "today":
+                Instant endToday = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Today period - End: {}", endToday);
+                return endToday;
+            case "week":
+                LocalDate sundayOfCurrentWeek = today.with(TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+                Instant endWeek = sundayOfCurrentWeek.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Week period - End: {}", endWeek);
+                return endWeek;
+            case "month":
+                Instant endMonth = today.withDayOfMonth(today.lengthOfMonth()).plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Month period - End: {}", endMonth);
+                return endMonth;
+            case "year":
+                Instant endYear = today.withDayOfYear(today.lengthOfYear()).plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Year period - End: {}", endYear);
+                return endYear;
+            default:
+                Instant defaultEnd = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Default period - End: {}", defaultEnd);
+                return defaultEnd;
+        }
+    }
 }
+
 

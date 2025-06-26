@@ -5,6 +5,7 @@ import com.example.FoodHub.dto.response.DishSalesResponse;
 import com.example.FoodHub.dto.response.RevenueReportResponse;
 import com.example.FoodHub.dto.response.TopDishResponse;
 import com.example.FoodHub.repository.OrderItemRepository;
+import com.example.FoodHub.repository.PaymentRepository;
 import com.example.FoodHub.repository.RestaurantOrderRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 public class RevenueReportsService {
     RestaurantOrderRepository orderRepository;
     OrderItemRepository orderItemRepository;
+    PaymentRepository paymentRepository;
 
     public RevenueReportResponse getDashboardData(String period, String specificDate) {
         Instant start, end, prevStart, prevEnd;
@@ -111,13 +113,13 @@ public class RevenueReportsService {
                 throw new IllegalArgumentException("Invalid period: " + period);
         }
 
-        BigDecimal revenue = orderRepository.findTotalRevenueByPeriod(start, end)
+        BigDecimal revenue = paymentRepository.findTotalRevenueByPeriod(start, end)
                 .orElse(BigDecimal.ZERO);
-        Long orders = orderRepository.countOrdersByPeriod(start, end);
-        BigDecimal previousRevenue = orderRepository.findTotalRevenueByPeriod(prevStart, prevEnd)
+        Long orders = paymentRepository.countPaidPaymentsByPeriod(start, end);
+        BigDecimal previousRevenue = paymentRepository.findTotalRevenueByPeriod(prevStart, prevEnd)
                 .orElse(BigDecimal.ZERO);
 
-        List<Object[]> dailyRevenueData = getDailyRevenueData(period, start, end);
+        List<Object[]> dailyRevenueData = getDailyRevenueDataFromPayments(period, start, end);
         log.info("Daily revenue data for period {}: {}", period,
                 dailyRevenueData.stream()
                         .map(data -> String.format("[hour=%s, amount=%s]", data[0], data[1]))
@@ -130,7 +132,7 @@ public class RevenueReportsService {
                 dailyRevenue.set(index, currentAmount.add((BigDecimal) data[1])); // Gộp doanh thu cho cùng index
             }
         }
-        List<Object[]> paymentMethodData = orderRepository.findRevenueByPaymentMethod(start, end);
+        List<Object[]> paymentMethodData = paymentRepository.findRevenueByPaymentMethod(start, end);
         List<String> paymentMethodLabels = new ArrayList<>();
         List<BigDecimal> paymentMethodRevenue = new ArrayList<>();
         for (Object[] data : paymentMethodData) {
@@ -138,14 +140,13 @@ public class RevenueReportsService {
             paymentMethodRevenue.add((BigDecimal) data[1]);
         }
 
-        List<Object[]> orderTypeData = orderRepository.findRevenueByOrderType(start, end);
+        List<Object[]> orderTypeData = paymentRepository.findRevenueByOrderType(start, end);
         List<String> orderTypeLabels = new ArrayList<>();
         List<BigDecimal> orderTypeRevenue = new ArrayList<>();
         for (Object[] data : orderTypeData) {
             orderTypeLabels.add((String) data[0]);
             orderTypeRevenue.add((BigDecimal) data[1]);
         }
-
         List<TopDishResponse> topDishes = orderItemRepository.findTopDishesByPeriod(start, end)
                 .stream()
                 .limit(5)
@@ -244,17 +245,17 @@ public class RevenueReportsService {
                 .build();
     }
 
-    private List<Object[]> getDailyRevenueData(String period, Instant start, Instant end) {
+    private List<Object[]> getDailyRevenueDataFromPayments(String period, Instant start, Instant end) {
         switch (period) {
             case "today":
             case "specific":
-                return orderRepository.findHourlyRevenueByPeriod(start, end);
+                return paymentRepository.findHourlyRevenueByPeriod(start, end);
             case "week":
-                return orderRepository.findDailyRevenueByPeriodForWeek(start, end);
+                return paymentRepository.findDailyRevenueByPeriodForWeek(start, end);
             case "month":
-                return orderRepository.findDailyRevenueByPeriodForMonth(start, end);
+                return paymentRepository.findDailyRevenueByPeriodForMonth(start, end);
             case "year":
-                return orderRepository.findMonthlyRevenueByPeriod(start, end);
+                return paymentRepository.findMonthlyRevenueByPeriod(start, end);
             default:
                 return new ArrayList<>();
         }

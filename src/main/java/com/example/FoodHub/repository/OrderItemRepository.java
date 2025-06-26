@@ -12,14 +12,13 @@ import java.util.List;
 
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
-     @Query("SELECT mi.name, SUM(oi.quantity), SUM(oi.quantity * oi.price) " +
-            "FROM OrderItem oi " +
-            "JOIN oi.menuItem mi " +
-            "JOIN oi.order ro " +
-            "WHERE oi.status = 'COMPLETED' AND ro.status = 'COMPLETED' AND ro.createdAt BETWEEN :start AND :end " +
-            "GROUP BY mi.name " +
+    @Query("SELECT oi.menuItem.name, SUM(oi.quantity), SUM(oi.price * oi.quantity) " +
+            "FROM OrderItem oi JOIN oi.order o JOIN o.payment p " +
+            "WHERE p.status = 'PAID' AND p.createdAt BETWEEN :start AND :end " +
+            "GROUP BY oi.menuItem.id, oi.menuItem.name " +
             "ORDER BY SUM(oi.quantity) DESC")
     List<Object[]> findTopDishesByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
 
     @Query("SELECT mi.name, SUM(oi.quantity) " +
             "FROM OrderItem oi " +
