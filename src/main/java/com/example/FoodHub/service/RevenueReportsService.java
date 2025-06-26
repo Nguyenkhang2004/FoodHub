@@ -5,6 +5,7 @@ import com.example.FoodHub.dto.response.DishSalesResponse;
 import com.example.FoodHub.dto.response.RevenueReportResponse;
 import com.example.FoodHub.dto.response.TopDishResponse;
 import com.example.FoodHub.repository.OrderItemRepository;
+import com.example.FoodHub.repository.PaymentRepository;
 import com.example.FoodHub.repository.RestaurantOrderRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 public class RevenueReportsService {
     RestaurantOrderRepository orderRepository;
     OrderItemRepository orderItemRepository;
+    PaymentRepository paymentRepository;
 
     public RevenueReportResponse getDashboardData(String period, String specificDate) {
         Instant start, end, prevStart, prevEnd;
@@ -45,7 +47,7 @@ public class RevenueReportsService {
                 end = today.plusDays(1).atStartOfDay(utcZone).toInstant();
                 prevStart = today.minusDays(1).atStartOfDay(utcZone).toInstant();
                 prevEnd = today.atStartOfDay(utcZone).toInstant();
-                dailyLabels = List.of("6h", "9h", "12h", "15h", "18h", "21h", "24h");
+                dailyLabels = List.of("6h", "8h", "10h", "12h", "14h", "16h", "18h", "20h", "22h", "24h");
                 break;
 
             case "week":
@@ -100,6 +102,10 @@ public class RevenueReportsService {
                 end = specific.plusDays(1).atStartOfDay(utcZone).toInstant();
                 prevStart = specific.minusDays(1).atStartOfDay(utcZone).toInstant();
                 prevEnd = specific.atStartOfDay(utcZone).toInstant();
+
+                // BUG FIX: Labels phải khớp với logic mapping trong getIndexForDailyLabel
+                // Đổi từ: List.of("6h", "8h", "10h", "12h", "14h", "16h", "18h", "20h", "22h", "24h");
+                // Thành labels nhất quán với case "today":
                 dailyLabels = List.of("6h", "8h", "10h", "12h", "14h", "16h", "18h", "20h", "22h", "24h");
                 break;
 
@@ -107,22 +113,26 @@ public class RevenueReportsService {
                 throw new IllegalArgumentException("Invalid period: " + period);
         }
 
-        BigDecimal revenue = orderRepository.findTotalRevenueByPeriod(start, end)
+        BigDecimal revenue = paymentRepository.findTotalRevenueByPeriod(start, end)
                 .orElse(BigDecimal.ZERO);
-        Long orders = orderRepository.countOrdersByPeriod(start, end);
-        BigDecimal previousRevenue = orderRepository.findTotalRevenueByPeriod(prevStart, prevEnd)
+        Long orders = paymentRepository.countPaidPaymentsByPeriod(start, end);
+        BigDecimal previousRevenue = paymentRepository.findTotalRevenueByPeriod(prevStart, prevEnd)
                 .orElse(BigDecimal.ZERO);
 
-        List<Object[]> dailyRevenueData = getDailyRevenueData(period, start, end);
+        List<Object[]> dailyRevenueData = getDailyRevenueDataFromPayments(period, start, end);
+        log.info("Daily revenue data for period {}: {}", period,
+                dailyRevenueData.stream()
+                        .map(data -> String.format("[hour=%s, amount=%s]", data[0], data[1]))
+                        .collect(Collectors.toList()));
         List<BigDecimal> dailyRevenue = new ArrayList<>(Collections.nCopies(dailyLabels.size(), BigDecimal.ZERO));
         for (Object[] data : dailyRevenueData) {
-            int index = getIndexForDailyLabel(data[0], period, ZonedDateTime.ofInstant(start, ZoneId.of("UTC")));
+            int index = getIndexForDailyLabel(data[0], period, ZonedDateTime.ofInstant(start, zoneId));
             if (index >= 0 && index < dailyLabels.size()) {
-                dailyRevenue.set(index, (BigDecimal) data[1]);
+                BigDecimal currentAmount = dailyRevenue.get(index);
+                dailyRevenue.set(index, currentAmount.add((BigDecimal) data[1])); // Gộp doanh thu cho cùng index
             }
         }
-
-        List<Object[]> paymentMethodData = orderRepository.findRevenueByPaymentMethod(start, end);
+        List<Object[]> paymentMethodData = paymentRepository.findRevenueByPaymentMethod(start, end);
         List<String> paymentMethodLabels = new ArrayList<>();
         List<BigDecimal> paymentMethodRevenue = new ArrayList<>();
         for (Object[] data : paymentMethodData) {
@@ -130,14 +140,13 @@ public class RevenueReportsService {
             paymentMethodRevenue.add((BigDecimal) data[1]);
         }
 
-        List<Object[]> orderTypeData = orderRepository.findRevenueByOrderType(start, end);
+        List<Object[]> orderTypeData = paymentRepository.findRevenueByOrderType(start, end);
         List<String> orderTypeLabels = new ArrayList<>();
         List<BigDecimal> orderTypeRevenue = new ArrayList<>();
         for (Object[] data : orderTypeData) {
             orderTypeLabels.add((String) data[0]);
             orderTypeRevenue.add((BigDecimal) data[1]);
         }
-
         List<TopDishResponse> topDishes = orderItemRepository.findTopDishesByPeriod(start, end)
                 .stream()
                 .limit(5)
@@ -236,17 +245,17 @@ public class RevenueReportsService {
                 .build();
     }
 
-    private List<Object[]> getDailyRevenueData(String period, Instant start, Instant end) {
+    private List<Object[]> getDailyRevenueDataFromPayments(String period, Instant start, Instant end) {
         switch (period) {
             case "today":
             case "specific":
-                return orderRepository.findHourlyRevenueByPeriod(start, end);
+                return paymentRepository.findHourlyRevenueByPeriod(start, end);
             case "week":
-                return orderRepository.findDailyRevenueByPeriodForWeek(start, end);
+                return paymentRepository.findDailyRevenueByPeriodForWeek(start, end);
             case "month":
-                return orderRepository.findDailyRevenueByPeriodForMonth(start, end);
+                return paymentRepository.findDailyRevenueByPeriodForMonth(start, end);
             case "year":
-                return orderRepository.findMonthlyRevenueByPeriod(start, end);
+                return paymentRepository.findMonthlyRevenueByPeriod(start, end);
             default:
                 return new ArrayList<>();
         }
@@ -262,18 +271,28 @@ public class RevenueReportsService {
     }
     private int getIndexForDailyLabel(Object timeData, String period, ZonedDateTime start) {
         if ("today".equals(period) || "specific".equals(period)) {
-            int hour = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
-
-            if (hour >= 0 && hour < 6) return 0;    // 0-5h -> 6h
-            if (hour >= 6 && hour < 9) return 1;    // 6-8h -> 9h
-            if (hour >= 9 && hour < 12) return 2;   // 9-11h -> 12h
-            if (hour >= 12 && hour < 15) return 3;  // 12-14h -> 15h
-            if (hour >= 15 && hour < 18) return 4;  // 15-17h -> 18h
-            if (hour >= 18 && hour < 21) return 5;  // 18-20h -> 21h
-            if (hour >= 21 && hour < 24) return 6;  // 21-23h -> 24h
-            return 6; // Default to last slot
-
-        } else if ("week".equals(period)) {
+            if (timeData == null) {
+                log.warn("timeData is null, returning -1");
+                return -1;
+            }
+            int hour;
+            try {
+                hour = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
+            } catch (NumberFormatException | NullPointerException e) {
+                log.error("Invalid timeData format: {}, returning -1", timeData, e);
+                return -1;
+            }
+            if (hour >= 0 && hour <= 7) return 0;   // 0-7h -> "6h"
+            if (hour >= 8 && hour <= 9) return 1;   // 8-9h -> "8h"
+            if (hour >= 10 && hour <= 11) return 2; // 10-11h -> "10h"
+            if (hour >= 12 && hour <= 13) return 3; // 12-13h -> "12h"
+            if (hour >= 14 && hour <= 15) return 4; // 14-15h -> "14h"
+            if (hour >= 16 && hour <= 17) return 5; // 16-17h -> "16h"
+            if (hour >= 18 && hour <= 19) return 6; // 18-19h -> "18h"
+            if (hour >= 20 && hour <= 21) return 7; // 20-21h -> "20h"
+            if (hour >= 22 && hour <= 23) return 8; // 22-23h -> "22h"
+            return 9; // 24h -> "24h"
+        }else if ("week".equals(period)) {
             int dayOfWeek = timeData instanceof Integer ? (Integer) timeData : Integer.parseInt(timeData.toString());
             switch (dayOfWeek) {
                 case 1: return 6; // Sunday -> CN (index 6)

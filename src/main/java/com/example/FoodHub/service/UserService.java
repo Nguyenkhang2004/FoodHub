@@ -3,14 +3,17 @@ package com.example.FoodHub.service;
 import com.example.FoodHub.dto.request.*;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.entity.OtpVerification;
+import com.example.FoodHub.entity.Role;
 import com.example.FoodHub.entity.User;
+import com.example.FoodHub.entity.WorkSchedule;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.OtpVerificationRepository;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
-import com.example.FoodHub.util.SecurityUtil;
+import com.example.FoodHub.repository.WorkScheduleRepository;
+import jakarta.mail.MessagingException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,11 +22,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -38,9 +43,11 @@ public class UserService {
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
-    OtpVerificationRepository otpVerificationRepository;
-    EmailService emailService;
     RoleRepository roleRepository;
+    WorkScheduleRepository workScheduleRepository;
+    EmailService emailService;
+    OtpVerificationRepository otpVerificationRepository;
+
 
     @Transactional
     public UserResponse createUser(UserCreationRequest request) {
@@ -57,12 +64,16 @@ public class UserService {
         User user = userMapper.toUser(request);
         String plainPassword = request.getPassword();
         user.setPassword(passwordEncoder.encode(plainPassword));
-
+        user.setRoleName(roleRepository.findById(request.getRoleName())
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED)));
         user.setStatus("ACTIVE");
-        user.setRegistrationDate(LocalDateTime.now().atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant());
+        user.setRegistrationDate(Instant.now());
         user.setIsAuthUser(false);
         User savedUser = userRepository.save(user);
-        emailService.sendWelcomeEmailAsync(savedUser.getEmail(), savedUser.getUsername(), null);
+
+        // Gửi email chào mừng
+        emailService.sendWelcomeEmailAsync(savedUser.getEmail(), savedUser.getUsername(), plainPassword);
+
         return userMapper.toUserResponse(savedUser);
     }
 
@@ -132,7 +143,7 @@ public class UserService {
                 .map(userMapper::toUserResponse)
                 .toList();
     }
-    public Page<UserResponse> getCustomers(String keyword, String sortDirection, int page, int size) {
+    public Page<UserResponse> getCustomers(String keyword, String status ,String sortDirection, int page, int size) {
         log.info("In method getCustomers");
         // Xác định hướng sắp xếp theo username
         Sort sort = Sort.by("username");
@@ -142,43 +153,61 @@ public class UserService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         // Lấy danh sách khách hàng từ repository
-        Page<User> customerPage = userRepository.findCustomers(keyword, pageable);
+        Page<User> customerPage = userRepository.findCustomers(keyword,status, pageable);
 
         // Ánh xạ sang DTO
         return customerPage.map(userMapper::toUserResponse);
     }
 
     public UserResponse getUserById(Integer id) {
-        return userMapper.toUserResponse(userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+        return userMapper.toUserResponse(userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 
+//    public UserResponse updateUser(Integer id, UserUpdateRequest request) {
+//        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+//        userMapper.updateUser(user, request);
+//        user.setPassword(passwordEncoder.encode(user.getPassword()));
+//        userRepository.save(user);
+//        return userMapper.toUserResponse(user);
+//    }
+
     public void deleteUser(Integer id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         userRepository.delete(user);
     }
 
     public UserResponse myInfo() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        log.info("In method myInfo for user: {}", email);
-        return userMapper.toUserResponse(userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userMapper.toUserResponse(userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
+    public Page<UserResponse> getEmployees(
+            String role, String keyword, String status, String sortDirection, int page, int size) {
 
-    public Page<UserResponse> getEmployees(String role, String keyword, String sortDirection, int page, int size) {
+        // Xác định hướng sắp xếp theo username
         Sort sort = Sort.by("username");
         sort = sortDirection.equalsIgnoreCase("desc") ? sort.descending() : sort.ascending();
+
+        // Tạo Pageable với phân trang và sắp xếp
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<User> employeePage = userRepository.findEmployees(role, keyword, pageable);
+
+        // Lấy danh sách nhân viên từ repository
+        Page<User> employeePage = userRepository.findEmployees(role, keyword, status, pageable);
+
+        // Ánh xạ sang DTO
         return employeePage.map(userMapper::toUserResponse);
     }
+
 
     @Transactional
     public void inactiveUser(Integer id) {
         if (!userRepository.existsById(id)) {
-            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+            throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
+        }
+        LocalDate today = LocalDate.now();
+        List<WorkSchedule> futureSchedules = workScheduleRepository.findByUserIdAndDateFromToday(id, today);
+        if (!futureSchedules.isEmpty()) {
+            throw new AppException(ErrorCode.USER_HAS_SCHEDULED_SHIFTS); // Tạo mã lỗi mới
         }
         int updatedRows = userRepository.updateStatusById(id, "INACTIVE");
         if (updatedRows == 0) {
@@ -189,9 +218,10 @@ public class UserService {
     @Transactional
     public void restoreUser(Integer id) {
         if (!userRepository.existsById(id)) {
-            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+            throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
         }
-        int updatedRows = userRepository.updateStatusById(id, "ACTIVE");
+
+        int updatedRows =  userRepository.updateStatusById(id, "ACTIVE");
         if (updatedRows == 0) {
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
@@ -201,7 +231,11 @@ public class UserService {
     public void updateUser(Integer id, EmployeeUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Cập nhật các field trừ password
         userMapper.updateStaff(user, request);
+
+        // Mã hóa mật khẩu mới
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
@@ -221,9 +255,13 @@ public class UserService {
         // B3: Lưu lại
         userRepository.save(user);
     }
+    public long getTotalCustomers() {
+        return userRepository.countCustomers();
+    }
 
-    public long countUser() {
-        return userRepository.count();
+
+    public long getTotalEmployees() {
+        return userRepository.countEmployees();
     }
 
     public void changePassword(String email, ChangePasswordRequest request) {

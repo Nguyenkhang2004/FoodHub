@@ -20,19 +20,22 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer> {
     User save(User user);
     boolean existsByUsername(String username);
-    boolean existsByEmail(String email);
+    boolean existsByEmail(@Email @NotBlank @Size(max = 255) String email);
     List<User> findAll();
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     @Query("SELECT u FROM User u WHERE u.roleName.name = 'CUSTOMER' " +
-            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<User> findCustomers(@Param("keyword") String keyword, Pageable pageable);
+            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')))"+
+            "AND (:status IS NULL OR u.status = :status)")
+    Page<User> findCustomers(@Param("keyword") String keyword,@Param("status") String status, Pageable pageable);
     @Query("SELECT u FROM User u WHERE u.roleName.name != 'CUSTOMER' " +
             "AND (:role IS NULL OR u.roleName.name = :role) " +
-            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:status IS NULL OR u.status = :status)")
     Page<User> findEmployees(
             @Param("role") String role,
             @Param("keyword") String keyword,
+            @Param("status") String status,
             Pageable pageable);
     @Modifying
     @Transactional
@@ -42,4 +45,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT COUNT(m) > 0 FROM User m WHERE LOWER(TRIM(m.username)) = LOWER(TRIM(:username)) AND m.id != :id")
     boolean existsByNameIgnoreCaseAndIdNot(@Param("username") String username, @Param("id") Integer id);
     List<User> findByRoleName_NameAndStatus(String roleName, String status);
+    @Query("SELECT COUNT(u) FROM User u WHERE u.roleName.name = 'CUSTOMER'")
+    long countCustomers();
+
+    // Đếm tổng số nhân viên (tất cả role khác CUSTOMER và ADMIN)
+    @Query("SELECT COUNT(u) FROM User u WHERE u.roleName.name NOT IN ('CUSTOMER')")
+    long countEmployees();
+
 }

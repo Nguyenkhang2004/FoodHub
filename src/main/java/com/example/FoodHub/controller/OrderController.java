@@ -2,6 +2,7 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
+import com.example.FoodHub.dto.response.OrderItemResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.service.RestaurantOrderService;
 import jakarta.validation.Valid;
@@ -12,9 +13,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/orders")
@@ -138,5 +144,62 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
+
+    @GetMapping("/completed")
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCompletedOrders(
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "ASC") String sort) {
+        Sort.Direction direction = Sort.Direction.fromString(sort);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
+        Page<RestaurantOrderResponse> orders = orderService.getCompletedOrders(period, startDate, endDate, search, pageable);
+        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+                .result(orders)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getOrderSummary(
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate) {
+        Map<String, Object> summary = orderService.getOrderSummary(period, startDate, endDate);
+        ApiResponse<Map<String, Object>> response = ApiResponse.<Map<String, Object>>builder()
+                .result(summary)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+    // Endpoint mới
+    @GetMapping("/completed/filtered")
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCompletedOrdersFiltered(
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(required = false) String orderType,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "ASC") String sort) {
+        Sort.Direction direction = Sort.Direction.fromString(sort);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
+        Page<RestaurantOrderResponse> orders = orderService.getCompletedOrdersFiltered(
+                period, startDate, endDate, orderType, minPrice, maxPrice, paymentMethod, search, pageable);
+        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+                .result(orders)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
 
 }

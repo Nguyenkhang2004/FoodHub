@@ -28,6 +28,8 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAdjusters;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -451,5 +453,180 @@ public class RestaurantOrderService {
             throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
     }
+
+    public Page<RestaurantOrderResponse> getCompletedOrders(
+            String period,
+            Instant startDate,
+            Instant endDate,
+            String search,
+            Pageable pageable) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        log.info("Fetching completed orders with period: {}, start: {}, end: {}, search: {}", period, start, end, search);
+
+        Page<RestaurantOrder> orders = orderRepository.findByStatusAndCreatedAtBetween(
+                "COMPLETED",
+                start,
+                end,
+                search,
+                pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
+    }
+
+    public Page<RestaurantOrderResponse> getCompletedOrdersFiltered(
+            String period,
+            Instant startDate,
+            Instant endDate,
+            String orderType,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String paymentMethod,
+            String search,
+            Pageable pageable) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        log.info("Fetching filtered completed orders with period: {}, start: {}, end: {}, orderType: {}, minPrice: {}, maxPrice: {}, paymentMethod: {}, search: {}",
+                period, start, end, orderType, minPrice, maxPrice, paymentMethod, search);
+
+        Page<RestaurantOrder> orders = orderRepository.findCompletedOrdersFiltered(
+                start,
+                end,
+                orderType,
+                minPrice,
+                maxPrice,
+                paymentMethod,
+                search,
+                pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
+    }
+
+    public Map<String, Object> getOrderSummary(String period, Instant startDate, Instant endDate) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        log.info("Fetching order summary with period: {}, start: {}, end: {}", period, start, end);
+
+        List<Object[]> summary = orderRepository.countOrdersByDateMySQL("COMPLETED", start, end);
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        List<String> labels = summary.stream()
+                .map(row -> {
+                    LocalDate date;
+                    if (row[0] instanceof java.sql.Date) {
+                        date = ((java.sql.Date) row[0]).toLocalDate();
+                    } else if (row[0] instanceof LocalDate) {
+                        date = (LocalDate) row[0];
+                    } else {
+                        try {
+                            date = LocalDate.parse(row[0].toString(), DateTimeFormatter.ISO_LOCAL_DATE);
+                        } catch (Exception e) {
+                            log.error("Invalid date format: {}, using fallback parsing", row[0], e);
+                            date = LocalDate.parse(row[0].toString());
+                        }
+                    }
+                    return date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+                })
+                .collect(Collectors.toList());
+
+        List<Long> quantities = summary.stream()
+                .map(row -> {
+                    if (row[1] instanceof Long) {
+                        return (Long) row[1];
+                    } else if (row[1] instanceof Integer) {
+                        return ((Integer) row[1]).longValue();
+                    } else {
+                        try {
+                            return Long.parseLong(row[1].toString());
+                        } catch (NumberFormatException e) {
+                            log.error("Invalid quantity format: {}, returning 0", row[1], e);
+                            return 0L;
+                        }
+                    }
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("labels", labels);
+        result.put("quantities", quantities);
+        return result;
+    }
+
+    private Instant getStartDate(String period, Instant startDate) {
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId utcZone = ZoneId.of("UTC");
+        LocalDate today = LocalDate.now(zoneId);
+
+        if ("specific".equals(period) && startDate != null) {
+            LocalDateTime localDateTime = startDate.atZone(zoneId).toLocalDateTime();
+            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
+            log.info("Specific period - Received startDate: {}, Adjusted startDate: {}", startDate, adjustedStart);
+            return adjustedStart;
+        }
+
+        switch (period != null ? period.toLowerCase() : "month") {
+            case "today":
+                Instant startToday = today.atStartOfDay(utcZone).toInstant();
+                log.info("Today period - Start: {}", startToday);
+                return startToday;
+            case "week":
+                LocalDate mondayOfCurrentWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                Instant startWeek = mondayOfCurrentWeek.atStartOfDay(utcZone).toInstant();
+                log.info("Week period - Start: {}", startWeek);
+                return startWeek;
+            case "month":
+                Instant startMonth = today.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
+                log.info("Month period - Start: {}", startMonth);
+                return startMonth;
+            case "year":
+                Instant startYear = today.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
+                log.info("Year period - Start: {}", startYear);
+                return startYear;
+            default:
+                Instant defaultStart = today.minusDays(30).atStartOfDay(utcZone).toInstant();
+                log.info("Default period - Start: {}", defaultStart);
+                return defaultStart;
+        }
+    }
+
+    private Instant getEndDate(String period, Instant endDate) {
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId utcZone = ZoneId.of("UTC");
+        LocalDate today = LocalDate.now(zoneId);
+
+
+        if ("specific".equals(period) && endDate != null) {
+            LocalDateTime localDateTime = endDate.atZone(zoneId).toLocalDateTime();
+            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
+            log.info("Specific period - Received startDate: {}, Adjusted startDate: {}", endDate, adjustedStart);
+            return adjustedStart;
+        }
+
+        switch (period != null ? period.toLowerCase() : "month") {
+            case "today":
+                Instant endToday = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Today period - End: {}", endToday);
+                return endToday;
+            case "week":
+                LocalDate sundayOfCurrentWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+                Instant endWeek = sundayOfCurrentWeek.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Week period - End: {}", endWeek);
+                return endWeek;
+            case "month":
+                Instant endMonth = today.withDayOfMonth(today.lengthOfMonth()).plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Month period - End: {}", endMonth);
+                return endMonth;
+            case "year":
+                Instant endYear = today.withDayOfYear(today.lengthOfYear()).plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Year period - End: {}", endYear);
+                return endYear;
+            default:
+                Instant defaultEnd = today.plusDays(1).atStartOfDay(utcZone).toInstant();
+                log.info("Default period - End: {}", defaultEnd);
+                return defaultEnd;
+        }
+    }
+
 
 }
