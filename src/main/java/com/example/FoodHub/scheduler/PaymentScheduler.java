@@ -25,19 +25,12 @@ public class PaymentScheduler {
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void cancelExpiredPayments() {
-        // Chuyển Instant.now().minus(Duration.ofMinutes(10)) sang LocalDateTime với múi giờ Asia/Ho_Chi_Minh
-        LocalDateTime tenMinutesAgo = Instant.now()
-                .minus(Duration.ofMinutes(10))
-                .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                .toLocalDateTime();
+        Instant tenMinutesAgo = Instant.now().minus(Duration.ofMinutes(10));
         PageRequest pageRequest = PageRequest.of(0, 1000);
 
-        // Sử dụng LocalDateTime trong truy vấn
         Page<Payment> expiredPayments = paymentRepository
                 .findByStatusInAndCreatedAtBefore(
-                        PaymentStatus.cancellableStatuses(),
-                        tenMinutesAgo,
-                        pageRequest
+                        PaymentStatus.cancellableStatuses(), tenMinutesAgo, pageRequest
                 );
 
         List<Payment> paymentsToCancel = expiredPayments.getContent();

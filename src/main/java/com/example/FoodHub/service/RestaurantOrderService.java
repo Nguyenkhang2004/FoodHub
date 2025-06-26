@@ -14,10 +14,12 @@ import com.example.FoodHub.mapper.RestaurantOrderMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.specification.OrderSpecifications;
 import com.example.FoodHub.utils.PayOSUtils;
+import com.example.FoodHub.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -208,7 +210,8 @@ public class RestaurantOrderService {
 
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
-        order.setCreatedAt(LocalDateTime.now());
+
+        order.setCreatedAt(TimeUtils.getNowInVietNam());
         orderRepository.save(order);               // order & id
         orderItems.forEach(orderItemRepository::save);
 
@@ -225,7 +228,7 @@ public class RestaurantOrderService {
         Payment payment = paymentMapper.toPayment(paymentRequest);
         payment.setOrder(order);
         payment.setAmount(order.getTotalAmount());
-        payment.setCreatedAt(LocalDateTime.now());
+        payment.setCreatedAt(Instant.now());
 
         boolean isCash = PaymentMethod.CASH.name().equals(paymentRequest.getPaymentMethod());
         payment.setStatus(isCash ? PaymentStatus.UNPAID.name() : PaymentStatus.PENDING.name());
@@ -315,7 +318,7 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         existingOrder.setTotalAmount(totalAmount);
         existingOrder.setOrderItems(currentOrderItems);
-        existingOrder.setUpdatedAt(LocalDateTime.now());
+        existingOrder.setUpdatedAt(Instant.now());
 
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
@@ -355,7 +358,7 @@ public class RestaurantOrderService {
             if (payment != null && !PaymentStatus.PAID.name().equals(payment.getStatus())) {
                 log.info("Cancelling payment for order ID: {}", orderId);
                 payment.setStatus(PaymentStatus.CANCELLED.name());
-                payment.setUpdatedAt(LocalDateTime.now());
+                payment.setUpdatedAt(Instant.now());
                 paymentRepository.save(payment);
             }
         }
@@ -377,7 +380,7 @@ public class RestaurantOrderService {
         // Recalculate total amount
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(LocalDateTime.now());
+        order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
@@ -403,7 +406,7 @@ public class RestaurantOrderService {
         // Recalculate total amount if necessary
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(LocalDateTime.now());
+        order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 

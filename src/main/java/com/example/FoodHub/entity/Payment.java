@@ -43,11 +43,11 @@ public class Payment {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at", nullable = false, updatable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY, optional = false)
