@@ -2,10 +2,7 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.PayOSRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
-import com.example.FoodHub.dto.response.ApiResponse;
-import com.example.FoodHub.dto.response.InvoiceResponse;
-import com.example.FoodHub.dto.response.PaymentResponse;
-import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
+import com.example.FoodHub.dto.response.*;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.service.EmailService;
@@ -15,6 +12,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -260,5 +261,29 @@ public class PaymentController {
                 .contentLength(pdfBytes.length)
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(resource);
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getPayments(
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "ASC") String sort) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
+        Page<PaymentResponse> payments = paymentService.getPayments(period, startDate, endDate, status, transactionId, pageable);
+        return ResponseEntity.ok(ApiResponse.<Page<PaymentResponse>>builder().result(payments).build());
+    }
+
+    // Xem chi tiết giao dịch (hóa đơn liên quan) (endpoint mới)
+    @GetMapping("/{transactionId}")
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getPaymentDetails(
+            @PathVariable String transactionId) {
+        RestaurantOrderResponse orderDetails = paymentService.getPaymentDetails(transactionId);
+        return ResponseEntity.ok(ApiResponse.<RestaurantOrderResponse>builder().result(orderDetails).build());
     }
 }
