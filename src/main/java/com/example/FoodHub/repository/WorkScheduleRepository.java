@@ -7,7 +7,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Integer> {
     @Query("SELECT ws FROM WorkSchedule ws WHERE ws.workDate BETWEEN :startDate AND :endDate")
@@ -16,5 +20,15 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Inte
     List<WorkSchedule> findByDate(LocalDate date);
     @Query("SELECT ws FROM WorkSchedule ws WHERE ws.user.id = :userId AND ws.workDate >= :date")
     List<WorkSchedule> findByUserIdAndDateFromToday(@Param("userId") Integer userId, @Param("date") LocalDate date);
+    @Query("SELECT w FROM WorkSchedule w " +
+            "WHERE w.user.id = :userId " +
+            "AND w.workDate = :today " +
+            "AND :now >= w.startTime AND :now < w.endTime")
+    Optional<WorkSchedule> findCurrentWorkShift(
+            @Param("userId") Integer userId,
+            @Param("today") LocalDate today,
+            @Param("now") LocalTime now);
+
+
     List<WorkSchedule> findByUserId(Integer userId);
 }

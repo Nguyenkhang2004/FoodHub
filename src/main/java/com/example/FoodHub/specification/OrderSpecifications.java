@@ -47,7 +47,7 @@ public final class OrderSpecifications {
 
     // Hàm base - giữ nguyên
     public static Specification<RestaurantOrder> filterWorkShiftOrders(
-            String status, String tableNumber, LocalDateTime startTime) {
+            String status, String tableNumber, Instant startTime) {
 
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -61,25 +61,30 @@ public final class OrderSpecifications {
             }
 
             if (startTime != null) {
+                // createdAt >= startTime OR updatedAt >= startTime
                 Predicate afterStartTimeCondition = cb.or(
                         cb.greaterThanOrEqualTo(root.get("createdAt"), startTime),
                         cb.greaterThanOrEqualTo(root.get("updatedAt"), startTime)
                 );
 
+                // createdAt < startTime AND updatedAt < startTime
                 Predicate beforeStartTimeCondition = cb.and(
                         cb.lessThan(root.get("createdAt"), startTime),
                         cb.lessThan(root.get("updatedAt"), startTime)
                 );
 
+                // status NOT IN ('CANCELLED', 'COMPLETED')
                 Predicate unfinishedCondition = cb.not(root.get("status").in(
                         OrderStatus.CANCELLED.name(),
                         OrderStatus.COMPLETED.name()
                 ));
 
+                // unfinished orders that were last updated before the shift
                 Predicate unfinishedBeforeStartTime = cb.and(beforeStartTimeCondition, unfinishedCondition);
 
                 predicates.add(cb.or(afterStartTimeCondition, unfinishedBeforeStartTime));
             } else {
+                // No startTime provided => only get unfinished orders
                 predicates.add(cb.not(root.get("status").in(
                         OrderStatus.CANCELLED.name(),
                         OrderStatus.COMPLETED.name()
@@ -90,9 +95,10 @@ public final class OrderSpecifications {
         };
     }
 
+
     // Hàm lọc order cho waiter - sử dụng base và thêm area filter
     public static Specification<RestaurantOrder> filterWaiterOrders(
-            String status, String tableNumber, String area, LocalDateTime startTime) {
+            String status, String tableNumber, String area, Instant startTime) {
 
         // Sử dụng base specification
         Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime);
@@ -110,7 +116,7 @@ public final class OrderSpecifications {
 
     // Hàm lọc order cho chef - sử dụng base và thêm payment check
     public static Specification<RestaurantOrder> filterChefOrders(
-            String status, String tableNumber, LocalDateTime startTime) {
+            String status, String tableNumber, Instant startTime) {
 
         // Sử dụng base specification
         Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime);

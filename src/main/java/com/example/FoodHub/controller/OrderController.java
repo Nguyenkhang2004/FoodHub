@@ -94,7 +94,7 @@ public class OrderController {
             @RequestParam String area,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tableNumber,
-            @RequestParam String startTime,
+            @RequestParam Instant startTime,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,
@@ -112,7 +112,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getChefWorkShiftOrders(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tableNumber,
-            @RequestParam String startTime,
+            @RequestParam Instant startTime,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,

@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -145,17 +146,15 @@ public class WorkScheduleService {
         return dto;
     }
 
-    public ShiftResponse getMyWorkScheduleToday() {
+    public ShiftResponse getMyCurrentWorkScheduleToday() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        List<WorkSchedule> schedules = workScheduleRepository.findByUserIdAndDateFromToday(user.getId(), LocalDate.now());
-        if (schedules.isEmpty()) {
-            throw new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND);
-        }
+        WorkSchedule schedule = workScheduleRepository.findCurrentWorkShift(user.getId(), LocalDate.now(), LocalTime.now())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
 
-        return workScheduleMapper.toShiftResponse(schedules.get(0), schedules.get(0).getWorkDate());
+        return workScheduleMapper.toShiftResponse(schedule, schedule.getWorkDate());
     }
 
     public List<ShiftResponse> getMyWorkSchedule() {
