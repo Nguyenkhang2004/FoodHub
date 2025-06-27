@@ -19,9 +19,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.payos.PayOS;
 
 import java.math.BigDecimal;
 import java.time.*;
@@ -46,6 +46,7 @@ public class RestaurantOrderService {
     PaymentRepository paymentRepository;
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
+    SimpMessagingTemplate messagingTemplate; // Thêm SimpMessagingTemplate
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -115,19 +116,18 @@ public class RestaurantOrderService {
 
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
-
         log.info("Creating new order for table: {}", request.getTableId());
 
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
 
-        // gán User (nếu có)
+        // Gán User (nếu có)
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
             order.setUser(user);
         }
 
-        // gán bàn nếu DINE_IN
+        // Gán bàn nếu DINE_IN
         if (OrderType.DINE_IN.name().equals(request.getOrderType())) {
             RestaurantTable table = tableRepository.findById(request.getTableId())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
@@ -138,7 +138,7 @@ public class RestaurantOrderService {
             order.setTable(table);
         }
 
-        // tạo OrderItems và tính total
+        // Tạo OrderItems và tính total
         Set<OrderItem> orderItems = request.getOrderItems().stream()
                 .map(itemReq -> {
                     MenuItem menuItem = menuItemRepository.findById(itemReq.getMenuItemId())
@@ -153,6 +153,7 @@ public class RestaurantOrderService {
                             .multiply(BigDecimal.valueOf(itemReq.getQuantity())));
                     return orderItem;
                 })
+
                 .collect(Collectors.toSet());
 
         BigDecimal totalAmount = orderItems.stream()
@@ -160,10 +161,9 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         order.setOrderItems(orderItems);
-        order.setTotalAmount(totalAmount);
         order.setCreatedAt(Instant.now());
 
-        orderRepository.save(order);               // order & id
+        orderRepository.save(order);               // Lưu order & id
         orderItems.forEach(orderItemRepository::save);
 
         if (OrderType.DELIVERY.name().equals(request.getOrderType())
@@ -180,7 +180,7 @@ public class RestaurantOrderService {
                     : PaymentStatus.PENDING.name());
             if (!isCash) {
                 String paymentUrl = payOSUtils.generatePaymentUrl(payment);
-                log.info("Generating payment url: {}", paymentUrl );
+                log.info("Generating payment url: {}", paymentUrl);
                 String transactionId = payOSUtils.getTransactionId(paymentUrl);
                 log.info("Generating transaction id: {}", transactionId);
                 payment.setPaymentUrl(paymentUrl);
@@ -191,9 +191,17 @@ public class RestaurantOrderService {
             paymentRepository.save(payment);
             order.setPayment(payment);
         }
-        return orderMapper.toRestaurantOrderResponse(order);
-    }
 
+        RestaurantOrder savedOrder = orderRepository.save(order);
+
+        // Gửi thông điệp WebSocket đến client
+        if (order.getUser() != null) {
+            messagingTemplate.convertAndSend("/topic/orders/" + order.getUser().getId(),
+                    orderMapper.toRestaurantOrderResponse(savedOrder));
+        }
+
+        return orderMapper.toRestaurantOrderResponse(savedOrder);
+    }
 
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
@@ -251,6 +259,13 @@ public class RestaurantOrderService {
         existingOrder.setUpdatedAt(Instant.now());
 
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
+
+        // Gửi thông điệp WebSocket đến client
+        if (existingOrder.getUser() != null) {
+            messagingTemplate.convertAndSend("/topic/orders/" + existingOrder.getUser().getId(),
+                    orderMapper.toRestaurantOrderResponse(savedOrder));
+        }
+
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
@@ -285,6 +300,13 @@ public class RestaurantOrderService {
         updateOrderStatusBasedOnItems(order);
 
         RestaurantOrder savedOrder = orderRepository.save(order);
+
+        // Gửi thông điệp WebSocket đến client
+        if (order.getUser() != null) {
+            messagingTemplate.convertAndSend("/topic/orders/" + order.getUser().getId(),
+                    orderMapper.toRestaurantOrderResponse(savedOrder));
+        }
+
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
@@ -303,6 +325,13 @@ public class RestaurantOrderService {
         order.setUpdatedAt(Instant.now());
         updateOrderStatusBasedOnItems(order);
         RestaurantOrder savedOrder = orderRepository.save(order);
+
+        // Gửi thông điệp WebSocket đến client
+        if (order.getUser() != null) {
+            messagingTemplate.convertAndSend("/topic/orders/" + order.getUser().getId(),
+                    orderMapper.toRestaurantOrderResponse(savedOrder));
+        }
+
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 

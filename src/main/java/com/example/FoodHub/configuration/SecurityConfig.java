@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT,
                                 "/users/**"
                         ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
-
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
