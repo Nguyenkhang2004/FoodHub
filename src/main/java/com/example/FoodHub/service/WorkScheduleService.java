@@ -150,12 +150,10 @@ public class WorkScheduleService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        List<WorkSchedule> schedules = workScheduleRepository.findByUserIdAndDateFromToday(user.getId(), LocalDate.now());
-        if (schedules.isEmpty()) {
-            throw new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND);
-        }
+        WorkSchedule schedule = workScheduleRepository.findCurrentWorkShift(user.getId(), LocalDate.now(), LocalTime.now())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
 
-        return workScheduleMapper.toShiftResponse(schedules.get(0), schedules.get(0).getWorkDate());
+        return workScheduleMapper.toShiftResponse(schedule, schedule.getWorkDate());
     }
 
     public List<ShiftResponse> getMyWorkSchedule() {
