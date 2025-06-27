@@ -20,8 +20,8 @@ public class RestaurantOrderResponse {
     private Integer id;
     private String status;
     private String orderType;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     private String note;
     private Integer tableId;
     private String tableNumber;

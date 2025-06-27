@@ -17,6 +17,7 @@ import com.example.FoodHub.mapper.RestaurantOrderMapper;
 import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.utils.PayOSUtils;
+import com.example.FoodHub.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -132,7 +133,7 @@ public class PaymentService {
         payment.setStatus(request.getPaymentMethod().equals(PaymentMethod.BANKING.name())
                 ? PaymentStatus.PENDING.name()
                 : PaymentStatus.UNPAID.name());
-        payment.setCreatedAt(LocalDateTime.now());
+        payment.setCreatedAt(Instant.now());
 
         if (request.getPaymentMethod().equals(PaymentMethod.BANKING.name())) {
             String paymentUrl = payOSUtils.generatePaymentUrl(payment);
@@ -153,7 +154,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(newStatus);
-        payment.setUpdatedAt(LocalDateTime.now());
+        payment.setUpdatedAt(Instant.now());
         paymentRepository.save(payment);
         return paymentMapper.toPaymentResponse(payment);
     }
@@ -168,7 +169,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(request.getOrderCode())
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(finalStatus);
-        payment.setUpdatedAt(LocalDateTime.now());
+        payment.setUpdatedAt(Instant.now());
         paymentRepository.save(payment);
         return paymentMapper.toPaymentResponse(payment);
     }
@@ -317,7 +318,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(PaymentStatus.REFUNDED.name());
-        payment.setUpdatedAt(LocalDateTime.now());
+        payment.setUpdatedAt(TimeUtils.getNowInVietNam());
         return paymentRepository.save(payment);
     }
 

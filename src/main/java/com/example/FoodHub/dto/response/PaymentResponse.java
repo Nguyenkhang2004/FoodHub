@@ -18,8 +18,8 @@ public class PaymentResponse {
     private String paymentMethod;
     private String transactionId; // Đảm bảo có trường này
     private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     private String paymentUrl;
 
 

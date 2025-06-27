@@ -1,10 +1,8 @@
 package com.example.FoodHub.service;
 
-import ch.qos.logback.core.util.TimeUtil;
 import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
-import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
@@ -16,13 +14,14 @@ import com.example.FoodHub.mapper.RestaurantOrderMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.specification.OrderSpecifications;
 import com.example.FoodHub.utils.PayOSUtils;
+import com.example.FoodHub.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
@@ -52,7 +51,6 @@ public class RestaurantOrderService {
     PaymentRepository paymentRepository;
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
-    SimpMessagingTemplate simpMessagingTemplate;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -78,33 +76,16 @@ public class RestaurantOrderService {
             String area,
             String status,
             String tableNumber,
-            String startTime,
+            Instant startTime,
             Pageable pageable) {
 
         log.info("Fetching orders for area: {}, status: {}, tableId: {}, startTime: {}",
                 area, status, tableNumber, startTime);
 
-        // Convert startTime string "HH:mm" to LocalDateTime of today
-        LocalDateTime startTimeLocal = null;
-        if (startTime != null && !startTime.trim().isEmpty()) {
-            try {
-                // Parse time string "08:30" to LocalTime
-                LocalTime time = LocalTime.parse(startTime.trim(), DateTimeFormatter.ofPattern("HH:mm"));
-
-                // Combine with today's date to create LocalDateTime
-                startTimeLocal = LocalDateTime.of(LocalDate.now(), time);
-
-                log.info("Parsed startTime: {} to LocalDateTime: {}", startTime, startTimeLocal);
-            } catch (DateTimeParseException e) {
-                log.warn("Invalid startTime format: {}. Expected format: HH:mm (e.g., 08:30)", startTime);
-                throw new AppException(ErrorCode.INVALID_TIME_FORMAT);
-            }
-        }
-
         // Use OrderSpecifications to filter orders
         Page<RestaurantOrder> orders = orderRepository.findAll(
                 OrderSpecifications.filterWaiterOrders(
-                        status, tableNumber, area, startTimeLocal
+                        status, tableNumber, area, startTime
                 ),
                 pageable
         );
@@ -112,36 +93,21 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
+
     public Page<RestaurantOrderResponse> getChefWorkShiftOrders(
             String status,
             String tableNumber,
-            String startTime,
+            Instant startTime,
             Pageable pageable) {
 
         log.info("Fetching orders for status: {}, tableId: {}, startTime: {}",
                 status, tableNumber, startTime);
 
-        // Convert startTime string "HH:mm" to LocalDateTime of today
-        LocalDateTime startTimeLocal = null;
-        if (startTime != null && !startTime.trim().isEmpty()) {
-            try {
-                // Parse time string "08:30" to LocalTime
-                LocalTime time = LocalTime.parse(startTime.trim(), DateTimeFormatter.ofPattern("HH:mm"));
-
-                // Combine with today's date to create LocalDateTime
-                startTimeLocal = LocalDateTime.of(LocalDate.now(), time);
-
-                log.info("Parsed startTime: {} to LocalDateTime: {}", startTime, startTimeLocal);
-            } catch (DateTimeParseException e) {
-                log.warn("Invalid startTime format: {}. Expected format: HH:mm (e.g., 08:30)", startTime);
-                throw new AppException(ErrorCode.INVALID_TIME_FORMAT);
-            }
-        }
 
         // Use OrderSpecifications to filter orders
         Page<RestaurantOrder> orders = orderRepository.findAll(
                 OrderSpecifications.filterChefOrders(
-                        status, tableNumber, startTimeLocal
+                        status, tableNumber, startTime
                 ),
                 pageable
         );
@@ -156,6 +122,7 @@ public class RestaurantOrderService {
                 () -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
         return orderMapper.toRestaurantOrderResponse(order);
     }
+
 
     public RestaurantOrderResponse getOrdersByOrderId(Integer id) {
         log.info("Fetching orders for order ID: {}", id);
@@ -211,8 +178,8 @@ public class RestaurantOrderService {
 
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
-        order.setCreatedAt(LocalDateTime.now());
 
+        order.setCreatedAt(TimeUtils.getNowInVietNam());
         orderRepository.save(order);               // order & id
         orderItems.forEach(orderItemRepository::save);
 
@@ -222,12 +189,6 @@ public class RestaurantOrderService {
             Payment payment = createPaymentForOrder(order, request.getPayment());
             order.setPayment(payment);
         }
-
-        NotificationResponse notification = NotificationResponse.builder()
-                .message("Có đơn hàng mới #: " + order.getId())
-                .timestamp(Instant.now())
-                .build();
-        simpMessagingTemplate.convertAndSend("/topic/kitchen", notification);
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
@@ -235,7 +196,7 @@ public class RestaurantOrderService {
         Payment payment = paymentMapper.toPayment(paymentRequest);
         payment.setOrder(order);
         payment.setAmount(order.getTotalAmount());
-        payment.setCreatedAt(LocalDateTime.now());
+        payment.setCreatedAt(Instant.now());
 
         boolean isCash = PaymentMethod.CASH.name().equals(paymentRequest.getPaymentMethod());
         payment.setStatus(isCash ? PaymentStatus.UNPAID.name() : PaymentStatus.PENDING.name());
@@ -325,7 +286,7 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         existingOrder.setTotalAmount(totalAmount);
         existingOrder.setOrderItems(currentOrderItems);
-        existingOrder.setUpdatedAt(LocalDateTime.now());
+        existingOrder.setUpdatedAt(Instant.now());
 
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
@@ -365,7 +326,7 @@ public class RestaurantOrderService {
             if (payment != null && !PaymentStatus.PAID.name().equals(payment.getStatus())) {
                 log.info("Cancelling payment for order ID: {}", orderId);
                 payment.setStatus(PaymentStatus.CANCELLED.name());
-                payment.setUpdatedAt(LocalDateTime.now());
+                payment.setUpdatedAt(Instant.now());
                 paymentRepository.save(payment);
             }
         }
@@ -387,7 +348,7 @@ public class RestaurantOrderService {
         // Recalculate total amount
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(LocalDateTime.now());
+        order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
@@ -413,7 +374,7 @@ public class RestaurantOrderService {
         // Recalculate total amount if necessary
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(LocalDateTime.now());
+        order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
@@ -483,6 +444,34 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
     }
 
+    public Page<RestaurantOrderResponse> getCompletedOrdersFiltered(
+            String period,
+            Instant startDate,
+            Instant endDate,
+            String orderType,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String paymentMethod,
+            String search,
+            Pageable pageable) {
+        Instant start = getStartDate(period, startDate);
+        Instant end = getEndDate(period, endDate);
+
+        log.info("Fetching filtered completed orders with period: {}, start: {}, end: {}, orderType: {}, minPrice: {}, maxPrice: {}, paymentMethod: {}, search: {}",
+                period, start, end, orderType, minPrice, maxPrice, paymentMethod, search);
+
+        Page<RestaurantOrder> orders = orderRepository.findCompletedOrdersFiltered(
+                start,
+                end,
+                orderType,
+                minPrice,
+                maxPrice,
+                paymentMethod,
+                search,
+                pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
+    }
+
     public Map<String, Object> getOrderSummary(String period, Instant startDate, Instant endDate) {
         Instant start = getStartDate(period, startDate);
         Instant end = getEndDate(period, endDate);
@@ -533,35 +522,6 @@ public class RestaurantOrderService {
         result.put("quantities", quantities);
         return result;
     }
-
-    public Page<RestaurantOrderResponse> getCompletedOrdersFiltered(
-            String period,
-            Instant startDate,
-            Instant endDate,
-            String orderType,
-            BigDecimal minPrice,
-            BigDecimal maxPrice,
-            String paymentMethod,
-            String search,
-            Pageable pageable) {
-        Instant start = getStartDate(period, startDate);
-        Instant end = getEndDate(period, endDate);
-
-        log.info("Fetching filtered completed orders with period: {}, start: {}, end: {}, orderType: {}, minPrice: {}, maxPrice: {}, paymentMethod: {}, search: {}",
-                period, start, end, orderType, minPrice, maxPrice, paymentMethod, search);
-
-        Page<RestaurantOrder> orders = orderRepository.findCompletedOrdersFiltered(
-                start,
-                end,
-                orderType,
-                minPrice,
-                maxPrice,
-                paymentMethod,
-                search,
-                pageable);
-        return orders.map(orderMapper::toRestaurantOrderResponsePaidOnly);
-    }
-
 
     private Instant getStartDate(String period, Instant startDate) {
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
@@ -637,5 +597,6 @@ public class RestaurantOrderService {
                 return defaultEnd;
         }
     }
+
 
 }
