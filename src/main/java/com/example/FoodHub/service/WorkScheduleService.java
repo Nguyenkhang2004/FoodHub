@@ -1,9 +1,8 @@
 package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.ShiftRequest;
-import com.example.FoodHub.dto.response.ShiftResponse;
-import com.example.FoodHub.dto.request.EmployeeWorkRequest;
 import com.example.FoodHub.dto.response.EmployeeWorkResponse;
+import com.example.FoodHub.dto.response.ShiftResponse;
 import com.example.FoodHub.entity.User;
 import com.example.FoodHub.entity.WorkSchedule;
 import com.example.FoodHub.exception.AppException;
@@ -14,12 +13,12 @@ import com.example.FoodHub.repository.WorkScheduleRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,15 +27,15 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WorkScheduleService {
     WorkScheduleRepository workScheduleRepository;
-
     UserRepository userRepository;
-
-    private final WorkScheduleMapper workScheduleMapper;
+    WorkScheduleMapper workScheduleMapper;
 
     public List<ShiftResponse> getShiftsForWeek(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
         List<WorkSchedule> schedules = workScheduleRepository.findByWeek(weekStart, weekEnd);
-        return schedules.stream().map(workScheduleMapper::toShiftResponse).collect(Collectors.toList());
+        return schedules.stream()
+                .map(schedule -> workScheduleMapper.toShiftResponse(schedule, schedule.getWorkDate()))
+                .collect(Collectors.toList());
     }
 
     public List<EmployeeWorkResponse> getEmployeesByRole(String role) {
@@ -116,7 +115,7 @@ public class WorkScheduleService {
         }
 
         WorkSchedule savedSchedule = workScheduleRepository.save(schedule);
-        return workScheduleMapper.toShiftResponse(savedSchedule);
+        return workScheduleMapper.toShiftResponse(savedSchedule, savedSchedule.getWorkDate());
     }
 
     public void deleteShift(Integer id) {
@@ -138,12 +137,15 @@ public class WorkScheduleService {
         dto.setId(schedule.getId());
         dto.setName(schedule.getUser().getUsername());
         dto.setRole(schedule.getUser().getRoleName().getName().toLowerCase());
-        dto.setDate(schedule.getWorkDate().toString());
+        dto.setDate(schedule.getWorkDate().atStartOfDay(ZoneId.of("UTC")).toInstant());
         dto.setShift(schedule.getShiftType().toLowerCase());
+        dto.setArea(schedule.getArea());
+        dto.setStartTime(schedule.getStartTime().atDate(schedule.getWorkDate()).atZone(ZoneId.of("UTC")).toInstant());
+        dto.setEndTime(schedule.getEndTime().atDate(schedule.getWorkDate()).atZone(ZoneId.of("UTC")).toInstant());
         return dto;
     }
 
-    public ShiftResponse getMyWorkScheduleToday(){
+    public ShiftResponse getMyWorkScheduleToday() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -153,12 +155,11 @@ public class WorkScheduleService {
             throw new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND);
         }
 
-        return workScheduleMapper.toShiftResponse(schedules.get(0));
+        return workScheduleMapper.toShiftResponse(schedules.get(0), schedules.get(0).getWorkDate());
     }
 
-    public List<ShiftResponse> getMyWorkSchedule(){
+    public List<ShiftResponse> getMyWorkSchedule() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         List<WorkSchedule> schedules = workScheduleRepository.findByUserId(user.getId());
@@ -167,7 +168,7 @@ public class WorkScheduleService {
         }
 
         return schedules.stream()
-                .map(workScheduleMapper::toShiftResponse)
+                .map(schedule -> workScheduleMapper.toShiftResponse(schedule, schedule.getWorkDate()))
                 .collect(Collectors.toList());
     }
 }
