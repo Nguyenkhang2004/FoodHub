@@ -2,6 +2,7 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
+import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.service.RestaurantOrderService;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -26,6 +28,7 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderController {
     RestaurantOrderService orderService;
+    SimpMessagingTemplate simpMessagingTemplate;
 
     @PostMapping
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@Valid @RequestBody RestaurantOrderRequest request) {
@@ -33,6 +36,11 @@ public class OrderController {
         ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponse)
                 .build();
+        NotificationResponse notification = NotificationResponse.builder()
+                .message("Có đơn hàng mới #: " + orderResponse.getId())
+                .timestamp(Instant.now())
+                .build();
+        simpMessagingTemplate.convertAndSend("/topic/kitchen", notification);
         return ResponseEntity.ok().body(response);
     }
 

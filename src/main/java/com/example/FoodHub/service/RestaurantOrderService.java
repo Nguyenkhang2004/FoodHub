@@ -1,8 +1,10 @@
 package com.example.FoodHub.service;
 
+import ch.qos.logback.core.util.TimeUtil;
 import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
+import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
@@ -20,6 +22,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
@@ -49,6 +52,7 @@ public class RestaurantOrderService {
     PaymentRepository paymentRepository;
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
+    SimpMessagingTemplate simpMessagingTemplate;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -153,7 +157,6 @@ public class RestaurantOrderService {
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
-
     public RestaurantOrderResponse getOrdersByOrderId(Integer id) {
         log.info("Fetching orders for order ID: {}", id);
         return orderRepository.findById(id)
@@ -219,6 +222,12 @@ public class RestaurantOrderService {
             Payment payment = createPaymentForOrder(order, request.getPayment());
             order.setPayment(payment);
         }
+
+        NotificationResponse notification = NotificationResponse.builder()
+                .message("Có đơn hàng mới #: " + order.getId())
+                .timestamp(Instant.now())
+                .build();
+        simpMessagingTemplate.convertAndSend("/topic/kitchen", notification);
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
