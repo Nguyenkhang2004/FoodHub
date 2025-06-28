@@ -4,6 +4,7 @@ import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
+import com.example.FoodHub.service.NotificationService;
 import com.example.FoodHub.service.RestaurantOrderService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -28,19 +29,12 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderController {
     RestaurantOrderService orderService;
-    SimpMessagingTemplate simpMessagingTemplate;
-
     @PostMapping
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@Valid @RequestBody RestaurantOrderRequest request) {
         RestaurantOrderResponse orderResponse = orderService.createOrder(request);
         ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(orderResponse)
                 .build();
-        NotificationResponse notification = NotificationResponse.builder()
-                .message("Có đơn hàng mới #: " + orderResponse.getId())
-                .timestamp(Instant.now())
-                .build();
-        simpMessagingTemplate.convertAndSend("/topic/kitchen", notification);
         return ResponseEntity.ok().body(response);
     }
 

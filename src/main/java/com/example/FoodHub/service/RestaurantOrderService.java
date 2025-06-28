@@ -3,6 +3,7 @@ package com.example.FoodHub.service;
 import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
+import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
@@ -51,6 +52,7 @@ public class RestaurantOrderService {
     PaymentRepository paymentRepository;
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
+    NotificationService notificationService;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -189,6 +191,7 @@ public class RestaurantOrderService {
             Payment payment = createPaymentForOrder(order, request.getPayment());
             order.setPayment(payment);
         }
+        notificationService.notifyOrderEvent(order, NotificationType.NEW_ORDER.name());
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
@@ -210,7 +213,6 @@ public class RestaurantOrderService {
 
         return paymentRepository.save(payment);
     }
-
 
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
@@ -291,6 +293,7 @@ public class RestaurantOrderService {
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
 
+        notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_ADDED.name());
         // 8. Return response
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
@@ -353,6 +356,9 @@ public class RestaurantOrderService {
         updateOrderStatusBasedOnItems(order);
 
         RestaurantOrder savedOrder = orderRepository.save(order);
+        if(newStatus.equals(OrderStatus.READY.name())) {
+            notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_READY.name());
+        }
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
@@ -379,8 +385,12 @@ public class RestaurantOrderService {
         updateOrderStatusBasedOnItems(order);
 
         RestaurantOrder savedOrder = orderRepository.save(order);
+        if(newStatus.equals(OrderStatus.READY.name())) {
+            notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_READY.name());
+        }
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
+
     private void updateOrderStatusBasedOnItems(RestaurantOrder order) {
         Set<OrderItem> items = order.getOrderItems();
         boolean allCancelled = items.stream().allMatch(item -> OrderItemStatus.CANCELLED.name().equals(item.getStatus()));

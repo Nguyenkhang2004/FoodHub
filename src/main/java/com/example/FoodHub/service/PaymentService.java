@@ -7,6 +7,7 @@ import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.*;
+import com.example.FoodHub.enums.NotificationType;
 import com.example.FoodHub.enums.OrderStatus;
 import com.example.FoodHub.enums.PaymentMethod;
 import com.example.FoodHub.enums.PaymentStatus;
@@ -45,6 +46,7 @@ public class PaymentService {
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
     RestaurantOrderMapper restaurantOrderMapper;
+    NotificationService notificationService;
 
     // Process payment for an order
 
@@ -171,6 +173,9 @@ public class PaymentService {
         payment.setStatus(finalStatus);
         payment.setUpdatedAt(Instant.now());
         paymentRepository.save(payment);
+        if(PaymentStatus.PAID.name().equals(finalStatus)) {
+            notificationService.notifyOrderEvent(payment.getOrder(), NotificationType.BANKING_COMPLETED.name());
+        }
         return paymentMapper.toPaymentResponse(payment);
     }
 

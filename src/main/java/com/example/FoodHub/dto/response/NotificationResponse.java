@@ -14,4 +14,5 @@ import java.time.Instant;
 public class NotificationResponse {
     private String message;
     private Instant timestamp;
+    private String type;
 }
