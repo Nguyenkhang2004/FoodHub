@@ -25,6 +25,8 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.*;
@@ -186,65 +188,88 @@ public class RestaurantOrderService {
     }
 
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
+        Logger log = LoggerFactory.getLogger(RestaurantOrderService.class);
         log.info("Creating new order for table: {}", request.getTableId());
+
+        // Kiểm tra các trường bắt buộc
+        if (request.getUserId() == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "userId must not be null");
+        }
+        if (request.getOrderType().equals(OrderType.DINE_IN.name()) && request.getTableId() == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "tableId must not be null for DINE_IN order");
+        }
+        if (request.getOrderItems() == null || request.getOrderItems().isEmpty() ||
+                request.getOrderItems().stream().anyMatch(item -> item.getMenuItemId() == null)) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "orderItems must not be empty and menuItemId must not be null");
+        }
 
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         order.setUser(user);
+
         if (request.getOrderType().equals(OrderType.DINE_IN.name())) {
             RestaurantTable table = tableRepository.findById(request.getTableId())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
-            // Kiểm tra trạng thái bàn trước khi gán
             if (!TableStatus.AVAILABLE.name().equals(table.getStatus())) {
                 throw new AppException(ErrorCode.TABLE_NOT_AVAILABLE);
             }
-            table.setStatus(TableStatus.OCCUPIED.name()); // Đánh dấu bàn là đang sử dụng
+            table.setStatus(TableStatus.OCCUPIED.name());
             order.setTable(table);
-            tableRepository.save(table); // Lưu lại trạng thái bàn
+            tableRepository.save(table);
         }
 
         Set<OrderItem> orderItems = request.getOrderItems().stream()
                 .map(itemReq -> {
                     OrderItem orderItem = orderMapper.toOrderItem(itemReq);
-                    // Lấy Menu entity theo menuItemId trong OrderItemRequest
                     MenuItem menuItem = menuItemRepository.findById(itemReq.getMenuItemId())
                             .orElseThrow(() -> new AppException(ErrorCode.MENU_ITEM_NOT_EXISTED));
                     if (!MenuItemStatus.AVAILABLE.name().equals(menuItem.getStatus())) {
                         throw new AppException(ErrorCode.MENU_ITEM_NOT_AVAILABLE);
                     }
                     orderItem.setMenuItem(menuItem);
-                    // Gán order cho orderItem (quan hệ hai chiều)
                     orderItem.setOrder(order);
-                    // Tính toán giá dựa trên quantity và unit price của MenuItem
                     orderItem.setPrice(menuItem.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity())));
-                    // Tính tổng giá trị của đơn hàng
                     return orderItem;
                 })
                 .collect(Collectors.toSet());
-        order.setCreatedAt(Instant.now());
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId utcZone = ZoneId.of("UTC");
+        LocalDateTime nowInVietnam = LocalDateTime.now(zoneId);
+        Instant orderCreatedAt = nowInVietnam.atZone(utcZone).toInstant();
+        order.setCreatedAt(orderCreatedAt);
+        log.info("Setting order createdAt: {} (Vietnam time converted to UTC)", orderCreatedAt);
+
         order.setOrderItems(orderItems);
         BigDecimal totalAmount = orderItems.stream()
                 .map(OrderItem::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
+
+        // Lưu order trước
+        log.info("Saving order with ID: {} at time: {}", order.getId(), orderCreatedAt.atZone(ZoneId.of("Asia/Ho_Chi_Minh")));
         orderRepository.save(order);
         orderItems.forEach(orderItemRepository::save);
 
-        if (OrderType.DELIVERY.name().equals(request.getOrderType())
-                || OrderType.TAKEAWAY.name().equals(request.getOrderType())) {
-
+        // Xử lý thanh toán chỉ cho DELIVERY hoặc TAKEAWAY
+        if (OrderType.DELIVERY.name().equals(request.getOrderType()) ||
+                OrderType.TAKEAWAY.name().equals(request.getOrderType())) {
+            if (request.getPayment() == null) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Payment information is required for DELIVERY or TAKEAWAY");
+            }
             Payment payment = paymentMapper.toPayment(request.getPayment());
             payment.setOrder(order);
             payment.setAmount(totalAmount);
-            payment.setCreatedAt(Instant.now());
 
-            boolean isCash = PaymentMethod.CASH.name()
-                    .equals(request.getPayment().getPaymentMethod());
-            payment.setStatus(isCash ? PaymentStatus.UNPAID.name()
-                    : PaymentStatus.PENDING.name());
+            // Đặt thời gian cho payment
+            Instant paymentCreatedAt = Instant.now().plus(7, ChronoUnit.HOURS);
+            payment.setCreatedAt(paymentCreatedAt);
+            log.info("Setting payment createdAt: {} (UTC: {})",
+                    paymentCreatedAt.atZone(ZoneId.of("Asia/Ho_Chi_Minh")),
+                    paymentCreatedAt);
+
+            boolean isCash = PaymentMethod.CASH.name().equals(request.getPayment().getPaymentMethod());
+            payment.setStatus(isCash ? PaymentStatus.UNPAID.name() : PaymentStatus.PENDING.name());
             if (!isCash) {
                 String paymentUrl = payOSUtils.generatePaymentUrl(payment);
                 log.info("Generating payment url: {}", paymentUrl);
@@ -255,12 +280,20 @@ public class RestaurantOrderService {
             } else {
                 log.info("Payment method is CASH, no payment URL generated.");
             }
+            log.info("Saving payment for order ID: {} at time: {}", order.getId(), paymentCreatedAt.atZone(ZoneId.of("Asia/Ho_Chi_Minh")));
             paymentRepository.save(payment);
             order.setPayment(payment);
+            log.info("Updating order with payment ID: {} at time: {}", payment.getId(), paymentCreatedAt.atZone(ZoneId.of("Asia/Ho_Chi_Minh")));
+            orderRepository.save(order);
+        } else if (request.getPayment() != null) {
+            log.warn("Payment information provided for DINE_IN order, ignoring payment data");
+            order.setPayment(null);
         }
-        return orderMapper.toRestaurantOrderResponse(order);
-    }
 
+        RestaurantOrderResponse response = orderMapper.toRestaurantOrderResponse(order);
+        log.info("Returning order response with createdAt: {}", response.getCreatedAt());
+        return response;
+    }
     public RestaurantOrderResponse updateOrder(Integer orderId, RestaurantOrderRequest request) {
         log.info("Updating order with ID: {}", orderId);
 

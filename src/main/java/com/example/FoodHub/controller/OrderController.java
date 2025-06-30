@@ -150,24 +150,24 @@ public class OrderController {
 //                .build();
 //        return ResponseEntity.ok().body(response);
 //    }
-@GetMapping("/completed")
-public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCompletedOrders(
-        @RequestParam(required = false) String period,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
-        @RequestParam(required = false) String search,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "createdAt") String orderBy,
-        @RequestParam(defaultValue = "ASC") String sort) {
-    Sort.Direction direction = Sort.Direction.fromString(sort);
-    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
-    Page<RestaurantOrderResponse> orders = orderService.getCompletedOrders(period, startDate, endDate, search, pageable);
-    ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
-            .result(orders)
-            .build();
-    return ResponseEntity.ok().body(response);
-}
+//@GetMapping("/completed")
+//public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCompletedOrders(
+//        @RequestParam(required = false) String period,
+//        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+//        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+//        @RequestParam(required = false) String search,
+//        @RequestParam(defaultValue = "0") int page,
+//        @RequestParam(defaultValue = "10") int size,
+//        @RequestParam(defaultValue = "createdAt") String orderBy,
+//        @RequestParam(defaultValue = "ASC") String sort) {
+//    Sort.Direction direction = Sort.Direction.fromString(sort);
+//    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
+//    Page<RestaurantOrderResponse> orders = orderService.getCompletedOrders(period, startDate, endDate, search, pageable);
+//    ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+//            .result(orders)
+//            .build();
+//    return ResponseEntity.ok().body(response);
+//}
 
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getOrderSummary(

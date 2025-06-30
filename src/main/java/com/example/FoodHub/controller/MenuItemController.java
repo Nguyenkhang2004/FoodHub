@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -68,7 +69,7 @@ public class MenuItemController {
         return ResponseEntity.ok().body(response);
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMenuItem(@PathVariable Integer id) {
         menuItemService.deleteMenuItem(id);
@@ -81,7 +82,7 @@ public class MenuItemController {
 
         return ResponseEntity.ok().body(response);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/restore")
     public ResponseEntity<ApiResponse<Void>> restoreMenuItem(@PathVariable Integer id) {
         menuItemService.restoreMenuItem(id);
@@ -120,7 +121,7 @@ public class MenuItemController {
 
         return ResponseEntity.ok().body(response);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MenuItemResponse>> updateMenuItem(
             @PathVariable Integer id,

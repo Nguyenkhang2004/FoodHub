@@ -28,7 +28,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')))"+
             "AND (:status IS NULL OR u.status = :status)")
     Page<User> findCustomers(@Param("keyword") String keyword,@Param("status") String status, Pageable pageable);
-    @Query("SELECT u FROM User u WHERE u.roleName.name != 'CUSTOMER' " +
+    @Query("SELECT u FROM User u WHERE u.roleName.name NOT IN ('CUSTOMER', 'ADMIN') " +
             "AND (:role IS NULL OR u.roleName.name = :role) " +
             "AND (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:status IS NULL OR u.status = :status)")

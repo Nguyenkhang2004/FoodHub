@@ -3,33 +3,34 @@ package com.example.FoodHub.dto.request;
 import com.example.FoodHub.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class EmployeeUpdateRequest {
-    @NotBlank
-    @Size(max = 255)
-    private String username;
+public class    EmployeeUpdateRequest {
+    @NotBlank(message="USERNAME_NOT_BLANK")
+    @Size(min=5, max=255, message="USERNAME_INVALID")
+    String username;
+    @Size(min=8, max=255, message="PASSWORD_INVALID")
+    String password;
 
-    @NotBlank
+    @NotBlank(message="EMAIL_NOT_BLANK")
     @Email
-    @Size(max = 255)
-    private String email;
-    @Size(max = 255)
-    private String password;
+    @Size(max=255)
+    String email;
 
-    @NotBlank
-    private String roleName;  // Phải là 1 trong 5 role được chấp nhận
+    @NotBlank(message="PHONE_NOT_BLANK")
+    @Pattern(regexp="^[0-9]{10}$", message="PHONE_PATTERN")
+    String phone;
 
-    @NotBlank
-    private String status; // ACTIVE / INACTIVE
 
-    @Size(max = 255)
-    private String address;
+    @Size(max=255)
+    String address;
 
-    @Size(max = 20)
-    private String phone;
+    @NotBlank(message="ROLE_NAME_NOT_BLANK")
+    @Size(min=2, message="ROLE_NAME_SIZE")
+    String roleName ;
 
     private String oauthProvider;
 }
