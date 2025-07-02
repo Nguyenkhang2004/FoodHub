@@ -301,10 +301,14 @@ public class RestaurantOrderService {
 
         RestaurantOrder savedOrder = orderRepository.save(order);
 
-        // Gửi thông điệp WebSocket đến client
+        // Gửi thông điệp WebSocket
         if (order.getUser() != null) {
-            messagingTemplate.convertAndSend("/topic/orders/" + order.getUser().getId(),
-                    orderMapper.toRestaurantOrderResponse(savedOrder));
+            Integer userId = order.getUser().getId();
+            RestaurantOrderResponse response = orderMapper.toRestaurantOrderResponse(savedOrder);
+            log.info("Sending WebSocket message to /topic/orders/{} for order {}", userId, orderId);
+            messagingTemplate.convertAndSend("/topic/orders/" + userId, response);
+        } else {
+            log.warn("User is null for order {}, no WebSocket message sent", orderId);
         }
 
         return orderMapper.toRestaurantOrderResponse(savedOrder);
