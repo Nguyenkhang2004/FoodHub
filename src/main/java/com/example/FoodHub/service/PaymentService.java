@@ -7,6 +7,7 @@ import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.*;
+import com.example.FoodHub.enums.NotificationType;
 import com.example.FoodHub.enums.OrderStatus;
 import com.example.FoodHub.enums.PaymentMethod;
 import com.example.FoodHub.enums.PaymentStatus;
@@ -14,7 +15,6 @@ import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.PaymentMapper;
 import com.example.FoodHub.mapper.RestaurantOrderMapper;
-import com.example.FoodHub.mapper.RestaurantTableMapper;
 import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.utils.PayOSUtils;
@@ -46,6 +46,7 @@ public class PaymentService {
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
     RestaurantOrderMapper restaurantOrderMapper;
+    NotificationService notificationService;
 
     // Process payment for an order
 
@@ -172,6 +173,9 @@ public class PaymentService {
         payment.setStatus(finalStatus);
         payment.setUpdatedAt(Instant.now());
         paymentRepository.save(payment);
+        if(PaymentStatus.PAID.name().equals(finalStatus)) {
+            notificationService.notifyOrderEvent(payment.getOrder(), NotificationType.BANKING_COMPLETED.name());
+        }
         return paymentMapper.toPaymentResponse(payment);
     }
 
@@ -390,6 +394,19 @@ public class PaymentService {
 
         return response;
     }
+
+    public PaymentResponse getPaymentStatus(Integer orderId) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Payment not found for order ID: " + orderId));
+        PaymentResponse response = new PaymentResponse();
+        response.setOrderId(orderId);
+        response.setAmount(payment.getAmount());
+        response.setTransactionId(payment.getTransactionId());
+        response.setStatus(payment.getStatus().toString());
+        response.setCreatedAt(payment.getCreatedAt());
+        response.setUpdatedAt(payment.getUpdatedAt());
+        return response;
+    }
     public Page<PaymentResponse> getPayments(
             String period, Instant startDate, Instant endDate, String status, String transactionId, Pageable pageable) {
         Instant start = getStartDate(period, startDate);
@@ -489,5 +506,4 @@ public class PaymentService {
         }
     }
 }
-
 

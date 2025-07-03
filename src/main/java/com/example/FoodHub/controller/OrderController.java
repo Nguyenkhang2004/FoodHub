@@ -2,33 +2,33 @@ package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
-import com.example.FoodHub.dto.response.OrderItemResponse;
+import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
+import com.example.FoodHub.service.NotificationService;
 import com.example.FoodHub.service.RestaurantOrderService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
-
+@Slf4j
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderController {
     RestaurantOrderService orderService;
-
     @PostMapping
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> createOrder(@Valid @RequestBody RestaurantOrderRequest request) {
         RestaurantOrderResponse orderResponse = orderService.createOrder(request);
@@ -202,4 +202,21 @@ public class OrderController {
     }
 
 
+//    @GetMapping("/user/{userId}")
+//    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getOrdersByUserId(
+//            @PathVariable Integer userId,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "20") int size,
+//            @RequestParam(defaultValue = "createdAt") String orderBy,
+//            @RequestParam(defaultValue = "DESC") String sort
+//    ) {
+//        log.info("Fetching orders for user ID: {}", userId);
+//        Sort.Direction direction = Sort.Direction.fromString(sort);
+//        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
+//        Page< RestaurantOrderResponse> orderResponses = orderService.getAllOrdersByUserId(userId, pageable);
+//        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+//                .result(orderResponses)
+//                .build();
+//        return ResponseEntity.ok().body(response);
+//    }
 }

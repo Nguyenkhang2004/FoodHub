@@ -54,7 +54,7 @@ public class SecurityConfig {
                                 "/users/**"
                         ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
 
-                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/ws/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .anyRequest().authenticated()

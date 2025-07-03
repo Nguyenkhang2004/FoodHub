@@ -31,4 +31,5 @@ public class RestaurantOrderResponse {
     private String paymentMethod;
     private Set<OrderItemResponse> orderItems;
     private PaymentResponse payment;
+    private String paymentStatus; // Thêm trường mới để lưu trạng thái thanh toán
 }
