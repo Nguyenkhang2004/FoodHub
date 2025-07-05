@@ -109,8 +109,8 @@ public enum ErrorCode {
     PAYMENT_EXPIRED(1065, "Payment has expired", HttpStatus.BAD_REQUEST),
     SESSION_FINISH_EXCEPTION(2003, "Cannot finish session",HttpStatus.BAD_REQUEST),
     CREATE_TABLE_TOKEN_FAILED(2004, "Failed to create table token", HttpStatus.INTERNAL_SERVER_ERROR),
-    INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED);
-
+    INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED),
+    TABLE_OCCUPIED_CANNOT_DELETE(1070,"Table is occupied and cannot be set to unavailable.",HttpStatus.BAD_REQUEST);
     private int code;
     private String message;
     private HttpStatusCode statusCode;

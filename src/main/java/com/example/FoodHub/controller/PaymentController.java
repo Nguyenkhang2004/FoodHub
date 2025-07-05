@@ -22,6 +22,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
@@ -257,6 +258,7 @@ public class PaymentController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(resource);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getPayments(
             @RequestParam(required = false) String period,
@@ -272,7 +274,7 @@ public class PaymentController {
         Page<PaymentResponse> payments = paymentService.getPayments(period, startDate, endDate, status, transactionId, pageable);
         return ResponseEntity.ok(ApiResponse.<Page<PaymentResponse>>builder().result(payments).build());
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     // Xem chi tiết giao dịch (hóa đơn liên quan) (endpoint mới)
     @GetMapping("/{transactionId}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getPaymentDetails(

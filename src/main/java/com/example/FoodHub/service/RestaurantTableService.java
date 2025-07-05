@@ -56,11 +56,11 @@ public class RestaurantTableService {
     }
 
 
-    public RestaurantTableResponse updateTableStatus (Integer tableId, String status) {
+    public RestaurantTableResponse updateTableStatus(Integer tableId, String status) {
         log.info("Updating table status for table ID: {} to {}", tableId, status);
         var table = tableRepository.findById(tableId)
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
-        if(status == null || !Arrays.stream(TableStatus.values())
+        if (status == null || !Arrays.stream(TableStatus.values())
                 .anyMatch(tableStatus -> tableStatus.name().equalsIgnoreCase(status))) {
             throw new AppException(ErrorCode.INVALID_TABLE_STATUS);
         }
@@ -68,4 +68,42 @@ public class RestaurantTableService {
         tableRepository.save(table);
         return tableMapper.toRestaurantTableResponse(table);
     }
+
+    public RestaurantTableResponse createTable(RestaurantTableRequest request) {
+        var entity = tableMapper.toRestaurantTable(request);
+        entity.setStatus(TableStatus.AVAILABLE.name());
+        tableRepository.save(entity);
+        return tableMapper.toRestaurantTableResponse(entity);
+    }
+
+    public RestaurantTableResponse deleteTable(Integer tableId) {
+        var table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+
+        if (TableStatus.OCCUPIED.name().equalsIgnoreCase(table.getStatus())) {
+            throw new AppException(ErrorCode.TABLE_OCCUPIED_CANNOT_DELETE);
+        }
+
+        table.setStatus(TableStatus.UNAVAILABLE.name());
+        tableRepository.save(table);
+        return tableMapper.toRestaurantTableResponse(table);
+    }
+
+    public RestaurantTableResponse restoreTable(Integer tableId) {
+        var table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+
+        table.setStatus(TableStatus.AVAILABLE.name());
+        tableRepository.save(table);
+        return tableMapper.toRestaurantTableResponse(table);
+    }
+
+    public RestaurantTableResponse getTableById(Integer tableId) {
+        var table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+        return tableMapper.toRestaurantTableResponse(table);
+    }
+
+
+
 }

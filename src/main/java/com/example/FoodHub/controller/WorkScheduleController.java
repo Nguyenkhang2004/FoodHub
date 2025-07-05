@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +47,7 @@ public class WorkScheduleController {
                 .build();
         return ResponseEntity.ok(response);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<ShiftResponse>> addShift(@Valid @RequestBody ShiftRequest shiftRequest) {
         ShiftResponse response = workScheduleService.addShift(shiftRequest);
@@ -57,7 +58,7 @@ public class WorkScheduleController {
                 .build();
         return ResponseEntity.ok(apiResponse);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteShift(@PathVariable Integer id) {
         workScheduleService.deleteShift(id);

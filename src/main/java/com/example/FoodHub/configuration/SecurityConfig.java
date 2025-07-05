@@ -44,7 +44,7 @@ public class SecurityConfig {
                                 "/restaurants", "/restaurants/**",
                                 "/dishes", "/dishes/**",
                                 "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
-                                "/images/**"
+                                "/images/**","/users/my-info"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST,

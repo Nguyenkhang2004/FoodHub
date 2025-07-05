@@ -108,7 +108,7 @@ public class MenuItemController {
 
         return ResponseEntity.ok().body(response);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<MenuItemResponse>> createMenuItem(@Valid @RequestBody MenuItemRequest request) throws IOException {
         MenuItemResponse createdItem = menuItemService.createMenuItem(request);
@@ -136,7 +136,7 @@ public class MenuItemController {
 
         return ResponseEntity.ok().body(response);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/count")
     public ApiResponse<Long> getMenuItemCount() {
         Long totalItems = menuItemService.countMenuItems();

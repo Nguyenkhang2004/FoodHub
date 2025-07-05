@@ -162,6 +162,7 @@ public class UserController {
                 .build();
         return ResponseEntity.ok(response);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/countEmployees")
     public ApiResponse<Long> getUserCount() {
         Long totalItems = userService.getTotalEmployees();
@@ -171,6 +172,7 @@ public class UserController {
                 .result(totalItems)
                 .build();
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/countCustomers")
     public ApiResponse<Long> getCustomerCount() {
         Long totalItems = userService.getTotalCustomers();
