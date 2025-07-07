@@ -111,6 +111,8 @@ public enum ErrorCode {
     CREATE_TABLE_TOKEN_FAILED(2004, "Failed to create table token", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED),
     TABLE_OCCUPIED_CANNOT_DELETE(1043, "Table is occupied and cannot be deleted", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED_ACCESS(1043, "Invalid token", HttpStatus.UNAUTHORIZED),
+    CHAT_MESSAGES_NOT_FOUND(1044, "Chat messages not found for the given table", HttpStatus.NOT_FOUND),
     ;
 
     private int code;

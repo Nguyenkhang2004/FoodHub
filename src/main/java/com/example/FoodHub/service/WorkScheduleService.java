@@ -158,8 +158,8 @@ public class WorkScheduleService {
     }
 
     public List<ShiftResponse> getMyWorkSchedule() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         List<WorkSchedule> schedules = workScheduleRepository.findByUserId(user.getId());
         if (schedules.isEmpty()) {

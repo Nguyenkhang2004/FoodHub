@@ -2,6 +2,7 @@ package com.example.FoodHub.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -61,5 +62,9 @@ public class RestaurantOrder {
 
     @OneToOne(mappedBy = "order")
     private Payment payment;
+
+    @Size(max = 255)
+    @Column(name = "note")
+    private String note;
 
 }

@@ -19,6 +19,8 @@ public interface RestaurantOrderMapper {
     @Mapping(source = "table.tableNumber", target = "tableNumber")
     @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "user.username", target = "username")
+    @Mapping(source = "payment", target = "payment")
+    @Mapping(source = "payment.status", target = "paymentStatus")
     RestaurantOrderResponse toRestaurantOrderResponse(RestaurantOrder order);
         @Mapping(source = "table.id", target = "tableId")
         @Mapping(source = "table.tableNumber", target = "tableNumber")
@@ -54,5 +56,4 @@ public interface RestaurantOrderMapper {
     @Mapping(target = "order", ignore = true)  // Sẽ được set trong service
     @Mapping(target = "menuItem", ignore = true)  // Sẽ được set trong service
     void updateOrderItem(@MappingTarget OrderItem orderItem, OrderItemRequest orderItemRequest);
-
 }

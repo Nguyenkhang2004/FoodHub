@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -30,4 +31,5 @@ public class RestaurantOrderResponse {
     private String paymentMethod;
     private Set<OrderItemResponse> orderItems;
     private PaymentResponse payment;
+    private String paymentStatus; // Thêm trường mới để lưu trạng thái thanh toán
 }

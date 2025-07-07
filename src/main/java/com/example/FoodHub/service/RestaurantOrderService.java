@@ -3,6 +3,7 @@ package com.example.FoodHub.service;
 import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
+import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
@@ -14,10 +15,12 @@ import com.example.FoodHub.mapper.RestaurantOrderMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.specification.OrderSpecifications;
 import com.example.FoodHub.utils.PayOSUtils;
+import com.example.FoodHub.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,6 +52,7 @@ public class RestaurantOrderService {
     PaymentRepository paymentRepository;
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
+    NotificationService notificationService;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -100,6 +104,8 @@ public class RestaurantOrderService {
 
         log.info("Fetching orders for status: {}, tableId: {}, startTime: {}",
                 status, tableNumber, startTime);
+
+
         // Use OrderSpecifications to filter orders
         Page<RestaurantOrder> orders = orderRepository.findAll(
                 OrderSpecifications.filterChefOrders(
@@ -174,8 +180,8 @@ public class RestaurantOrderService {
 
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
-        order.setCreatedAt(Instant.now());
 
+        order.setCreatedAt(TimeUtils.getNowInVietNam());
         orderRepository.save(order);               // order & id
         orderItems.forEach(orderItemRepository::save);
 
@@ -185,6 +191,7 @@ public class RestaurantOrderService {
             Payment payment = createPaymentForOrder(order, request.getPayment());
             order.setPayment(payment);
         }
+        notificationService.notifyOrderEvent(order, NotificationType.NEW_ORDER.name());
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
@@ -206,7 +213,6 @@ public class RestaurantOrderService {
 
         return paymentRepository.save(payment);
     }
-
 
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
@@ -287,6 +293,7 @@ public class RestaurantOrderService {
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
 
+        notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_ADDED.name());
         // 8. Return response
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
@@ -300,8 +307,8 @@ public class RestaurantOrderService {
     }
 
     // Helper method to update order status
-    public RestaurantOrderResponse updateOrderStatus(Integer orderId, String newStatus) {
-        log.info("Updating order status. Order ID: {}, New Status: {}", orderId, newStatus);
+    public RestaurantOrderResponse updateOrderStatus(Integer orderId, String newStatus, String note) {
+        log.info("Updating order status. Order ID: {}, New Status: {}, note: {}", orderId, newStatus, note);
 
         // Lock the order to prevent concurrent modifications
         RestaurantOrder order = orderRepository.findById(orderId)
@@ -344,16 +351,21 @@ public class RestaurantOrderService {
         // Recalculate total amount
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(Instant.now());
+        order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
-
+        if(OrderStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
+            order.setNote(note);
+        }
         RestaurantOrder savedOrder = orderRepository.save(order);
+        if(newStatus.equals(OrderStatus.READY.name())) {
+            notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_READY.name());
+        }
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
     @Transactional
-    public RestaurantOrderResponse updateOrderItemStatus(Integer orderItemId, String newStatus) {
+    public RestaurantOrderResponse updateOrderItemStatus(Integer orderItemId, String newStatus, String note) {
         log.info("Updating order item status. Order Item ID: {}, New Status: {}", orderItemId, newStatus);
 
         // Lock the order to prevent concurrent modifications
@@ -365,18 +377,24 @@ public class RestaurantOrderService {
         // Validate status transition for the order item
         validateStatusTransition(orderItem.getStatus(), newStatus);
         orderItem.setStatus(newStatus);
+        if(OrderItemStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
+            orderItem.setNote(note);
+        }
         orderItemRepository.save(orderItem);
 
         // Recalculate total amount if necessary
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(Instant.now());
+        order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
-
         RestaurantOrder savedOrder = orderRepository.save(order);
+        if(newStatus.equals(OrderStatus.READY.name())) {
+            notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_READY.name());
+        }
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
+
     private void updateOrderStatusBasedOnItems(RestaurantOrder order) {
         Set<OrderItem> items = order.getOrderItems();
         boolean allCancelled = items.stream().allMatch(item -> OrderItemStatus.CANCELLED.name().equals(item.getStatus()));

@@ -286,4 +286,13 @@ public class PaymentController {
         RestaurantOrderResponse orderDetails = paymentService.getPaymentDetails(transactionId);
         return ResponseEntity.ok(ApiResponse.<RestaurantOrderResponse>builder().result(orderDetails).build());
     }
+
+    @GetMapping("/status/{orderId}")
+    public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentStatus(@PathVariable Integer orderId) {
+        log.info("Fetching payment status for order ID: {}", orderId);
+        PaymentResponse response = paymentService.getPaymentStatus(orderId);
+        ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(response);
+        return ResponseEntity.ok(apiResponse);
+    }
 }

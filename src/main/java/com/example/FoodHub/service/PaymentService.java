@@ -7,6 +7,7 @@ import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.*;
+import com.example.FoodHub.enums.NotificationType;
 import com.example.FoodHub.enums.OrderStatus;
 import com.example.FoodHub.enums.PaymentMethod;
 import com.example.FoodHub.enums.PaymentStatus;
@@ -14,10 +15,10 @@ import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.PaymentMapper;
 import com.example.FoodHub.mapper.RestaurantOrderMapper;
-import com.example.FoodHub.mapper.RestaurantTableMapper;
 import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.utils.PayOSUtils;
+import com.example.FoodHub.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -45,6 +46,7 @@ public class PaymentService {
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
     RestaurantOrderMapper restaurantOrderMapper;
+    NotificationService notificationService;
 
     // Process payment for an order
 
@@ -171,6 +173,9 @@ public class PaymentService {
         payment.setStatus(finalStatus);
         payment.setUpdatedAt(Instant.now());
         paymentRepository.save(payment);
+        if(PaymentStatus.PAID.name().equals(finalStatus)) {
+            notificationService.notifyOrderEvent(payment.getOrder(), NotificationType.BANKING_COMPLETED.name());
+        }
         return paymentMapper.toPaymentResponse(payment);
     }
 
@@ -318,7 +323,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(PaymentStatus.REFUNDED.name());
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(TimeUtils.getNowInVietNam());
         return paymentRepository.save(payment);
     }
 
@@ -377,7 +382,7 @@ public class PaymentService {
         // Tạo response
         InvoiceResponse response = new InvoiceResponse();
         response.setOrderId(order.getId());
-        response.setPaymentDate(payment.getUpdatedAt());
+//        response.setPaymentDate(payment.getUpdatedAt());
         response.setTableNumber(table.getTableNumber());
         response.setCustomerName(user.getUsername());
         response.setCustomerEmail(user.getEmail());
@@ -387,6 +392,19 @@ public class PaymentService {
         response.setTransactionId(payment.getTransactionId());
         response.setOrderItems(orderItems);
 
+        return response;
+    }
+
+    public PaymentResponse getPaymentStatus(Integer orderId) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Payment not found for order ID: " + orderId));
+        PaymentResponse response = new PaymentResponse();
+        response.setOrderId(orderId);
+        response.setAmount(payment.getAmount());
+        response.setTransactionId(payment.getTransactionId());
+        response.setStatus(payment.getStatus().toString());
+        response.setCreatedAt(payment.getCreatedAt());
+        response.setUpdatedAt(payment.getUpdatedAt());
         return response;
     }
     public Page<PaymentResponse> getPayments(
@@ -488,5 +506,4 @@ public class PaymentService {
         }
     }
 }
-
 

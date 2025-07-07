@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-07-07T09:54:37+0700",
+    date = "2025-07-07T10:29:23+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
@@ -39,14 +39,16 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.tableNumber( orderTableTableNumber( order ) );
         restaurantOrderResponse.userId( orderUserId( order ) );
         restaurantOrderResponse.username( orderUserUsername( order ) );
+        restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
+        restaurantOrderResponse.paymentStatus( orderPaymentStatus( order ) );
         restaurantOrderResponse.id( order.getId() );
         restaurantOrderResponse.status( order.getStatus() );
         restaurantOrderResponse.orderType( order.getOrderType() );
         restaurantOrderResponse.createdAt( order.getCreatedAt() );
         restaurantOrderResponse.updatedAt( order.getUpdatedAt() );
+        restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
-        restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
 
         return restaurantOrderResponse.build();
     }
@@ -68,6 +70,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.orderType( order.getOrderType() );
         restaurantOrderResponse.createdAt( order.getCreatedAt() );
         restaurantOrderResponse.updatedAt( order.getUpdatedAt() );
+        restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
         restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
@@ -88,6 +91,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrder.setStatus( restaurantOrderRequest.getStatus() );
         restaurantOrder.setOrderType( restaurantOrderRequest.getOrderType() );
         restaurantOrder.setPayment( paymentMapper.toPayment( restaurantOrderRequest.getPayment() ) );
+        restaurantOrder.setNote( restaurantOrderRequest.getNote() );
 
         return restaurantOrder;
     }
@@ -109,6 +113,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         else {
             order.setPayment( null );
         }
+        order.setNote( request.getNote() );
     }
 
     @Override
@@ -186,6 +191,14 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
             return null;
         }
         return user.getUsername();
+    }
+
+    private String orderPaymentStatus(RestaurantOrder restaurantOrder) {
+        Payment payment = restaurantOrder.getPayment();
+        if ( payment == null ) {
+            return null;
+        }
+        return payment.getStatus();
     }
 
     protected Set<OrderItemResponse> orderItemSetToOrderItemResponseSet(Set<OrderItem> set) {

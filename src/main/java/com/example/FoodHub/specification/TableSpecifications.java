@@ -7,7 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 
-public class    TableSpecifications {
+public class TableSpecifications {
     public static Specification<RestaurantTable> filterTables(String tableNumber, String status, String area) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();

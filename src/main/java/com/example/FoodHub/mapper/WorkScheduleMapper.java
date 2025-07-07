@@ -2,6 +2,7 @@ package com.example.FoodHub.mapper;
 
 import com.example.FoodHub.dto.request.ShiftRequest;
 import com.example.FoodHub.dto.response.ShiftResponse;
+import com.example.FoodHub.entity.User;
 import com.example.FoodHub.entity.WorkSchedule;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;

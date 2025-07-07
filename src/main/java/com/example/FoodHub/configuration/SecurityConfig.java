@@ -32,6 +32,7 @@ public class SecurityConfig {
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
+            "/api/gemini/**", "/api/feedback/**"
     };
 
     @Bean
@@ -43,24 +44,23 @@ public class SecurityConfig {
                                 "/menu", "/menu/**",
                                 "/restaurants", "/restaurants/**",
                                 "/dishes", "/dishes/**",
-                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**"
+                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**","/images/**"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST,
-                                "/auth/**", "/users/**", "/api/gemini/**", "/api/feedback/**"
+                                PUBLIC_ENDPOINTS
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.PUT,
                                 "/users/**"
                         ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
 
-                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/ws/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
 
-                // ✅ Thêm dòng này để bật JWT Bearer support
                 .oauth2ResourceServer(resource -> resource
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())

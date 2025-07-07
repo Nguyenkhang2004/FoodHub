@@ -7,7 +7,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +27,6 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Inte
             @Param("userId") Integer userId,
             @Param("today") LocalDate today,
             @Param("now") LocalTime now);
-
 
     List<WorkSchedule> findByUserId(Integer userId);
 }
