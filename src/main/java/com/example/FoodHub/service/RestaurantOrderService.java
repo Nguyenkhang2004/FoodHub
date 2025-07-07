@@ -95,7 +95,6 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
-
     public Page<RestaurantOrderResponse> getChefWorkShiftOrders(
             String status,
             String tableNumber,
@@ -134,20 +133,17 @@ public class RestaurantOrderService {
     }
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
-
         log.info("Creating new order for table: {}", request.getTableId());
-
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
 
-        // gán User (nếu có)
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
             order.setUser(user);
         }
 
-        // gán bàn nếu DINE_IN
         if (OrderType.DINE_IN.name().equals(request.getOrderType())) {
+            log.warn("tableId {} is provided but ignored for order type {}", request.getTableId(), request.getOrderType());
             RestaurantTable table = tableRepository.findById(request.getTableId())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
             if (!TableStatus.AVAILABLE.name().equals(table.getStatus())) {
@@ -157,7 +153,6 @@ public class RestaurantOrderService {
             order.setTable(table);
         }
 
-        // tạo OrderItems và tính total
         Set<OrderItem> orderItems = request.getOrderItems().stream()
                 .map(itemReq -> {
                     MenuItem menuItem = menuItemRepository.findById(itemReq.getMenuItemId())
@@ -190,6 +185,8 @@ public class RestaurantOrderService {
 
             Payment payment = createPaymentForOrder(order, request.getPayment());
             order.setPayment(payment);
+            log.info("Payment created for order ID: {}, Payment Method: {}, Amount: {}",
+                    order.getId(), payment.getPaymentMethod(), payment.getAmount());
         }
         notificationService.notifyOrderEvent(order, NotificationType.NEW_ORDER.name());
         return orderMapper.toRestaurantOrderResponse(order);
@@ -199,7 +196,7 @@ public class RestaurantOrderService {
         Payment payment = paymentMapper.toPayment(paymentRequest);
         payment.setOrder(order);
         payment.setAmount(order.getTotalAmount());
-        payment.setCreatedAt(Instant.now());
+        payment.setCreatedAt(TimeUtils.getNowInVietNam());
 
         boolean isCash = PaymentMethod.CASH.name().equals(paymentRequest.getPaymentMethod());
         payment.setStatus(isCash ? PaymentStatus.UNPAID.name() : PaymentStatus.PENDING.name());
@@ -210,7 +207,6 @@ public class RestaurantOrderService {
             payment.setPaymentUrl(paymentUrl);
             payment.setTransactionId(transactionId);
         }
-
         return paymentRepository.save(payment);
     }
 

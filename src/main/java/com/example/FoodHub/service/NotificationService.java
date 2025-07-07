@@ -35,39 +35,51 @@ public class NotificationService {
     }
 
     private void sendNotificationToWaiter(RestaurantOrder order, String messageType) {
-        String baseMessage = "Có đơn hàng mới #" + order.getId() + ", bàn " + order.getTable().getTableNumber();
+        // Kiểm tra xem order có table không
+        String tableInfo = order.getTable() != null ? "bàn " + order.getTable().getTableNumber() : "đơn hàng " + order.getOrderType();
+        String baseMessage = "Có đơn hàng mới #" + order.getId() + ", " + tableInfo;
+
         if (messageType.equals(NotificationType.ORDER_ITEM_ADDED.name())) {
-            baseMessage = "Đơn hàng #" + order.getId() + " tại bàn " + order.getTable().getTableNumber() + " vừa thêm món mới";
+            baseMessage = "Đơn hàng #" + order.getId() + " tại " + tableInfo + " vừa thêm món mới";
         } else if (messageType.equals(NotificationType.ORDER_READY.name())) {
-            baseMessage = "Đơn hàng #" + order.getId() + " tại bàn " + order.getTable().getTableNumber() + " đã sẵn sàng";
+            baseMessage = "Đơn hàng #" + order.getId() + " tại " + tableInfo + " đã sẵn sàng";
         } else if (messageType.equals(NotificationType.ORDER_ITEM_READY.name())) {
-            baseMessage = "Một món trong đơn #" + order.getId()
-                    + ", bàn " + order.getTable().getTableNumber() + " đã sẵn sàng, vui lòng phục vụ khách";
-        } else if(messageType.equals(NotificationType.BANKING_COMPLETED.name())) {
-            baseMessage = "Bàn " + order.getTable().getTableNumber()
-                    + " đã thanh toán chuyển khoản thành công, vui lòng đến chụp lại thông tin thanh toán của khách hàng";
+            baseMessage = "Một món trong đơn #" + order.getId() + ", " + tableInfo + " đã sẵn sàng, vui lòng phục vụ khách";
+        } else if (messageType.equals(NotificationType.BANKING_COMPLETED.name())) {
+            baseMessage = tableInfo + " đã thanh toán chuyển khoản thành công, vui lòng đến chụp lại thông tin thanh toán của khách hàng";
         } else if (messageType.equals(NotificationType.CUSTOMER_CALL_WAITER.name())) {
-            baseMessage = "Khách hàng tại bàn " + order.getTable().getTableNumber() + " đã gọi phục vụ";
+            baseMessage = "Khách hàng tại " + tableInfo + " đã gọi phục vụ";
         }
-        String topic = "/topic/waiter/area/" + order.getTable().getArea();
-        log.info("topic: {}", topic);
-        sendNotification(baseMessage, messageType, topic);
+
+        // Chỉ gửi thông báo đến waiter cho DINE_IN hoặc các trường hợp phù hợp
+        if (order.getTable() != null) {
+            String topic = "/topic/waiter/area/" + order.getTable().getArea();
+            log.info("topic: {}", topic);
+            sendNotification(baseMessage, messageType, topic);
+        } else {
+            log.info("Skipping waiter notification for order #{} (type: {}), no table assigned", order.getId(), order.getOrderType());
+        }
     }
 
     private void sendNotificationToChef(RestaurantOrder order, String messageType) {
+        // Kiểm tra xem order có table không
+        String tableInfo = order.getTable() != null ? "bàn " + order.getTable().getTableNumber() : "đơn hàng " + order.getOrderType();
+
         if (messageType.equals(NotificationType.ORDER_ITEM_ADDED.name())) {
-            String message = "Đơn hàng #" + order.getId() + " tại bàn " + order.getTable().getTableNumber() + " vừa thêm món mới";
+            String message = "Đơn hàng #" + order.getId() + " tại " + tableInfo + " vừa thêm món mới";
             sendNotification(message, messageType, "/topic/kitchen");
             return;
         }
-        if(messageType.equals(NotificationType.NEW_ORDER.name())){
+
+        if (messageType.equals(NotificationType.NEW_ORDER.name())) {
             boolean shouldNotifyChef = order.getOrderType().equals(OrderType.DINE_IN.name()) ||
                     (order.getOrderType().equals(OrderType.DELIVERY.name()) ||
                             order.getOrderType().equals(OrderType.TAKEAWAY.name())) &&
+                            order.getPayment() != null &&
                             order.getPayment().getPaymentMethod().equals(PaymentMethod.CASH.name());
 
             if (shouldNotifyChef) {
-                String message = "Có đơn hàng mới: #" + order.getId(); // hoặc "Đơn hàng #" + id + " vừa thêm món mới"
+                String message = "Có đơn hàng mới: #" + order.getId() + " (" + tableInfo + ")";
                 sendNotification(message, messageType, "/topic/kitchen");
             }
         }
