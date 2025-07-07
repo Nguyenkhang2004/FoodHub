@@ -60,8 +60,8 @@ public class OrderController {
 
     @PutMapping("/status/{orderId}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderStatus(
-            @PathVariable Integer orderId, @RequestParam String status) {
-        RestaurantOrderResponse updatedOrder = orderService.updateOrderStatus(orderId, status);
+            @PathVariable Integer orderId, @RequestParam String status, @RequestParam(required = false) String note) {
+        RestaurantOrderResponse updatedOrder = orderService.updateOrderStatus(orderId, status, note);
         ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(updatedOrder)
                 .build();
@@ -71,7 +71,7 @@ public class OrderController {
     @PutMapping("/items/status/{orderItemId}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> updateOrderItemStatus(
             @PathVariable Integer orderItemId, @RequestParam String status, @RequestParam(required = false) String note) {
-        RestaurantOrderResponse updatedOrderItemStatus = orderService.updateOrderItemStatus(orderItemId, status);
+        RestaurantOrderResponse updatedOrderItemStatus = orderService.updateOrderItemStatus(orderItemId, status, note);
         ApiResponse<RestaurantOrderResponse> response = ApiResponse.<RestaurantOrderResponse>builder()
                 .result(updatedOrderItemStatus)
                 .build();

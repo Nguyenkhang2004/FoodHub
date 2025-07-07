@@ -110,7 +110,9 @@ public enum ErrorCode {
     SESSION_FINISH_EXCEPTION(2003, "Cannot finish session",HttpStatus.BAD_REQUEST),
     CREATE_TABLE_TOKEN_FAILED(2004, "Failed to create table token", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED),
-    UNAUTHORIZED_ACCESS(1043, "Invalid token", HttpStatus.UNAUTHORIZED), ;
+    UNAUTHORIZED_ACCESS(1043, "Invalid token", HttpStatus.UNAUTHORIZED),
+    CHAT_MESSAGES_NOT_FOUND(1044, "Chat messages not found for the given table", HttpStatus.NOT_FOUND),
+    ;
 
     private int code;
     private String message;

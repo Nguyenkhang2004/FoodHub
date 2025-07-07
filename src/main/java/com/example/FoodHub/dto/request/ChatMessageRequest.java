@@ -2,10 +2,8 @@ package com.example.FoodHub.dto.request;
 
 import lombok.Data;
 
-import java.time.Instant;
-
 @Data
-public class ChatRequest {
+public class ChatMessageRequest {
     private String message;
     private String sender;
 }

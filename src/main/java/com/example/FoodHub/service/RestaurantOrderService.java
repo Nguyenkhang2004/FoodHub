@@ -307,8 +307,8 @@ public class RestaurantOrderService {
     }
 
     // Helper method to update order status
-    public RestaurantOrderResponse updateOrderStatus(Integer orderId, String newStatus) {
-        log.info("Updating order status. Order ID: {}, New Status: {}", orderId, newStatus);
+    public RestaurantOrderResponse updateOrderStatus(Integer orderId, String newStatus, String note) {
+        log.info("Updating order status. Order ID: {}, New Status: {}, note: {}", orderId, newStatus, note);
 
         // Lock the order to prevent concurrent modifications
         RestaurantOrder order = orderRepository.findById(orderId)
@@ -354,7 +354,9 @@ public class RestaurantOrderService {
         order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
-
+        if(OrderStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
+            order.setNote(note);
+        }
         RestaurantOrder savedOrder = orderRepository.save(order);
         if(newStatus.equals(OrderStatus.READY.name())) {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_READY.name());
@@ -363,7 +365,7 @@ public class RestaurantOrderService {
     }
 
     @Transactional
-    public RestaurantOrderResponse updateOrderItemStatus(Integer orderItemId, String newStatus) {
+    public RestaurantOrderResponse updateOrderItemStatus(Integer orderItemId, String newStatus, String note) {
         log.info("Updating order item status. Order Item ID: {}, New Status: {}", orderItemId, newStatus);
 
         // Lock the order to prevent concurrent modifications
@@ -375,6 +377,9 @@ public class RestaurantOrderService {
         // Validate status transition for the order item
         validateStatusTransition(orderItem.getStatus(), newStatus);
         orderItem.setStatus(newStatus);
+        if(OrderItemStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
+            orderItem.setNote(note);
+        }
         orderItemRepository.save(orderItem);
 
         // Recalculate total amount if necessary
@@ -383,7 +388,6 @@ public class RestaurantOrderService {
         order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
-
         RestaurantOrder savedOrder = orderRepository.save(order);
         if(newStatus.equals(OrderStatus.READY.name())) {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_READY.name());

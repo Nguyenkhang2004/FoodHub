@@ -1,5 +1,6 @@
 package com.example.FoodHub.entity;
 
+import com.example.FoodHub.utils.TimeUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -33,11 +34,11 @@ public class ChatMessage {
     private String sender;
 
     @NotNull
-    @Column(name = "content", nullable = false)
-    private String content;
+    @Column(name = "message", nullable = false)
+    private String message;
 
     @NotNull
     @Column(name = "timestamp", nullable = false)
-    private Instant timestamp;
+    private Instant timestamp = TimeUtils.getNowInVietNam();
 
 }
