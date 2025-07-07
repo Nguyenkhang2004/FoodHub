@@ -52,4 +52,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     // Autocomplete suggestions for transaction ID
     @Query("SELECT DISTINCT p FROM Payment p WHERE p.transactionId LIKE %:query%")
     List<Payment> findSuggestionsByTransactionId(@Param("query") String query);
+
+    List<Payment> findByStatusAndCreatedAtAfter(String status, Instant createdAt);
+
 }

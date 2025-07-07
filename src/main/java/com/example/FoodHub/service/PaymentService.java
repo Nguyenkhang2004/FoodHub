@@ -247,13 +247,16 @@ public class PaymentService {
     // Hàm mới: Lấy giao dịch theo khoảng thời gian và trạng thái
     public List<PaymentResponse> getTransactionsByDateAndStatus(Instant start, Instant end, String status) {
         log.info("Fetching transactions from {} to {} with status {}", start, end, status);
-        if (end.isBefore(start)) {
-            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        try {
+            List<Payment> payments = paymentRepository.findByCreatedAtBetweenAndStatus(start, end, status);
+            log.info("Found {} transactions with status {}", payments.size(), status);
+            return payments.stream()
+                    .map(this::mapToPaymentResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error fetching transactions by date and status: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to fetch transactions");
         }
-        List<Payment> payments = paymentRepository.findByCreatedAtBetweenAndStatus(start, end, status);
-        return payments.stream()
-                .map(this::mapToPaymentResponse)
-                .collect(Collectors.toList());
     }
 
 

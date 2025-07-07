@@ -58,6 +58,8 @@ public class UserService {
         User user = userMapper.toUser(request);
         String plainPassword = request.getPassword();
         user.setPassword(passwordEncoder.encode(plainPassword));
+        user.setRoleName(roleRepository.findById(request.getRoleName())
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED)));
 
 
         log.info("role request {}", request.getRoleName());

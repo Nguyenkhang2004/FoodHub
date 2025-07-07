@@ -34,60 +34,60 @@ public class SecurityConfig {
             "/auth/refresh",
     };
 
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(HttpMethod.GET,
-//                                "/menu", "/menu/**",
-//                                "/restaurants", "/restaurants/**",
-//                                "/dishes", "/dishes/**",
-//                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**"
-//                        ).permitAll()
-//
-//                        .requestMatchers(HttpMethod.POST,
-//                                "/auth/**", "/users/**", "/api/gemini/**", "/api/feedback/**"
-//                        ).permitAll()
-//
-//                        .requestMatchers(HttpMethod.PUT,
-//                                "/users/**"
-//                        ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
-//
-//                        .requestMatchers("/oauth2/**").permitAll()
-//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-//
-//                        .anyRequest().authenticated()
-//                )
-//
-//                // ✅ Thêm dòng này để bật JWT Bearer support
-//                .oauth2ResourceServer(resource -> resource
-//                        .jwt(jwt -> jwt
-//                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-//                                .decoder(customJwtDecoder) // nếu bạn có custom decoder
-//                        )
-//                )
-//
-//                .oauth2Login(oauth2 -> oauth2
-//                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-//                        .successHandler(oAuth2AuthenticationSuccessHandler)
-//                );
-//
-//        return http.build();
-//    }
-
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // Cho phép tất cả các request
+                        .requestMatchers(HttpMethod.GET,
+                                "/menu", "/menu/**",
+                                "/restaurants", "/restaurants/**",
+                                "/dishes", "/dishes/**",
+                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth/**", "/users/**", "/api/gemini/**", "/api/feedback/**"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.PUT,
+                                "/users/**"
+                        ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
+
+                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .anyRequest().authenticated()
                 )
-                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF nếu là REST API
-                .oauth2ResourceServer(AbstractHttpConfigurer::disable); // Vô hiệu hóa OAuth2 Resource Server nếu không dùng
+
+                // ✅ Thêm dòng này để bật JWT Bearer support
+                .oauth2ResourceServer(resource -> resource
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                                .decoder(customJwtDecoder) // nếu bạn có custom decoder
+                        )
+                )
+
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                );
 
         return http.build();
     }
+
+//
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//                .authorizeHttpRequests(auth -> auth
+//                        .anyRequest().permitAll() // Cho phép tất cả các request
+//                )
+//                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF nếu là REST API
+//                .oauth2ResourceServer(AbstractHttpConfigurer::disable); // Vô hiệu hóa OAuth2 Resource Server nếu không dùng
+//
+//        return http.build();
+//    }
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
