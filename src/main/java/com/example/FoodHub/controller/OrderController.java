@@ -182,8 +182,9 @@ public class OrderController {
     }
 
     // Endpoint mới
-    @GetMapping("/completed/filtered")
-    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCompletedOrdersFiltered(
+    @GetMapping("/filtered")
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getOrdersFiltered(
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String period,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -196,10 +197,13 @@ public class OrderController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort) {
+
         Sort.Direction direction = Sort.Direction.fromString(sort);
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
-        Page<RestaurantOrderResponse> orders = orderService.getCompletedOrdersFiltered(
-                period, startDate, endDate, orderType, minPrice, maxPrice, paymentMethod, search, pageable);
+
+        Page<RestaurantOrderResponse> orders = orderService.getOrdersFiltered(
+                status, period, startDate, endDate, orderType, minPrice, maxPrice, paymentMethod, search, pageable);
+
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orders)
                 .build();
