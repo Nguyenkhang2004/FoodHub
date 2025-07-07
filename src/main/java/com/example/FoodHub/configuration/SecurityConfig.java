@@ -27,54 +27,45 @@ public class SecurityConfig {
     private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
-    private final String[] PUBLIC_ENDPOINTS = {
+    private final String[] PUBLIC_POST_ENDPOINTS = {
             "/users",
             "/auth/login",
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
-            "/api/gemini/**", "/api/feedback/**"
+            "/scan",
+            "/api/gemini/**",
+            "/api/feedback/**"
     };
+
+    private final String[] PUBLIC_GET_ENDPOINTS = {
+            "/menu", "/menu/**",
+            "/restaurants", "/restaurants/**",
+            "/dishes", "/dishes/**",
+            "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
+            "/images/**","/users/my-info"
+    };
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults())
+                .cors(Customizer.withDefaults()) // 👈 BẮT BUỘC để cho phép CORS kể cả khi lỗi
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET,
-                                "/menu", "/menu/**",
-                                "/restaurants", "/restaurants/**",
-                                "/dishes", "/dishes/**",
-                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**","/images/**"
-                        ).permitAll()
-
-                        .requestMatchers(HttpMethod.POST,
-                                PUBLIC_ENDPOINTS
-                        ).permitAll()
-
-                        .requestMatchers(HttpMethod.PUT,
-                                "/users/**"
-                        ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
-
-                        .requestMatchers("/oauth2/**", "/ws/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
-
-                .oauth2ResourceServer(resource -> resource
-                        .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                                .decoder(customJwtDecoder) // nếu bạn có custom decoder
-                        )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(Customizer.withDefaults())
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()) // 👈 Xử lý lỗi 401
                 )
-
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 );
-
         return http.build();
     }
 
