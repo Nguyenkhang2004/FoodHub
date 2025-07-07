@@ -45,6 +45,7 @@ public class UserController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/customers")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getCustomer(
             @RequestParam(required = false) String keyword,
@@ -61,6 +62,7 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/employees")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getEmployees(
             @RequestParam(required = false) String role,
@@ -158,7 +160,7 @@ public class UserController {
                 .build();
         return ResponseEntity.ok(response);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/count")
     public ApiResponse<Long> getUserCount() {
         Long totalItems = userService.countUser();

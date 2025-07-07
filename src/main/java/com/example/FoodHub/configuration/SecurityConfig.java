@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,6 +16,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,51 +32,40 @@ public class SecurityConfig {
     private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
-    private final String[] PUBLIC_ENDPOINTS = {
+    private final String[] PUBLIC_POST_ENDPOINTS = {
             "/users",
             "/auth/login",
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
+            "/scan",
+            "/api/gemini/**",
+            "/api/feedback/**"
     };
+
+    private final String[] PUBLIC_GET_ENDPOINTS = {
+            "/menu", "/menu/**",
+            "/restaurants", "/restaurants/**",
+            "/dishes", "/dishes/**",
+            "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
+            "/images/**","/users/my-info"
+    };
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults()) // 👈 BẮT BUỘC để cho phép CORS kể cả khi lỗi
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET,
-                                "/menu", "/menu/**",
-                                "/restaurants", "/restaurants/**",
-                                "/dishes", "/dishes/**",
-                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**"
-                        ).permitAll()
-
-                        .requestMatchers(HttpMethod.POST,
-                                "/auth/**", "/users/**", "/api/gemini/**", "/api/feedback/**"
-                        ).permitAll()
-
-                        .requestMatchers(HttpMethod.PUT,
-                                "/users/**"
-                        ).authenticated() // ✅ chỉ cho phép người đã đăng nhập PUT đổi mật khẩu
-
-                        .requestMatchers("/oauth2/**", "/ws/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
-
-                // ✅ Thêm dòng này để bật JWT Bearer support
-                .oauth2ResourceServer(resource -> resource
-                        .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                                .decoder(customJwtDecoder) // nếu bạn có custom decoder
-                        )
-                )
-
-                .oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(Customizer.withDefaults())
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()) // 👈 Xử lý lỗi 401
                 );
 
         return http.build();

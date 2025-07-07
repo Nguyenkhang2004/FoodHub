@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-29T00:41:25+0700",
+    date = "2025-07-07T13:03:39+0700",
     comments = "version: 1.6.0.Beta1, compiler: javac, environment: Java 22.0.1 (Oracle Corporation)"
 )
 @Component
@@ -46,6 +46,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.orderType( order.getOrderType() );
         restaurantOrderResponse.createdAt( order.getCreatedAt() );
         restaurantOrderResponse.updatedAt( order.getUpdatedAt() );
+        restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
 
@@ -69,6 +70,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrderResponse.orderType( order.getOrderType() );
         restaurantOrderResponse.createdAt( order.getCreatedAt() );
         restaurantOrderResponse.updatedAt( order.getUpdatedAt() );
+        restaurantOrderResponse.note( order.getNote() );
         restaurantOrderResponse.totalAmount( order.getTotalAmount() );
         restaurantOrderResponse.orderItems( orderItemSetToOrderItemResponseSet( order.getOrderItems() ) );
         restaurantOrderResponse.payment( paymentMapper.toPaymentResponse( order.getPayment() ) );
@@ -89,6 +91,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         restaurantOrder.setStatus( restaurantOrderRequest.getStatus() );
         restaurantOrder.setOrderType( restaurantOrderRequest.getOrderType() );
         restaurantOrder.setPayment( paymentMapper.toPayment( restaurantOrderRequest.getPayment() ) );
+        restaurantOrder.setNote( restaurantOrderRequest.getNote() );
 
         return restaurantOrder;
     }
@@ -110,6 +113,7 @@ public class RestaurantOrderMapperImpl implements RestaurantOrderMapper {
         else {
             order.setPayment( null );
         }
+        order.setNote( request.getNote() );
     }
 
     @Override
