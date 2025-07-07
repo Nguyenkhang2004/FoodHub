@@ -3,7 +3,6 @@ package com.example.FoodHub.service;
 import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
-import com.example.FoodHub.dto.response.NotificationResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
@@ -20,9 +19,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
@@ -53,10 +52,10 @@ public class RestaurantOrderService {
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
     NotificationService notificationService;
+    SimpMessagingTemplate messagingTemplate; // Thêm SimpMessagingTemplate
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-
         log.info("Fetching all orders with status: {}, tableNumber: {}, minPrice: {}, maxPrice: {}",
                 status, tableNumber, minPrice, maxPrice);
 
@@ -132,10 +131,11 @@ public class RestaurantOrderService {
                 .map(orderMapper::toRestaurantOrderResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
     }
+
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
 
-        log.info("Creating new order for table: {}", request.getTableId());
+        log.info("Creating new order for table: {}, type: {}", request.getTableId(), request.getOrderType());
 
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
 
@@ -216,7 +216,6 @@ public class RestaurantOrderService {
 
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
-        // 1. Tìm order hiện tại
         RestaurantOrder existingOrder = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
 
@@ -233,7 +232,6 @@ public class RestaurantOrderService {
             existingOrder.setStatus(request.getStatus());
         }
 
-        // 4. Lấy danh sách order items hiện tại
         Set<OrderItem> currentOrderItems = existingOrder.getOrderItems();
         Map<Integer, OrderItem> existingItemsMap = currentOrderItems.stream()
                 .collect(Collectors.toMap(
@@ -241,48 +239,31 @@ public class RestaurantOrderService {
                         item -> item
                 ));
 
-        // 5. Xử lý các items mới từ request
         for (OrderItemRequest itemRequest : request.getOrderItems()) {
-            // Validate menu item exists
             MenuItem menuItem = menuItemRepository.findById(itemRequest.getMenuItemId())
                     .orElseThrow(() -> new AppException(ErrorCode.MENU_ITEM_NOT_EXISTED));
-
-            // Kiểm tra menu item có available không
             if (!MenuItemStatus.AVAILABLE.name().equals(menuItem.getStatus())) {
                 throw new AppException(ErrorCode.MENU_ITEM_NOT_AVAILABLE);
             }
 
-            // Kiểm tra nếu món đã tồn tại trong order
             if (existingItemsMap.containsKey(itemRequest.getMenuItemId())) {
-                // Cộng thêm quantity vào món đã có
                 OrderItem existingItem = existingItemsMap.get(itemRequest.getMenuItemId());
                 int newQuantity = existingItem.getQuantity() + itemRequest.getQuantity();
-
                 existingItem.setQuantity(newQuantity);
-                // Tính lại price cho item hiện tại
                 existingItem.setPrice(menuItem.getPrice().multiply(BigDecimal.valueOf(newQuantity)));
-
-                // Update status nếu có
                 if (itemRequest.getStatus() != null) {
                     existingItem.setStatus(itemRequest.getStatus());
                 }
             } else {
-                // Tạo order item mới
                 OrderItem newOrderItem = orderMapper.toOrderItem(itemRequest);
                 newOrderItem.setOrder(existingOrder);
                 newOrderItem.setMenuItem(menuItem);
-                // *** QUAN TRỌNG: Set price cho order item mới ***
                 newOrderItem.setPrice(menuItem.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
-
-                // Thêm vào danh sách order items hiện tại
                 currentOrderItems.add(newOrderItem);
-
-                // *** QUAN TRỌNG: Save order item mới vào database ***
                 orderItemRepository.save(newOrderItem);
             }
         }
 
-        // 6. Tính lại tổng tiền dựa trên price đã được set cho từng OrderItem
         BigDecimal totalAmount = currentOrderItems.stream()
                 .map(OrderItem::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -290,15 +271,20 @@ public class RestaurantOrderService {
         existingOrder.setOrderItems(currentOrderItems);
         existingOrder.setUpdatedAt(Instant.now());
 
-        // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
 
         notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_ADDED.name());
         // 8. Return response
+
+        // Gửi thông điệp WebSocket đến client
+        if (existingOrder.getUser() != null) {
+            messagingTemplate.convertAndSend("/topic/orders/" + existingOrder.getUser().getId(),
+                    orderMapper.toRestaurantOrderResponse(savedOrder));
+        }
+
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
-    // Helper method to calculate total amount excluding cancelled items
     private BigDecimal calculateTotalAmount(RestaurantOrder order) {
         return order.getOrderItems().stream()
                 .filter(item -> !OrderItemStatus.CANCELLED.name().equals(item.getStatus()))
@@ -306,18 +292,11 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Helper method to update order status
     public RestaurantOrderResponse updateOrderStatus(Integer orderId, String newStatus, String note) {
-        log.info("Updating order status. Order ID: {}, New Status: {}, note: {}", orderId, newStatus, note);
-
-        // Lock the order to prevent concurrent modifications
+        log.info("Updating order status. Order ID: {}, New Status: {}", orderId, newStatus);
         RestaurantOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
-
-        // Validate status transition for the order
         validateStatusTransition(order.getStatus(), newStatus);
-
-        // Set new status for the order
         order.setStatus(newStatus);
 
         // Nếu là CANCELLED và là TAKEAWAY hoặc DELIVERY thì huỷ luôn payment nếu có
@@ -347,8 +326,6 @@ public class RestaurantOrderService {
         });
 
         orderItemRepository.saveAll(updatedItems);
-
-        // Recalculate total amount
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
         order.setUpdatedAt(TimeUtils.getNowInVietNam());
@@ -361,28 +338,32 @@ public class RestaurantOrderService {
         if(newStatus.equals(OrderStatus.READY.name())) {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_READY.name());
         }
+
+        if (order.getUser() != null) {
+            Integer userId = order.getUser().getId();
+            RestaurantOrderResponse response = orderMapper.toRestaurantOrderResponse(savedOrder);
+            log.info("Sending WebSocket message to /topic/orders/{} for order {}", userId, orderId);
+            messagingTemplate.convertAndSend("/topic/orders/" + userId, response);
+        } else {
+            log.warn("User is null for order {}, no WebSocket message sent", orderId);
+        }
+
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
     @Transactional
     public RestaurantOrderResponse updateOrderItemStatus(Integer orderItemId, String newStatus, String note) {
         log.info("Updating order item status. Order Item ID: {}, New Status: {}", orderItemId, newStatus);
-
-        // Lock the order to prevent concurrent modifications
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_ITEM_NOT_EXISTED));
         RestaurantOrder order = orderRepository.findById(orderItem.getOrder().getId())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
-
-        // Validate status transition for the order item
         validateStatusTransition(orderItem.getStatus(), newStatus);
         orderItem.setStatus(newStatus);
         if(OrderItemStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
             orderItem.setNote(note);
         }
         orderItemRepository.save(orderItem);
-
-        // Recalculate total amount if necessary
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
         order.setUpdatedAt(TimeUtils.getNowInVietNam());
@@ -392,6 +373,13 @@ public class RestaurantOrderService {
         if(newStatus.equals(OrderStatus.READY.name())) {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_READY.name());
         }
+
+        // Gửi thông điệp WebSocket đến client
+        if (order.getUser() != null) {
+            messagingTemplate.convertAndSend("/topic/orders/" + order.getUser().getId(),
+                    orderMapper.toRestaurantOrderResponse(savedOrder));
+        }
+
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
@@ -406,7 +394,6 @@ public class RestaurantOrderService {
         } else if (allCompleted) {
             order.setStatus(OrderStatus.COMPLETED.name());
         } else {
-            // Ensure order status is valid based on items
             Set<String> itemStatuses = items.stream()
                     .map(OrderItem::getStatus)
                     .collect(Collectors.toSet());
@@ -421,18 +408,15 @@ public class RestaurantOrderService {
     }
 
     private void validateStatusTransition(String currentStatus, String newStatus) {
-        // Define valid status transitions
         Map<String, Set<String>> validTransitions = Map.of(
                 "PENDING", Set.of("CONFIRMED", "CANCELLED"),
                 "CONFIRMED", Set.of("PREPARING", "CANCELLED"),
                 "PREPARING", Set.of("READY"),
                 "READY", Set.of("COMPLETED"),
-                "COMPLETED", Set.of(), // No transitions from completed
-                "CANCELLED", Set.of()  // No transitions from cancelled
+                "COMPLETED", Set.of(),
+                "CANCELLED", Set.of()
         );
-
         Set<String> allowedTransitions = validTransitions.getOrDefault(currentStatus, Set.of());
-
         if (!allowedTransitions.contains(newStatus)) {
             throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
