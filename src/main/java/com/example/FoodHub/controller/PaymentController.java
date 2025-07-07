@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
-@RequestMapping("/cashier")
+@RequestMapping("/payments")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentController {
@@ -59,16 +59,16 @@ public class PaymentController {
     EmailService emailService;
 PaymentRepository   paymentRepository;  
     PaymentMapper paymentMapper;
-
 //
-//    @PostMapping("/payment")
-//    public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
-//        PaymentResponse response = paymentService.createPayment(request);
-//        ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
-//                .result(response)
-//                .build();
-//        return ResponseEntity.ok().body(apiResponse);
-//    }   cái này của khứa khang có phải không?
+
+    @PostMapping("/payment")
+    public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
+        PaymentResponse response = paymentService.createPayment(request);
+        ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
+                .result(response)
+                .build();
+        return ResponseEntity.ok().body(apiResponse);
+    }
     
 
 
@@ -106,8 +106,8 @@ PaymentRepository   paymentRepository;
     }
 
     // Thanh toán đơn hàng
-    @PostMapping("/payment")
-    public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
+    @PostMapping("/payment2")
+    public ResponseEntity<ApiResponse<PaymentResponse>> processPayment2(@RequestBody PaymentRequest request) {
         PaymentResponse response = paymentService.processPayment(request);
         ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
                 .result(response)
