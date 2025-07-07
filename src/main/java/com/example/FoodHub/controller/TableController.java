@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -62,6 +63,40 @@ public class TableController {
                 .result(updatedTable)
                 .build();
         return ResponseEntity.ok().body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<ApiResponse<RestaurantTableResponse>> createTable(
+            @Valid @RequestBody RestaurantTableRequest request) {
+        RestaurantTableResponse table = tableService.createTable(request);
+        return ResponseEntity.ok(ApiResponse.<RestaurantTableResponse>builder()
+                .result(table)
+                .build());
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{tableId}")
+    public ResponseEntity<ApiResponse<RestaurantTableResponse>> deleteTable(@PathVariable Integer tableId) {
+        RestaurantTableResponse table = tableService.deleteTable(tableId);
+        return ResponseEntity.ok(ApiResponse.<RestaurantTableResponse>builder()
+                .result(table)
+                .build());
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/restore/{tableId}")
+    public ResponseEntity<ApiResponse<RestaurantTableResponse>> restoreTable(@PathVariable Integer tableId) {
+        RestaurantTableResponse table = tableService.restoreTable(tableId);
+        return ResponseEntity.ok(ApiResponse.<RestaurantTableResponse>builder()
+                .result(table)
+                .build());
+    }
+
+    @GetMapping("/{tableId}")
+    public ResponseEntity<ApiResponse<RestaurantTableResponse>> getTableById(@PathVariable Integer tableId) {
+        RestaurantTableResponse table = tableService.getTableById(tableId);
+        return ResponseEntity.ok(ApiResponse.<RestaurantTableResponse>builder()
+                .result(table)
+                .build());
     }
 
 
