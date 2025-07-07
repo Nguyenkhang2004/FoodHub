@@ -33,6 +33,9 @@ public class SecurityConfig {
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
+            "/auth/forgot-password/send-otp",
+            "/auth/verify-otp",
+            "/auth/send-otp",
             "/scan",
             "/api/gemini/**",
             "/api/feedback/**"

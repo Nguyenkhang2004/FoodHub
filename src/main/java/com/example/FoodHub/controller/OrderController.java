@@ -202,21 +202,21 @@ public class OrderController {
     }
 
 
-//    @GetMapping("/user/{userId}")
-//    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getOrdersByUserId(
-//            @PathVariable Integer userId,
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "20") int size,
-//            @RequestParam(defaultValue = "createdAt") String orderBy,
-//            @RequestParam(defaultValue = "DESC") String sort
-//    ) {
-//        log.info("Fetching orders for user ID: {}", userId);
-//        Sort.Direction direction = Sort.Direction.fromString(sort);
-//        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
-//        Page< RestaurantOrderResponse> orderResponses = orderService.getAllOrdersByUserId(userId, pageable);
-//        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
-//                .result(orderResponses)
-//                .build();
-//        return ResponseEntity.ok().body(response);
-//    }
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getOrdersByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "DESC") String sort
+    ) {
+        log.info("Fetching orders for user ID: {}", userId);
+        Sort.Direction direction = Sort.Direction.fromString(sort);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
+        Page< RestaurantOrderResponse> orderResponses = orderService.getAllOrdersByUserId(userId, pageable);
+        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+                .result(orderResponses)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
 }
