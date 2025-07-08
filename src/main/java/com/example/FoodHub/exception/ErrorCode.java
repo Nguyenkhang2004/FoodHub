@@ -112,6 +112,9 @@ public enum ErrorCode {
     INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED_ACCESS(1043, "Invalid token", HttpStatus.UNAUTHORIZED),
     CHAT_MESSAGES_NOT_FOUND(1044, "Chat messages not found for the given table", HttpStatus.NOT_FOUND),
+    WORK_SHIFT_LOG_NOT_FOUND(1045, "Work shift log not found", HttpStatus.NOT_FOUND),
+    CHECKIN_TOO_EARLY(1046, "Không được check-in sớm quá 30 phút", HttpStatus.BAD_REQUEST),
+    CHECKIN_TOO_LATE(1047, "Không thể check-in khi ca làm đã kết thúc", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;

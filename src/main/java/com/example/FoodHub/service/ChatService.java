@@ -33,7 +33,7 @@ public class ChatService {
     ChatMessageRepository chatMessageRepository;
     ChatMesssageMapper chatMesssageMapper;
 
-    @PreAuthorize("hasAuthority('ACCESS_CHAT')")
+//    @PreAuthorize("hasAuthority('ACCESS_CHAT')")
     public void sendMessage(String tableNumber, ChatMessageRequest request) {
         log.info("Received chat request for table: {}, sender: {}, message: {}", tableNumber, request.getSender(), request.getMessage());
         ChatMessage message = chatMesssageMapper.toChatMessage(request);
@@ -54,7 +54,7 @@ public class ChatService {
         simpMessagingTemplate.convertAndSend(topic, messageResponse);
     }
 
-    @PreAuthorize("hasAuthority('ACCESS_CHAT')")
+//    @PreAuthorize("hasAuthority('ACCESS_CHAT')")
     public List<ChatMessageResponse> getChatMessagesByTableNumber(String tableNumber) {
         log.info("Fetching chat messages for table: {}", tableNumber);
         RestaurantTable table = tableRepository.findByTableNumber(tableNumber)

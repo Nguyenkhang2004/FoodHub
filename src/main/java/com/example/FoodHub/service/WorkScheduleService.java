@@ -1,28 +1,39 @@
 package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.ShiftRequest;
+import com.example.FoodHub.dto.request.WorkShiftLogRequest;
 import com.example.FoodHub.dto.response.EmployeeWorkResponse;
 import com.example.FoodHub.dto.response.ShiftResponse;
+import com.example.FoodHub.dto.response.WorkShiftLogResponse;
 import com.example.FoodHub.entity.User;
 import com.example.FoodHub.entity.WorkSchedule;
+import com.example.FoodHub.entity.WorkShiftLog;
+import com.example.FoodHub.enums.ShiftStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.WorkScheduleMapper;
+import com.example.FoodHub.mapper.WorkShiftLogMapper;
 import com.example.FoodHub.repository.UserRepository;
 import com.example.FoodHub.repository.WorkScheduleRepository;
+import com.example.FoodHub.repository.WorkShiftLogRepository;
+import com.example.FoodHub.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.example.FoodHub.enums.ShiftStatus.*;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -30,6 +41,8 @@ public class WorkScheduleService {
     WorkScheduleRepository workScheduleRepository;
     UserRepository userRepository;
     WorkScheduleMapper workScheduleMapper;
+    WorkShiftLogMapper workShiftLogMapper;
+    WorkShiftLogRepository workShiftLogRepository;
 
     public List<ShiftResponse> getShiftsForWeek(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
@@ -172,4 +185,105 @@ public class WorkScheduleService {
                 .map(schedule -> workScheduleMapper.toShiftResponse(schedule, schedule.getWorkDate()))
                 .collect(Collectors.toList());
     }
+
+    public WorkShiftLogResponse checkIn(WorkShiftLogRequest request) {
+        log.info("Processing check-in request: {}", request);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Integer userId;
+
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            userId = ((Number) jwtAuth.getToken().getClaim("id")).intValue();
+        } else {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        log.info("User ID from JWT: {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        WorkSchedule schedule = workScheduleRepository
+                .findById(request.getShiftId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
+
+        Instant checkInTime = TimeUtils.getNowInVietNam();
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        Instant scheduledStart = ZonedDateTime.of(schedule.getWorkDate(), schedule.getStartTime(), zone).toInstant();
+        Instant scheduledEnd = ZonedDateTime.of(schedule.getWorkDate(), schedule.getEndTime(), zone).toInstant();
+        Instant earliestAllowed = scheduledStart.minus(Duration.ofMinutes(30));
+
+        if (checkInTime.isBefore(earliestAllowed)) {
+            throw new AppException(ErrorCode.CHECKIN_TOO_EARLY);
+        }
+
+        if (checkInTime.isAfter(scheduledEnd)) {
+            throw new AppException(ErrorCode.CHECKIN_TOO_LATE);
+        }
+
+        String status = determineStatusCheckIn(checkInTime, schedule);
+
+        // Ghi log
+        WorkShiftLog workShiftLog = WorkShiftLog.builder()
+                .user(user)
+                .workSchedule(schedule)
+                .checkInTime(checkInTime)
+                .status(status)
+                .build();
+
+        return workShiftLogMapper.toWorkShiftLogResponse(workShiftLogRepository.save(workShiftLog));
+    }
+
+
+    public WorkShiftLogResponse checkOut(WorkShiftLogRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Integer userId;
+
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            userId = ((Number) jwtAuth.getToken().getClaim("id")).intValue();
+        } else {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        WorkSchedule schedule = workScheduleRepository
+                .findById(request.getShiftId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
+
+        Instant checkOutTime = TimeUtils.getNowInVietNam();
+
+        // Cập nhật log hiện tại
+        WorkShiftLog workShiftLog = workShiftLogRepository.findByUserAndWorkSchedule(user, schedule)
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SHIFT_LOG_NOT_FOUND));
+
+        workShiftLog.setCheckOutTime(checkOutTime);
+        String status = determineFinalStatus(workShiftLog.getStatus(), checkOutTime, schedule);
+        workShiftLog.setStatus(status);
+
+        return workShiftLogMapper.toWorkShiftLogResponse(workShiftLogRepository.save(workShiftLog));
+    }
+
+    private String determineStatusCheckIn(Instant actualTime, WorkSchedule schedule) {
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        ZonedDateTime scheduledStart = ZonedDateTime.of(schedule.getWorkDate(), schedule.getStartTime(), zone);
+        return actualTime.isAfter(scheduledStart.toInstant()) ? LATE.name() : ON_TIME.name();
+    }
+
+    public String determineFinalStatus(String currentStatus, Instant checkOutTime, WorkSchedule schedule) {
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+        Instant scheduledEnd = ZonedDateTime.of(schedule.getWorkDate(), schedule.getEndTime(), zone).toInstant();
+
+        boolean leftEarly = checkOutTime.isBefore(scheduledEnd);
+
+        if (LATE.name().equals(currentStatus)) {
+            return leftEarly ? LATE_AND_LEFT_EARLY.name() : LATE.name();
+        } else if (ON_TIME.name().equals(currentStatus)) {
+            return leftEarly ? LEFT_EARLY.name() : ON_TIME.name();
+        } else {
+            return currentStatus; // fallback
+        }
+    }
+
 }

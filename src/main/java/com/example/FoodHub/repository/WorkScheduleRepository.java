@@ -29,4 +29,7 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Inte
             @Param("now") LocalTime now);
 
     List<WorkSchedule> findByUserId(Integer userId);
+
+    List<WorkSchedule> findAllByWorkDateAndShiftType(LocalDate workDate, String shiftType);
+
 }
