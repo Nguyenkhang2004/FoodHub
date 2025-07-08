@@ -2,6 +2,7 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
+import com.example.FoodHub.entity.RestaurantTable;
 import com.example.FoodHub.enums.TableStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
@@ -14,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.List;
 public class RestaurantTableService {
     RestaurantTableRepository tableRepository;
     RestaurantTableMapper tableMapper;
+    ScanQRService scanQRService;
 
     public List<RestaurantTableResponse> getAllTables(
             String tableNumber, String status, String area, String orderBy, String sort) {
@@ -67,5 +70,25 @@ public class RestaurantTableService {
         table.setStatus(status);
         tableRepository.save(table);
         return tableMapper.toRestaurantTableResponse(table);
+    }
+
+    /**
+     * Đặt lại bàn về AVAILABLE (dành cho nhân viên).
+     */
+    @Transactional
+    public void resetTable(Integer tableId) {
+        log.info("Đặt lại bàn: {}", tableId);
+
+        RestaurantTable table = tableRepository.findByIdWithLock(tableId)
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+        if (table.getCurrentToken() != null) {
+            scanQRService.finishSession(table.getCurrentToken());
+        } else {
+            table.setStatus(TableStatus.AVAILABLE.name());
+            table.setCurrentToken(null);
+            table.setTokenExpiry(null);
+            tableRepository.save(table);
+            log.info("Đã đặt lại bàn: {}", tableId);
+        }
     }
 }

@@ -19,11 +19,8 @@ public class RestaurantOrderResponse {
     private String status;
     private String orderType;
     private Instant createdAt;
-<<<<<<< HEAD
-=======
     private Instant updatedAt;
     private String note;
->>>>>>> dc295ec239a30ee36e7c449577db64f0973f9c6c
 
     private Integer tableId;
     private String tableNumber;
@@ -32,4 +29,6 @@ public class RestaurantOrderResponse {
     private String username;
     private BigDecimal totalAmount;
     private Set<OrderItemResponse> orderItems;
+    private PaymentResponse payment;
+
 }

@@ -4,9 +4,9 @@ import java.util.Date;
 
 public class TestTime {
     public static void main(String[] args) {
-      long TOKEN_EXPIRY_HOURS = 2;
 
-        Instant expiryUtc = Instant.now().plus(TOKEN_EXPIRY_HOURS, ChronoUnit.HOURS);
-        System.out.println(expiryUtc);
+//        ZoneId vietnamZoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        Instant expiry = LocalDateTime.now().toInstant(ZoneOffset.UTC);
+        System.out.println(expiry);
     }
 }

@@ -45,9 +45,6 @@ public class RestaurantOrder {
     @OneToMany(mappedBy = "order")
     private Set<OrderItem> orderItems = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "order")
-    private Set<Payment> payments = new LinkedHashSet<>();
-
     @NotNull
     @ColumnDefault("0.00")
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
@@ -60,5 +57,12 @@ public class RestaurantOrder {
 
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+
+    @OneToOne(mappedBy = "order")
+    private Payment payment;
+
+//    @Column(name = "token_id")
+//    private String tokenId;
 
 }

@@ -32,6 +32,10 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
     @Query("SELECT t FROM RestaurantTable t WHERE t.id = :id")
     Optional<RestaurantTable> findByIdWithLock(@Param("id") Integer id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM RestaurantTable t WHERE t.tableNumber = :tableNumber")
+    Optional<RestaurantTable> findByTableNumberWithLock(String tableNumber);
+
     List<RestaurantTable> findByTokenExpiryBefore(Instant instant);
 
 

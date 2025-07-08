@@ -1,8 +1,6 @@
 package com.example.FoodHub.service;
 
-import com.example.FoodHub.dto.request.EmployeeUpdateRequest;
-import com.example.FoodHub.dto.request.OtpRequest;
-import com.example.FoodHub.dto.request.UserCreationRequest;
+import com.example.FoodHub.dto.request.*;
 import com.example.FoodHub.dto.response.UserResponse;
 import com.example.FoodHub.entity.OtpVerification;
 import com.example.FoodHub.entity.User;
@@ -12,6 +10,7 @@ import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.OtpVerificationRepository;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
+import com.example.FoodHub.util.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -28,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
@@ -58,6 +58,8 @@ public class UserService {
         String plainPassword = request.getPassword();
         user.setPassword(passwordEncoder.encode(plainPassword));
         user.setStatus("ACTIVE");
+        user.setRoleName(roleRepository.findById(request.getRoleName())
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_ROLE)));
         user.setRegistrationDate(LocalDateTime.now().atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant());
         user.setIsAuthUser(false);
         User savedUser = userRepository.save(user);
@@ -131,6 +133,21 @@ public class UserService {
                 .map(userMapper::toUserResponse)
                 .toList();
     }
+    public Page<UserResponse> getCustomers(String keyword, String sortDirection, int page, int size) {
+        log.info("In method getCustomers");
+        // Xác định hướng sắp xếp theo username
+        Sort sort = Sort.by("username");
+        sort = sortDirection.equalsIgnoreCase("desc") ? sort.descending() : sort.ascending();
+
+        // Tạo Pageable với phân trang và sắp xếp
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Lấy danh sách khách hàng từ repository
+        Page<User> customerPage = userRepository.findCustomers(keyword, pageable);
+
+        // Ánh xạ sang DTO
+        return customerPage.map(userMapper::toUserResponse);
+    }
 
     public UserResponse getUserById(Integer id) {
         return userMapper.toUserResponse(userRepository.findById(id)
@@ -145,9 +162,9 @@ public class UserService {
 
     public UserResponse myInfo() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        log.info("In method myInfo for user: {}", username);
-        return userMapper.toUserResponse(userRepository.findByUsername(username)
+        String email = authentication.getName();
+        log.info("In method myInfo for user: {}", email);
+        return userMapper.toUserResponse(userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 
@@ -192,7 +209,89 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public void updateCustomer(Integer userId, UserUpdateRequest request) {
+        // B1: Tìm user theo ID
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user ID: " + userId));
+
+
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
+
+        // B3: Lưu lại
+        userRepository.save(user);
+    }
+
     public long countUser() {
         return userRepository.count();
     }
+
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu cũ không đúng");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+    @Transactional
+    public void sendOtpForPasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5);
+
+        // Ghi đè OTP cũ nếu có
+        OtpVerification otpVerification = otpVerificationRepository.findByEmail(email)
+                .orElse(new OtpVerification());
+
+        otpVerification.setEmail(email);
+        otpVerification.setOtp(otp);
+        otpVerification.setCreatedAt(LocalDateTime.now());
+        otpVerification.setExpiresAt(expiresAt);
+
+        otpVerification.setAddress(user.getAddress() != null ? user.getAddress() : "N/A");
+        otpVerification.setPhone(user.getPhone() != null ? user.getPhone() : "0000000000");
+        otpVerification.setUsername(user.getUsername());
+        otpVerification.setRoleName("CUSTOMER");
+        otpVerification.setPassword(user.getPassword());
+
+        otpVerificationRepository.save(otpVerification);
+
+        emailService.sendOtpEmailAsync(email, otp);
+    }
+
+    @Transactional
+    public void resetPasswordWithOtp(ResetPasswordWithOtpRequest request) {
+        String email = request.getEmail();
+        String submittedOtp = request.getOtp();
+        String newPassword = request.getNewPassword();
+
+        OtpVerification otpVerification = otpVerificationRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.OTP_NOT_FOUND));
+
+        if (!otpVerification.getOtp().equals(submittedOtp)) {
+            throw new AppException(ErrorCode.INVALID_OTP);
+        }
+
+        if (otpVerification.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.OTP_EXPIRED);
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        otpVerificationRepository.delete(otpVerification);
+    }
+
+
+
 }

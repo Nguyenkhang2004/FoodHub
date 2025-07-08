@@ -21,6 +21,8 @@ public class RestaurantOrderRequest {
     @Positive(message = "USER_ID_INVALID")
     private Integer userId;
 
+    private String token; // Token bàn
+
     @Pattern(regexp = "DINE_IN|TAKEAWAY|DELIVERY", message = "ORDER_TYPE_INVALID")
     private String orderType;
 
@@ -31,5 +33,7 @@ public class RestaurantOrderRequest {
     @NotEmpty(message = "ORDER_ITEMS_REQUIRED")
     @Valid
     private Set<OrderItemRequest> orderItems;
+
+    private PaymentRequest payment;
 }
 

@@ -98,17 +98,20 @@ public enum ErrorCode {
     PAYMENT_ALREADY_PROCESSED(1025, "Payment has already been processed", HttpStatus.BAD_REQUEST),
     INVALID_PAYMENT_METHOD(1026, "Invalid payment method", HttpStatus.BAD_REQUEST),
     WORK_SCHEDULE_NOT_FOUND(1041, "Work schedule not found", HttpStatus.NOT_FOUND),
-<<<<<<< HEAD
-    INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED);
-=======
     PAST_SHIFT(1041, "You cannot customize past calendars", HttpStatus.BAD_REQUEST),
     SHIFT_NOT_FOUND(1044, "Shift not found", HttpStatus.NOT_FOUND),
     PAST_DATE_NOT_ALLOWED(1046, "You cannot create OR delete a shift in the past", HttpStatus.BAD_REQUEST),
     PAST_SHIFT_TIME(1048, "You cannot create a shift that has already passed", HttpStatus.BAD_REQUEST),
-    INVALID_TIME_FORMAT(1050, "Invalid time format, must be HH:mm", HttpStatus.BAD_REQUEST)
-    ;
->>>>>>> dc295ec239a30ee36e7c449577db64f0973f9c6c
-
+    INVALID_TIME_FORMAT(1050, "Invalid time format, must be HH:mm", HttpStatus.BAD_REQUEST),
+    USER_NOT_ACTIVE(1052, "User is not active", HttpStatus.BAD_REQUEST),
+    PAYMENT_ALREADY_EXISTS(1057, "Payment already exists for this order", HttpStatus.BAD_REQUEST),
+    PAYMENT_URL_GENERATION_FAILED(1058, "Failed to generate payment URL", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYMENT_ALREADY_PAID(1059, "Payment has already been paid", HttpStatus.BAD_REQUEST),
+    PAYMENT_EXPIRED(1065, "Payment has expired", HttpStatus.BAD_REQUEST),
+    ORDER_NOT_MODIFIABLE(1060, "Order cannot be modified in its current state", HttpStatus.BAD_REQUEST),
+    INVALID_TOKEN_TYPE(1042, "Invalid token type", HttpStatus.UNAUTHORIZED),
+    TOKEN_INVALIDATION_FAILED(1066, "Error when token invalidated, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
+    TABLE_ALREADY_IN_USE(1067, "Table is already in use by another guest", HttpStatus.BAD_REQUEST);
     private int code;
     private String message;
     private HttpStatusCode statusCode;

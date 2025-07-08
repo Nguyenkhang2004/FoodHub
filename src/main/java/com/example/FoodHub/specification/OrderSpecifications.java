@@ -29,7 +29,7 @@ public final class OrderSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Filter by area
+            // Filter by area (mandatory for work shift)
             if (area != null) {
                 predicates.add(cb.equal(root.get("table").get("area"), area));
             }
@@ -40,37 +40,40 @@ public final class OrderSpecifications {
             }
 
             // Filter by price range
-            if (minPrice != null) predicates.add(cb.ge(root.get("totalAmount"), minPrice));
-            if (maxPrice != null) predicates.add(cb.le(root.get("totalAmount"), maxPrice));
+            if (minPrice != null) {
+                predicates.add(cb.ge(root.get("totalAmount"), minPrice));
+            }
+            if (maxPrice != null) {
+                predicates.add(cb.le(root.get("totalAmount"), maxPrice));
+            }
 
-            // Main logic: Orders created/updated after startTime OR unfinished orders
+            // Filter by status if provided
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+
+            // Main logic: Orders created/updated after startTime AND unfinished
             if (startTime != null) {
-                // Điều kiện 1: Đơn hàng được tạo hoặc cập nhật sau startTime
+                // Condition 1: Orders created or updated after startTime
                 Predicate timeCondition = cb.or(
                         cb.greaterThanOrEqualTo(root.get("createdAt"), startTime),
                         cb.greaterThanOrEqualTo(root.get("updatedAt"), startTime)
                 );
 
-                // Điều kiện 2: Đơn hàng chưa hoàn thành (không phải CANCELLED hoặc COMPLETED)
+                // Condition 2: Unfinished orders (not CANCELLED or COMPLETED)
                 Predicate unfinishedCondition = cb.not(root.get("status").in(
                         OrderStatus.CANCELLED.name(),
                         OrderStatus.COMPLETED.name()
                 ));
 
-                // Kết hợp 2 điều kiện bằng OR
-                predicates.add(cb.or(timeCondition, unfinishedCondition));
+                // Combine conditions with AND
+                predicates.add(cb.and(timeCondition, unfinishedCondition));
             } else {
-                // Nếu không có startTime, chỉ lấy đơn hàng chưa hoàn thành
+                // If no startTime, only take unfinished orders
                 predicates.add(cb.not(root.get("status").in(
                         OrderStatus.CANCELLED.name(),
                         OrderStatus.COMPLETED.name()
                 )));
-            }
-
-            // Filter by specific status if provided (this will override the above status logic)
-            if (status != null) {
-                // Nếu có status cụ thể, thêm điều kiện này
-                predicates.add(cb.equal(root.get("status"), status));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

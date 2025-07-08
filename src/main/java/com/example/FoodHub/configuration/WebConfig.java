@@ -17,7 +17,8 @@ public class WebConfig {
                         .allowedOrigins("http://127.0.0.1:5500",
                                         "http://10.12.48.109:5500",
                                         "http://172.20.10.2:5500",//phone
-                                        "http://192.168.1.2:5500")//home
+                                        "http://192.168.1.2:5500",//home
+                                        "http://192.168.1.26:5500")
                         .allowedMethods("*")
                         .allowedHeaders("*")
                         .allowCredentials(true); // Cho phép gửi token/cookie

@@ -1,10 +1,12 @@
 package com.example.FoodHub.repository;
 
 import com.example.FoodHub.entity.RestaurantOrder;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -48,4 +50,28 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
     @Deprecated
     @Query("SELECT HOUR(o.createdAt), SUM(o.totalAmount) FROM RestaurantOrder o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :start AND :end GROUP BY HOUR(o.createdAt)")
     List<Object[]> findDailyRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
+
+    Page<RestaurantOrder> findByUserId(@Param("userId") Integer userId, Pageable pageable);
+    Optional<RestaurantOrder> findFirstByTableIdAndStatusIn(Integer tableId, List<String> statuses);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM RestaurantOrder o WHERE o.id = :id")
+    Optional<RestaurantOrder> findByIdWithLock(Integer id);
+    // 1. Trả về ID đơn hàng đang hoạt động nếu có
+    @Query("""
+        SELECT r.id FROM RestaurantOrder r
+        WHERE r.table.id = :tableId
+          AND r.status IN ('PENDING', 'PREPARING', 'READY', 'CONFIRMED')
+        ORDER BY r.createdAt ASC
+        LIMIT 1
+    """)
+    Integer findActiveOrderIdByTable(@Param("tableId") Integer tableId);
+
+    // 2. Kiểm tra xem có đơn hàng hoạt động nào không
+    @Query("""
+        SELECT COUNT(r) > 0 FROM RestaurantOrder r
+        WHERE r.table.id = :tableId
+          AND r.status IN ('PENDING', 'PREPARING', 'READY', 'CONFIRMED')
+    """)
+    boolean hasActiveOrder(@Param("tableId") Integer tableId);
 }

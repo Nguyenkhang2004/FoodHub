@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,8 @@ import java.math.BigDecimal;
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+@CrossOrigin(origins = "http://127.0.0.1:5500")
 public class OrderController {
     RestaurantOrderService orderService;
 
@@ -39,7 +42,7 @@ public class OrderController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort
     ) {
@@ -85,7 +88,7 @@ public class OrderController {
 
     @GetMapping("/work-shift-orders")
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCurrentOrders(
-            @RequestParam String area,
+            @RequestParam(required = false) String area,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tableNumber,
             @RequestParam(required = false) BigDecimal minPrice,
@@ -122,5 +125,21 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
-
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getOrdersByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "DESC") String sort
+    ) {
+        log.info("Fetching orders for user ID: {}", userId);
+        Sort.Direction direction = Sort.Direction.fromString(sort);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderBy));
+        Page< RestaurantOrderResponse> orderResponses = orderService.getAllOrdersByUserId(userId, pageable);
+        ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
+                .result(orderResponses)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
 }

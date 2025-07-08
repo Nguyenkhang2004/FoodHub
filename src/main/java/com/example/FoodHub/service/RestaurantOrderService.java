@@ -2,32 +2,32 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.OrderItemRequest;
 import com.example.FoodHub.dto.request.RestaurantOrderRequest;
-import com.example.FoodHub.dto.response.OrderItemResponse;
+import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
 import com.example.FoodHub.enums.*;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
+import com.example.FoodHub.mapper.PaymentMapper;
 import com.example.FoodHub.mapper.RestaurantOrderMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.specification.OrderSpecifications;
-import jakarta.persistence.LockModeType;
+import com.example.FoodHub.utils.JwtUtil;
+import com.example.FoodHub.utils.PayOSUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestParam;
+import vn.payos.PayOS;
 
 import java.math.BigDecimal;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,7 +44,12 @@ public class RestaurantOrderService {
     RestaurantTableRepository tableRepository;
     UserRepository userRepository;
     MenuItemRepository menuItemRepository;
-    WorkScheduleRepository workScheduleRepository;
+    PaymentRepository paymentRepository;
+    PaymentMapper paymentMapper;
+    PayOSUtils payOSUtils;
+    JwtUtil jwtUtil;
+    InvalidateTokenRepository invalidTokenRepository;
+    ScanQRService scanQRService;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -115,82 +120,136 @@ public class RestaurantOrderService {
     }
 
 
-
-
     public RestaurantOrderResponse getOrdersByOrderId(Integer id) {
         log.info("Fetching orders for order ID: {}", id);
         return orderRepository.findById(id)
                 .map(orderMapper::toRestaurantOrderResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
     }
-
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
+
         log.info("Creating new order for table: {}", request.getTableId());
+        if (request.getToken() != null && !scanQRService.isValidToken(request.getToken()).isValid()) {
+            log.warn("Token không hợp lệ: {}", request.getToken());
+            throw new AppException(ErrorCode.QR_CODE_INVALID);
+        }
 
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
+
+        // gán User (nếu có)
         if (request.getUserId() != null) {
-            log.info("Setting user for order: {}", request.getUserId());
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
             order.setUser(user);
         }
 
-        if (request.getOrderType().equals(OrderType.DINE_IN.name())) {
-
-            RestaurantTable table = tableRepository.findById(request.getTableId())
+        // gán bàn nếu DINE_IN
+        RestaurantTable table = null;
+        if (OrderType.DINE_IN.name().equals(request.getOrderType())) {
+            table = tableRepository.findByIdWithLock(request.getTableId())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
-            // Kiểm tra trạng thái bàn trước khi gán
-            if (!TableStatus.AVAILABLE.name().equals(table.getStatus())) {
+
+            if (!table.getStatus().equals(TableStatus.AVAILABLE.name())) {
+                log.warn("Bàn {} không ở trạng thái A: {}", request.getTableId(), table.getStatus());
                 throw new AppException(ErrorCode.TABLE_NOT_AVAILABLE);
             }
-            table.setStatus(TableStatus.OCCUPIED.name()); // Đánh dấu bàn là đang sử dụng
+            if (request.getToken() != null && !table.getCurrentToken().equals(request.getToken())) {
+                log.warn("Token không khớp với bàn {}: {}", table.getTableNumber(), request.getToken());
+                throw new AppException(ErrorCode.INVALID_QR_TOKEN);
+            }
+            table.setStatus(TableStatus.OCCUPIED.name());
             order.setTable(table);
-            tableRepository.save(table); // Lưu lại trạng thái bàn
+
         }
 
+        // tạo OrderItems và tính total
         Set<OrderItem> orderItems = request.getOrderItems().stream()
                 .map(itemReq -> {
-                    OrderItem orderItem = orderMapper.toOrderItem(itemReq);
-                    // Lấy Menu entity theo menuItemId trong OrderItemRequest
                     MenuItem menuItem = menuItemRepository.findById(itemReq.getMenuItemId())
                             .orElseThrow(() -> new AppException(ErrorCode.MENU_ITEM_NOT_EXISTED));
                     if (!MenuItemStatus.AVAILABLE.name().equals(menuItem.getStatus())) {
                         throw new AppException(ErrorCode.MENU_ITEM_NOT_AVAILABLE);
                     }
-                    orderItem.setMenuItem(menuItem);
-                    // Gán order cho orderItem (quan hệ hai chiều)
+                    OrderItem orderItem = orderMapper.toOrderItem(itemReq);
                     orderItem.setOrder(order);
-                    // Tính toán giá dựa trên quantity và unit price của MenuItem
-                    orderItem.setPrice(menuItem.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity())));
-                    // Tính tổng giá trị của đơn hàng
-
+                    orderItem.setMenuItem(menuItem);
+                    orderItem.setPrice(menuItem.getPrice()
+                            .multiply(BigDecimal.valueOf(itemReq.getQuantity())));
                     return orderItem;
                 })
                 .collect(Collectors.toSet());
-        order.setCreatedAt(Instant.now());
-        order.setOrderItems(orderItems);
+
         BigDecimal totalAmount = orderItems.stream()
                 .map(OrderItem::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
-        orderRepository.save(order);
+        order.setCreatedAt(LocalDateTime.now().toInstant(ZoneOffset.UTC));
+
+        orderRepository.save(order);               // order & id
         orderItems.forEach(orderItemRepository::save);
+
+        if (OrderType.DELIVERY.name().equals(request.getOrderType())
+                || OrderType.TAKEAWAY.name().equals(request.getOrderType())) {
+
+            Payment payment = paymentMapper.toPayment(request.getPayment());
+            payment.setOrder(order);
+            payment.setAmount(totalAmount);
+            payment.setCreatedAt(LocalDateTime.now().toInstant(ZoneOffset.UTC));
+
+            boolean isCash = PaymentMethod.CASH.name()
+                    .equals(request.getPayment().getPaymentMethod());
+            payment.setStatus(isCash ? PaymentStatus.UNPAID.name()
+                    : PaymentStatus.PENDING.name());
+            if (!isCash) {
+                String paymentUrl = payOSUtils.generatePaymentUrl(payment);
+                log.info("Generating payment url: {}", paymentUrl );
+                String transactionId = payOSUtils.getTransactionId(paymentUrl);
+                log.info("Generating transaction id: {}", transactionId);
+                payment.setPaymentUrl(paymentUrl);
+                payment.setTransactionId(transactionId);
+            } else {
+                log.info("Payment method is CASH, no payment URL generated.");
+            }
+            paymentRepository.save(payment);
+            order.setPayment(payment);
+        }
         return orderMapper.toRestaurantOrderResponse(order);
     }
+
+
 
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
         // 1. Tìm order hiện tại
-        RestaurantOrder existingOrder = orderRepository.findById(orderId)
+        if (request.getToken() != null && !scanQRService.isValidToken(request.getToken()).isValid()) {
+            log.warn("Token không hợp lệ: {}", request.getToken());
+            throw new AppException(ErrorCode.INVALID_QR_TOKEN);
+        }
+        RestaurantOrder existingOrder = orderRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
 
+
         // 2. Kiểm tra trạng thái order có thể thêm món không
-        if (OrderStatus.CANCELLED.name().equals(existingOrder.getStatus()) || OrderStatus.COMPLETED.name().equals(existingOrder.getStatus())) {
-            throw new IllegalStateException("Cannot add items to cancelled or completed order");
+        if ("CANCELLED".equals(existingOrder.getStatus()) || "COMPLETED".equals(existingOrder.getStatus())) {
+            throw new AppException(ErrorCode.ORDER_NOT_MODIFIABLE);
+        }
+
+        if (OrderType.DINE_IN.name().equals(existingOrder.getOrderType())) {
+            RestaurantTable table = tableRepository.findByIdWithLock(existingOrder.getTable().getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+            if (request.getToken() != null && !table.getCurrentToken().equals(request.getToken())) {
+                log.warn("Token không khớp với bàn {}: {}", table.getTableNumber(), request.getToken());
+                throw new AppException(ErrorCode.INVALID_QR_TOKEN);
+            }
         }
 
         // 3. Update thông tin order nếu có thay đổi (note, orderType...)
+//        if (request.getNote() != null) {
+//            existingOrder.setNote(request.getNote());
+//        }
         if (request.getOrderType() != null) {
             existingOrder.setOrderType(request.getOrderType());
         }
@@ -227,6 +286,7 @@ public class RestaurantOrderService {
                 // Tính lại price cho item hiện tại
                 existingItem.setPrice(menuItem.getPrice().multiply(BigDecimal.valueOf(newQuantity)));
 
+                existingItem.setNote(itemRequest.getNote());
                 // Update status nếu có
                 if (itemRequest.getStatus() != null) {
                     existingItem.setStatus(itemRequest.getStatus());
@@ -253,7 +313,7 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         existingOrder.setTotalAmount(totalAmount);
         existingOrder.setOrderItems(currentOrderItems);
-        existingOrder.setUpdatedAt(Instant.now());
+        existingOrder.setUpdatedAt(LocalDateTime.now().toInstant(ZoneOffset.UTC));
 
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
@@ -261,6 +321,37 @@ public class RestaurantOrderService {
         // 8. Return response
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
+
+    /**
+     * Hoàn tất đơn hàng và giải phóng bàn.
+     */
+    @Transactional
+    public RestaurantOrderResponse completeOrder(Integer orderId) {
+        log.info("Hoàn tất đơn hàng: {}", orderId);
+
+        RestaurantOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
+
+        if (!OrderStatus.PENDING.name().equals(order.getStatus()) &&
+                !OrderStatus.PREPARING.name().equals(order.getStatus()) &&
+                !OrderStatus.READY.name().equals(order.getStatus()) &&
+                !OrderStatus.CONFIRMED.name().equals(order.getStatus())) {
+            log.warn("Không thể hoàn tất đơn hàng {} ở trạng thái: {}", orderId, order.getStatus());
+            throw new AppException(ErrorCode.ORDER_NOT_MODIFIABLE);
+        }
+
+        order.setStatus(OrderStatus.COMPLETED.name());
+        if (OrderType.DINE_IN.name().equals(order.getOrderType())) {
+            scanQRService.finishSession(order.getTable().getCurrentToken());
+        }
+
+        order.setUpdatedAt(LocalDateTime.now().toInstant(ZoneOffset.UTC));
+        orderRepository.save(order);
+        return orderMapper.toRestaurantOrderResponse(order);
+    }
+
+
+
 
     // Helper method to calculate total amount excluding cancelled items
     private BigDecimal calculateTotalAmount(RestaurantOrder order) {
@@ -300,7 +391,7 @@ public class RestaurantOrderService {
         // Recalculate total amount
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(Instant.now());
+        order.setUpdatedAt(LocalDateTime.now().toInstant(ZoneOffset.UTC));
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
@@ -326,14 +417,13 @@ public class RestaurantOrderService {
         // Recalculate total amount if necessary
         BigDecimal newTotalAmount = calculateTotalAmount(order);
         order.setTotalAmount(newTotalAmount);
-        order.setUpdatedAt(Instant.now());
+        order.setUpdatedAt(LocalDateTime.now().toInstant(ZoneOffset.UTC));
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
 
         RestaurantOrder savedOrder = orderRepository.save(order);
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
-
     private void updateOrderStatusBasedOnItems(RestaurantOrder order) {
         Set<OrderItem> items = order.getOrderItems();
         boolean allCancelled = items.stream().allMatch(item -> OrderItemStatus.CANCELLED.name().equals(item.getStatus()));
@@ -375,6 +465,14 @@ public class RestaurantOrderService {
         if (!allowedTransitions.contains(newStatus)) {
             throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
+    }
+
+    public Page<RestaurantOrderResponse> getAllOrdersByUserId(Integer userId, Pageable pageable) {
+        log.info("Fetching all orders for user ID: {}", userId);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        Page<RestaurantOrder> orders = orderRepository.findByUserId(userId, pageable);
+        return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
 }

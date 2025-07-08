@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class    ScanQRController {
+public class ScanQRController {
 
     ScanQRService scanQRService;
 
@@ -30,17 +30,14 @@ public class    ScanQRController {
     @PostMapping("/scan")
     public ResponseEntity<ApiResponse<ScanQRResponse>> scanQR(@RequestBody ScanQRRequest request) {
         log.info("Scanning QR code: {}", request.getQrCode());
-        try {
+
             ScanQRResponse scanQRResponse = scanQRService.scanQRCode(request);
-            ApiResponse<ScanQRResponse> response = ApiResponse.<ScanQRResponse>builder()
+
+            return ResponseEntity.ok(ApiResponse.<ScanQRResponse>builder()
                     .message("Quét QR code thành công")
                     .result(scanQRResponse)
-                    .build();
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("Error scanning QR code: {}", e.getMessage(), e);
-            throw e;
-        }
+                    .build());
+
     }
 
     /**
@@ -52,60 +49,39 @@ public class    ScanQRController {
 
         TokenValidationResponse result = scanQRService.isValidToken(request.getToken());
 
-        ApiResponse<TokenValidationResponse> response = ApiResponse.<TokenValidationResponse>builder()
+        return ResponseEntity.ok(ApiResponse.<TokenValidationResponse>builder()
                 .message("Xác thực token thành công")
                 .result(result)
-                .build();
-        return ResponseEntity.ok(response);
+                .build());
     }
 
-//    /**
-//     * API lấy thông tin bàn
-//     */
-//    @GetMapping("/table-info")
-//    public ResponseEntity<ApiResponse<TableInfo>> getTableInfo(@RequestHeader("Authorization") String authHeader) {
-//        try {
-//            String token = authHeader.replace("Bearer ", "");
-//            TableInfo tableInfo = scanQRService.getTableInfo(token);
-//            return ResponseEntity.ok(ApiResponse.success(tableInfo));
-//        } catch (InvalidTokenException e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                    .body(ApiResponse.error("INVALID_TOKEN", e.getMessage()));
-//        } catch (Exception e) {
-//            log.error("Error getting table info: {}", e.getMessage());
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(ApiResponse.error("INTERNAL_ERROR", "Có lỗi xảy ra"));
-//        }
-//    }
+
 
     /**
      * API kết thúc phiên (khách thanh toán xong)
      */
     @PostMapping("/finish-session")
     public ResponseEntity<ApiResponse<Void>> finishSession(@RequestBody LogoutRequest request) {
+        log.info("Kết thúc phiên với token: {}", request.getToken());
 
         scanQRService.finishSession(request.getToken());
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
-                .message("Kết thúc phiên thành công")
-                .build();
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .message("Kết thúc phiên thành công")
+                .build());
     }
 
     /**
      * Gia hạn token (refresh)
      * POST /api/qr/refresh-token
      */
-    @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse<TokenRefreshResponse>> refreshToken(RefreshRequest request) {
-
-
-        TokenRefreshResponse refreshResponse = scanQRService.refreshTableToken(request.getToken());
-        ApiResponse<TokenRefreshResponse> response = ApiResponse.<TokenRefreshResponse>builder()
-                .message("Gia hạn token thành công")
-                .result(refreshResponse)
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
+//    @PostMapping("/refresh-token")
+//    public ResponseEntity<ApiResponse<TokenRefreshResponse>> refreshToken(@RequestBody RefreshRequest request) {
+//        TokenRefreshResponse refreshResponse = scanQRService.refreshToken(request.getToken());
+//
+//        return ResponseEntity.ok(ApiResponse.<TokenRefreshResponse>builder()
+//                .message("Gia hạn token thành công")
+//                .result(refreshResponse)
+//                .build());
+//    }
 }

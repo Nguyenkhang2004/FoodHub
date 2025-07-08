@@ -11,6 +11,10 @@ import org.springframework.data.domain.Page; // Đúng package cho Page
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Repository
 public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> , JpaSpecificationExecutor<MenuItem> {
 
@@ -66,4 +70,43 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> , J
 
     // Method để check tồn tại
     boolean existsById(Integer id);
+
+
+
+    // 🔹 Món đắt nhất và rẻ nhất (tổng thể)
+    MenuItem findTopByOrderByPriceDesc();
+    MenuItem findTopByOrderByPriceAsc();
+
+    // 🔹 Theo trạng thái (VD: VEGETARIAN, AVAILABLE)
+    MenuItem findTopByStatusIgnoreCaseOrderByPriceDesc(String status);
+    MenuItem findTopByStatusIgnoreCaseOrderByPriceAsc(String status);
+    List<MenuItem> findByStatusIgnoreCase(String status);
+    List<MenuItem> findByStatusIgnoreCaseAndPriceLessThanEqual(String status, Integer price);
+
+    // 🔹 Theo tên danh mục (VD: 'Lẩu nước', 'Món nướng thịt'...)
+    MenuItem findTopByCategories_NameIgnoreCaseOrderByPriceDesc(String categoryName);
+    MenuItem findTopByCategories_NameIgnoreCaseOrderByPriceAsc(String categoryName);
+    List<MenuItem> findByCategories_NameIgnoreCase(String categoryName);
+    List<MenuItem> findByCategories_NameIgnoreCaseAndPriceLessThanEqual(String categoryName, Integer price);
+
+    // 🔹 Theo giá
+    List<MenuItem> findByPriceLessThanEqual(Integer price);
+    List<MenuItem> findByPriceGreaterThanEqual(Integer price);
+    MenuItem findTopByPriceLessThanEqualOrderByPriceDesc(Integer price);
+    MenuItem findTopByPriceLessThanEqualOrderByPriceAsc(Integer price);
+
+    // 🔹 Theo tên
+    List<MenuItem> findByNameContainingIgnoreCase(String keyword);
+    List<MenuItem> findByNameStartingWithIgnoreCase(String prefix);
+    List<MenuItem> findByNameEndingWithIgnoreCase(String suffix);
+
+    // 🔹 Kết hợp danh mục + trạng thái
+    List<MenuItem> findByStatusIgnoreCaseAndCategories_NameIgnoreCase(String status, String categoryName);
+    MenuItem findTopByStatusIgnoreCaseAndCategories_NameIgnoreCaseOrderByPriceDesc(String status, String categoryName);
+    MenuItem findTopByStatusIgnoreCaseAndCategories_NameIgnoreCaseOrderByPriceAsc(String status, String categoryName);
+
+    // 🔹 Kết hợp cả status + category + ngân sách
+    List<MenuItem> findByStatusIgnoreCaseAndPriceLessThanEqualAndCategories_NameIgnoreCase(String status, Integer price, String categoryName);
+
+
 }

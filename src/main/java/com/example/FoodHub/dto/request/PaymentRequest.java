@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class PaymentRequest {
     private Integer orderId;
-    private String paymentMethod; // CASH hoặc VNPAY
+    private String paymentMethod;
 }

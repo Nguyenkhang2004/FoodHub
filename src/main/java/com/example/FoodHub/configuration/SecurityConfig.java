@@ -1,9 +1,12 @@
 package com.example.FoodHub.configuration;
 
+import com.example.FoodHub.security.CustomOAuth2UserService;
+import com.example.FoodHub.security.OAuth2AuthenticationSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,52 +22,70 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
     @Autowired
+    private CustomOAuth2UserService customOAuth2UserService;
+    @Autowired
+    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    @Autowired
     private CustomJwtDecoder customJwtDecoder;
-    private final String[] PUBLIC_ENDPOINTS = {
+    private final String[] PUBLIC_POST_ENDPOINTS = {
             "/users",
             "/auth/login",
             "/auth/introspect",
             "/auth/logout",
             "/auth/refresh",
-            "/public/**",
-            "/admin/**",
-            "/waiter/**",
-            "/orders/**",
-            "/chef/**",
-            "/login.html",
+            "/auth/forgot-password/send-otp",
+            "/auth/verify-otp",
+            "/auth/send-otp",
             "/qr",
-            "/customer/**",
-            "/menu-items",
-            "/categories",
-            "/menu-items/**",
+            "/qr/**",
+            "/api/gemini/**",
+            "/api/feedback/**"
+    };
+
+    private final String[] PUBLIC_GET_ENDPOINTS = {
+            "/menu", "/menu/**",
+            "/restaurants", "/restaurants/**",
+            "/dishes", "/dishes/**",
+            "/menu-items", "/menu-items/**", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
+            "/images/**","/users/my-info"
     };
 
 
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-//        httpSecurity
-//                .authorizeHttpRequests(requests -> requests
-//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Bỏ qua xác thực cho OPTIONS
-//                        .requestMatchers(HttpMethod.POST, "/auth/**", "/users").permitAll()
-//                        .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll() // Cho phép truy cập không cần xác thực
-//                        .anyRequest().authenticated())
-//                .oauth2ResourceServer(oauth2 -> oauth2
-//                        .jwt(jwt -> jwt.decoder(customJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-//                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
-//                .csrf(AbstractHttpConfigurer::disable);
-//        return httpSecurity.build();
-//    }
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults()) // 👈 BẮT BUỘC để cho phép CORS kể cả khi lỗi
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // Cho phép tất cả các request
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
+                        .requestMatchers("/oauth2/**", "/ws/**").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF nếu là REST API
-                .oauth2ResourceServer(AbstractHttpConfigurer::disable); // Vô hiệu hóa OAuth2 Resource Server nếu không dùng
-
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(Customizer.withDefaults())
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()) // 👈 Xử lý lỗi 401
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                );
         return http.build();
     }
+
+
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//                .authorizeHttpRequests(auth -> auth
+//                        .anyRequest().permitAll() // Cho phép tất cả các request
+//                )
+//                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF nếu là REST API
+//                .oauth2ResourceServer(AbstractHttpConfigurer::disable); // Vô hiệu hóa OAuth2 Resource Server nếu không dùng
+//
+//        return http.build();
+//    }
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {

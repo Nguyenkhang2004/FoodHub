@@ -1,9 +1,6 @@
 package com.example.FoodHub.service;
 
-import com.example.FoodHub.dto.request.AuthenticationRequest;
-import com.example.FoodHub.dto.request.IntrospectRequest;
-import com.example.FoodHub.dto.request.LogoutRequest;
-import com.example.FoodHub.dto.request.RefreshRequest;
+import com.example.FoodHub.dto.request.*;
 import com.example.FoodHub.dto.response.AuthenticationResponse;
 import com.example.FoodHub.dto.response.IntrospectResponse;
 import com.example.FoodHub.entity.InvalidateToken;
@@ -12,6 +9,7 @@ import com.example.FoodHub.entity.User;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.InvalidateTokenRepository;
+import com.example.FoodHub.repository.RestaurantTableRepository;
 import com.example.FoodHub.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -24,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.text.ParseException;
@@ -41,6 +40,7 @@ public class AuthenticationService {
     UserRepository userRepository;
     InvalidateTokenRepository invalidateTokenRepository;
     PasswordEncoder passwordEncoder;
+    RestaurantTableRepository tableRepository;
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -54,10 +54,10 @@ public class AuthenticationService {
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
 
-    public String generateToken(User user) {
+    private String generateToken(User user) {
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getUsername())
+                .subject(user.getEmail())
                 .issuer("FoodHub")
                 .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))
                 .issueTime(new Date())
@@ -77,11 +77,14 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        var user = userRepository.findByUsername(request.getUsername())
+        var user = userRepository.findByEmail(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        if (user.getStatus() == null || !user.getStatus().equals("ACTIVE")) {
+            throw new AppException(ErrorCode.USER_NOT_ACTIVE);
         }
         String token = generateToken(user);
         return AuthenticationResponse.builder()
@@ -161,5 +164,15 @@ public class AuthenticationService {
         return stringJoiner.toString();
     }
 
+    public AuthenticationResponse authenticateByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+        String token = generateToken(user); // ✅ Gọi lại chính method của class này
+
+        return AuthenticationResponse.builder()
+                .token(token)
+                .isAuthenticated(true)
+                .build();
+    }
 }

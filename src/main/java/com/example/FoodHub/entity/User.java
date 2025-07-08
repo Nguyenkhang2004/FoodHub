@@ -39,7 +39,7 @@ public class User {
     private String password;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_name", nullable = false)
     private Role roleName;
 
