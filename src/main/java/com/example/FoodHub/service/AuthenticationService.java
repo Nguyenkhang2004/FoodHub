@@ -94,28 +94,6 @@ public class AuthenticationService {
                 .build();
     }
 
-    private String generateScanQRToken(String tableNumber) {
-        JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(tableNumber)
-                .issuer("FoodHub")
-                .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))
-                .issueTime(new Date())
-                .jwtID(UUID.randomUUID().toString())
-                .claim("scope", "SCAN_QR")
-                .build();
-        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
-        JWSObject jwsObject = new JWSObject(jwsHeader, payload);
-        try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY));
-            return jwsObject.serialize();
-        } catch (JOSEException e) {
-            log.error("Error signing JWT for QR code: {}", e.getMessage());
-            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-
     public IntrospectResponse introspect(IntrospectRequest request) throws ParseException, JOSEException {
         String token = request.getToken();
         boolean isValid = true;

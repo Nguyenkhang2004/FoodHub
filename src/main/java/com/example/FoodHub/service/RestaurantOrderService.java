@@ -53,6 +53,7 @@ public class RestaurantOrderService {
     PayOSUtils payOSUtils;
     NotificationService notificationService;
     SimpMessagingTemplate messagingTemplate; // Thêm SimpMessagingTemplate
+    ScanQRService scanQRService;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -136,7 +137,10 @@ public class RestaurantOrderService {
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
 
         log.info("Creating new order for table: {}, type: {}", request.getTableId(), request.getOrderType());
-
+        if (request.getToken() != null && !scanQRService.isValidToken(request.getToken()).isValid()) {
+            log.warn("Token không hợp lệ: {}", request.getToken());
+            throw new AppException(ErrorCode.QR_CODE_INVALID);
+        }
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
 
         // gán User (nếu có)
@@ -152,6 +156,10 @@ public class RestaurantOrderService {
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
             if (!TableStatus.AVAILABLE.name().equals(table.getStatus())) {
                 throw new AppException(ErrorCode.TABLE_NOT_AVAILABLE);
+            }
+            if (request.getToken() != null && !table.getCurrentToken().equals(request.getToken())) {
+                log.warn("Token không khớp với bàn {}: {}", table.getTableNumber(), request.getToken());
+                throw new AppException(ErrorCode.INVALID_QR_TOKEN);
             }
             table.setStatus(TableStatus.OCCUPIED.name());
             order.setTable(table);
@@ -216,6 +224,10 @@ public class RestaurantOrderService {
 
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
+        if (request.getToken() != null && !scanQRService.isValidToken(request.getToken()).isValid()) {
+            log.warn("Token không hợp lệ: {}", request.getToken());
+            throw new AppException(ErrorCode.INVALID_QR_TOKEN);
+        }
         RestaurantOrder existingOrder = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
 
@@ -223,6 +235,15 @@ public class RestaurantOrderService {
         if (OrderStatus.CANCELLED.name().equals(existingOrder.getStatus())
                 || paymentRepository.existsByOrderIdAndStatus(orderId, PaymentStatus.PAID.name())) {
             throw new AppException(ErrorCode.ORDER_COMPLETED);
+        }
+
+        if (OrderType.DINE_IN.name().equals(existingOrder.getOrderType())) {
+            RestaurantTable table = tableRepository.findByIdWithLock(existingOrder.getTable().getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+            if (request.getToken() != null && !table.getCurrentToken().equals(request.getToken())) {
+                log.warn("Token không khớp với bàn {}: {}", table.getTableNumber(), request.getToken());
+                throw new AppException(ErrorCode.INVALID_QR_TOKEN);
+            }
         }
 
         if (request.getOrderType() != null) {

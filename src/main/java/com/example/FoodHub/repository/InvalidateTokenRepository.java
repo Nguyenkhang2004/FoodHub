@@ -18,5 +18,5 @@ public interface InvalidateTokenRepository extends JpaRepository<InvalidateToken
 //    boolean existsByJwtId(String jwtId);
     @Modifying
     @Query("DELETE FROM InvalidateToken i WHERE i.expiryTime < :now")
-    void deleteExpiredTokens(@Param("now") Instant now);
+    int deleteExpiredTokens(@Param("now") Instant now);
 }

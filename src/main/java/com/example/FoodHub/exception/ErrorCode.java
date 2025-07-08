@@ -113,8 +113,9 @@ public enum ErrorCode {
     TABLE_OCCUPIED_CANNOT_DELETE(1043, "Table is occupied and cannot be deleted", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED_ACCESS(1043, "Invalid token", HttpStatus.UNAUTHORIZED),
     CHAT_MESSAGES_NOT_FOUND(1044, "Chat messages not found for the given table", HttpStatus.NOT_FOUND),
-    ;
-
+    ORDER_NOT_MODIFIABLE(1060, "Order cannot be modified in its current state", HttpStatus.BAD_REQUEST),
+    TOKEN_INVALIDATION_FAILED(1066, "Error when token invalidated, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
+    TABLE_ALREADY_IN_USE(1067, "Table is already in use by another guest", HttpStatus.BAD_REQUEST);
     private int code;
     private String message;
     private HttpStatusCode statusCode;

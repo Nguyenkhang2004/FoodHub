@@ -12,5 +12,6 @@ import java.time.Instant;
 public class ScanQRResponse {
     String token;
     String tableNumber;
+    Integer orderId; // ID đơn hàng (nếu có)
     Instant expiryTime;
 }

@@ -36,7 +36,8 @@ public class SecurityConfig {
             "/auth/forgot-password/send-otp",
             "/auth/verify-otp",
             "/auth/send-otp",
-            "/scan",
+            "/qr",
+            "/qr/**",
             "/api/gemini/**",
             "/api/feedback/**"
     };
@@ -45,7 +46,7 @@ public class SecurityConfig {
             "/menu", "/menu/**",
             "/restaurants", "/restaurants/**",
             "/dishes", "/dishes/**",
-            "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
+            "/menu-items", "/menu-items/**", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
             "/images/**","/users/my-info"
     };
 
