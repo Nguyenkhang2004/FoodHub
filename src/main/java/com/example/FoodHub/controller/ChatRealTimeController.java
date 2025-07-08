@@ -25,11 +25,19 @@ public class ChatRealTimeController {
 
     @MessageMapping("/chat/table/{tableNumber}")
     public void chat(@DestinationVariable String tableNumber, @Payload ChatMessageRequest request) {
-        chatService.sendMessage(tableNumber, request);
+        try{
+            log.info("Received chat message for table in controller: {}, sender: {}, message: {}", tableNumber, request.getSender(), request.getMessage());
+            chatService.sendMessage(tableNumber, request);
+        }catch (Exception e) {
+            log.error("Error processing chat message for table {}: {}", tableNumber, e.getMessage());
+            // Handle the error appropriately, e.g., send an error response back to the client
+        }
+
     }
 
     @GetMapping("/chat/messages/table/{tableNumber}")
     public ResponseEntity<List<ChatMessageResponse>> getChatMessages(@PathVariable String tableNumber) {
+        log.info("Fetching chat messages for table: {}", tableNumber);
         List<ChatMessageResponse> messages = chatService.getChatMessagesByTableNumber(tableNumber);
         return ResponseEntity.ok(messages);
     }

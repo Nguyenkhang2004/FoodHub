@@ -61,28 +61,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())
-                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()) // 👈 Xử lý lỗi 401
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                 );
 
         return http.build();
     }
-
-
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                .authorizeHttpRequests(auth -> auth
-//                        .anyRequest().permitAll() // Cho phép tất cả các request
-//                )
-//                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF nếu là REST API
-//                .oauth2ResourceServer(AbstractHttpConfigurer::disable); // Vô hiệu hóa OAuth2 Resource Server nếu không dùng
-//
-//        return http.build();
-//    }
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {

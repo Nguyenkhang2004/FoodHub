@@ -5,6 +5,7 @@ import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
+import com.example.FoodHub.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -35,7 +36,7 @@ public class ApplicationInitConfig {
                                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED)))
                         .email("admin@foodhub.com") // REQUIRED if `@NotNull`
                         .status("ACTIVE")           // REQUIRED if `@NotNull`
-                        .registrationDate(Instant.now()) // REQUIRED if `@NotNull`
+                        .registrationDate(TimeUtils.getNowInVietNam()) // REQUIRED if `@NotNull`
                         .isAuthUser(false)         // Optional (default is already false)
                         .build();
                 userRepository.save(user);

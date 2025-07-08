@@ -10,7 +10,6 @@ import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.OtpVerificationRepository;
 import com.example.FoodHub.repository.RoleRepository;
 import com.example.FoodHub.repository.UserRepository;
-import com.example.FoodHub.util.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

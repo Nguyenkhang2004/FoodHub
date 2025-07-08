@@ -3,14 +3,11 @@ package com.example.FoodHub.exception;
 import com.example.FoodHub.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.expression.AccessException;
-
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
@@ -34,8 +31,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponse);
     }
 
-    @ExceptionHandler(AccessException.class)
-    ResponseEntity<ApiResponse> handleAccessException(AccessException e) {
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ApiResponse> handleAccessDeniedException(AccessDeniedException e) {
         ApiResponse apiResponse = new ApiResponse<>();
         apiResponse.setMessage(ErrorCode.UNAUTHORIZED.getMessage() + " : " + e.getMessage());
         apiResponse.setCode(ErrorCode.UNAUTHORIZED.getCode());

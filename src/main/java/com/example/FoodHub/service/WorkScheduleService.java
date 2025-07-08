@@ -13,6 +13,7 @@ import com.example.FoodHub.repository.WorkScheduleRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -145,6 +146,7 @@ public class WorkScheduleService {
         return dto;
     }
 
+    @PreAuthorize("hasAuthority('VIEW_WORK_SCHEDULE')")
     public ShiftResponse getMyWorkScheduleToday() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -156,6 +158,7 @@ public class WorkScheduleService {
         return workScheduleMapper.toShiftResponse(schedule, schedule.getWorkDate());
     }
 
+    @PreAuthorize("hasAuthority('VIEW_WORK_SCHEDULE')")
     public List<ShiftResponse> getMyWorkSchedule() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)

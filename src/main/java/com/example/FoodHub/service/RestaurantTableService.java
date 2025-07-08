@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,7 +57,8 @@ public class RestaurantTableService {
         return tableMapper.toRestaurantTableResponse(table);
     }
 
-
+    @PreAuthorize("hasAuthority('ASSIGN_TABLE')")
+    @Transactional
     public RestaurantTableResponse updateTableStatus (Integer tableId, String status) {
         log.info("Updating table status for table ID: {} to {}", tableId, status);
         var table = tableRepository.findById(tableId)

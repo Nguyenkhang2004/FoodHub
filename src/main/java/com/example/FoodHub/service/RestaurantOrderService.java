@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
@@ -74,6 +75,7 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
+    @PreAuthorize("hasRole('WAITER')")
     public Page<RestaurantOrderResponse> getWaiterWorkShiftOrders(
             String area,
             String status,
@@ -95,6 +97,7 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
+    @PreAuthorize("hasRole('CHEF')")
     public Page<RestaurantOrderResponse> getChefWorkShiftOrders(
             String status,
             String tableNumber,
@@ -116,6 +119,7 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
+    @PreAuthorize("hasAuthority('VIEW_ORDER')")
     public RestaurantOrderResponse getCurrentOrdersByTableId(Integer tableId) {
         log.info("Fetching orders for table ID: {}", tableId);
         List<String> statuses = List.of(OrderStatus.PENDING.name(), OrderStatus.CONFIRMED.name(), OrderStatus.COMPLETED.name());
@@ -124,13 +128,15 @@ public class RestaurantOrderService {
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
-
+    @PreAuthorize("hasAuthority('VIEW_ORDER')")
     public RestaurantOrderResponse getOrdersByOrderId(Integer id) {
         log.info("Fetching orders for order ID: {}", id);
         return orderRepository.findById(id)
                 .map(orderMapper::toRestaurantOrderResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
     }
+
+    @PreAuthorize("hasAuthority('CREATE_ORDER')")
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
         log.info("Creating new order for table: {}", request.getTableId());
@@ -192,6 +198,7 @@ public class RestaurantOrderService {
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
+    @PreAuthorize("hasAuthority('PROCESS_PAYMENT')")
     private Payment createPaymentForOrder(RestaurantOrder order, PaymentRequest paymentRequest) {
         Payment payment = paymentMapper.toPayment(paymentRequest);
         payment.setOrder(order);
@@ -210,6 +217,7 @@ public class RestaurantOrderService {
         return paymentRepository.save(payment);
     }
 
+    @PreAuthorize("hasAuthority('ADD_NEW_ITEMS')")
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
         // 1. Tìm order hiện tại
@@ -284,7 +292,7 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         existingOrder.setTotalAmount(totalAmount);
         existingOrder.setOrderItems(currentOrderItems);
-        existingOrder.setUpdatedAt(Instant.now());
+        existingOrder.setUpdatedAt(TimeUtils.getNowInVietNam());
 
         // 7. Save order
         RestaurantOrder savedOrder = orderRepository.save(existingOrder);
@@ -302,7 +310,8 @@ public class RestaurantOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Helper method to update order status
+    @PreAuthorize("hasAuthority('UPDATE_ORDER_STATUS')")
+    @Transactional
     public RestaurantOrderResponse updateOrderStatus(Integer orderId, String newStatus, String note) {
         log.info("Updating order status. Order ID: {}, New Status: {}, note: {}", orderId, newStatus, note);
 
@@ -325,7 +334,7 @@ public class RestaurantOrderService {
             if (payment != null && !PaymentStatus.PAID.name().equals(payment.getStatus())) {
                 log.info("Cancelling payment for order ID: {}", orderId);
                 payment.setStatus(PaymentStatus.CANCELLED.name());
-                payment.setUpdatedAt(Instant.now());
+                payment.setUpdatedAt(TimeUtils.getNowInVietNam());
                 paymentRepository.save(payment);
             }
         }
@@ -360,6 +369,7 @@ public class RestaurantOrderService {
         return orderMapper.toRestaurantOrderResponse(savedOrder);
     }
 
+    @PreAuthorize("hasAuthority('UPDATE_ORDER_STATUS')")
     @Transactional
     public RestaurantOrderResponse updateOrderItemStatus(Integer orderItemId, String newStatus, String note) {
         log.info("Updating order item status. Order Item ID: {}, New Status: {}", orderItemId, newStatus);
