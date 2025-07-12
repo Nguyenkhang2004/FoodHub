@@ -115,6 +115,9 @@ public enum ErrorCode {
     WORK_SHIFT_LOG_NOT_FOUND(1045, "Work shift log not found", HttpStatus.NOT_FOUND),
     CHECKIN_TOO_EARLY(1046, "Không được check-in sớm quá 30 phút", HttpStatus.BAD_REQUEST),
     CHECKIN_TOO_LATE(1047, "Không thể check-in khi ca làm đã kết thúc", HttpStatus.BAD_REQUEST),
+    USER_NOT_CHECKED_IN(1048, "Bạn chưa chấm công vào ca", HttpStatus.BAD_REQUEST),
+    WORK_SHIFT_LOG_ALREADY_CHECK_IN(1049, "Bạn đã chấm công vào ca làm này rồi", HttpStatus.BAD_REQUEST),
+    WORK_SHIFT_LOG_ALREADY_CHECK_OUT(1050, "Bạn đã chấm công ra khỏi ca làm này rồi", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;

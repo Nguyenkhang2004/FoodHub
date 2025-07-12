@@ -8,6 +8,7 @@ import com.example.FoodHub.dto.response.PaymentResponse;
 import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.entity.*;
 import com.example.FoodHub.enums.*;
+import com.example.FoodHub.enums.Role;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.PaymentMapper;
@@ -24,6 +25,9 @@ import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
@@ -54,6 +58,8 @@ public class RestaurantOrderService {
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
     NotificationService notificationService;
+    WorkShiftLogRepository workShiftLogRepository;
+    WorkScheduleRepository workScheduleRepository;
 
     public Page<RestaurantOrderResponse> getAllOrders(
             String status, String tableNumber, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
@@ -77,19 +83,23 @@ public class RestaurantOrderService {
 
     @PreAuthorize("hasRole('WAITER')")
     public Page<RestaurantOrderResponse> getWaiterWorkShiftOrders(
-            String area,
             String status,
             String tableNumber,
-            Instant startTime,
+            Integer userId,
             Pageable pageable) {
 
-        log.info("Fetching orders for area: {}, status: {}, tableId: {}, startTime: {}",
-                area, status, tableNumber, startTime);
-
+        log.info("Fetching orders for status: {}, tableId: {}, userId: {}",
+                status, tableNumber, userId);
+        WorkShiftLog existingWorkShiftLog = validateUserCheckedInToday(userId);
+        Instant startTime = existingWorkShiftLog.getCheckInTime();
+        Instant endTime = existingWorkShiftLog.getCheckOutTime();
+        log.info("Waiter work shift time range: startTime: {}, endTime: {}",
+                startTime, endTime);
+        String area = existingWorkShiftLog.getWorkSchedule().getArea();
         // Use OrderSpecifications to filter orders
         Page<RestaurantOrder> orders = orderRepository.findAll(
                 OrderSpecifications.filterWaiterOrders(
-                        status, tableNumber, area, startTime
+                        status, tableNumber, area, startTime, endTime
                 ),
                 pageable
         );
@@ -97,21 +107,36 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
+    private WorkShiftLog validateUserCheckedInToday(Integer userId) {
+        WorkSchedule workSchedule = workScheduleRepository.findCurrentWorkShift(userId, LocalDate.now(), LocalTime.now())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
+        WorkShiftLog log = workShiftLogRepository.findByUserIdAndWorkScheduleId(userId, workSchedule.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SHIFT_LOG_NOT_FOUND));
+        if(log.getCheckInTime() == null) {
+            throw new AppException(ErrorCode.USER_NOT_CHECKED_IN);
+        }
+        return log;
+    }
+
     @PreAuthorize("hasRole('CHEF')")
     public Page<RestaurantOrderResponse> getChefWorkShiftOrders(
             String status,
             String tableNumber,
-            Instant startTime,
+            Integer userId,
             Pageable pageable) {
 
-        log.info("Fetching orders for status: {}, tableId: {}, startTime: {}",
-                status, tableNumber, startTime);
+        log.info("Fetching orders for status: {}, tableId: {}, userId: {}",
+                status, tableNumber, userId);
+        WorkShiftLog existingWorkShiftLog = validateUserCheckedInToday(userId);
+        Instant startTime = existingWorkShiftLog.getCheckInTime();
+        Instant endTime = existingWorkShiftLog.getCheckOutTime();
 
-
+        log.info("Chef work shift time range: startTime: {}, endTime: {}",
+                startTime, endTime);
         // Use OrderSpecifications to filter orders
         Page<RestaurantOrder> orders = orderRepository.findAll(
                 OrderSpecifications.filterChefOrders(
-                        status, tableNumber, startTime
+                        status, tableNumber, startTime, endTime
                 ),
                 pageable
         );
@@ -121,6 +146,15 @@ public class RestaurantOrderService {
 
     @PreAuthorize("hasAuthority('VIEW_ORDER')")
     public RestaurantOrderResponse getCurrentOrdersByTableId(Integer tableId) {
+        Integer userId;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            userId = ((Number) jwtAuth.getToken().getClaim("id")).intValue();
+            log.info("Creating order for authenticated user ID: {}", userId);
+            validateUserIsWorking(userId);
+        } else {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
         log.info("Fetching orders for table ID: {}", tableId);
         List<String> statuses = List.of(OrderStatus.PENDING.name(), OrderStatus.CONFIRMED.name(), OrderStatus.COMPLETED.name());
         RestaurantOrder order = orderRepository.findFirstByTableIdAndStatusInOrderByCreatedAtDesc(tableId, statuses).orElseThrow(
@@ -136,10 +170,50 @@ public class RestaurantOrderService {
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
     }
 
+    private void validateUserIsWorking(Integer userId) {
+        log.info("Validating if user {} is currently working", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        log.info("User {} found with role: {}", userId, user.getRoleName());
+        // Chỉ kiểm tra với Waiter và Chef
+        if (Role.WAITER.name().equals(user.getRoleName().getName())
+                || Role.CHEF.name().equals(user.getRoleName().getName())) {
+
+            LocalDate today = LocalDate.now();
+            LocalTime now = LocalTime.now();
+
+            WorkSchedule workSchedule = workScheduleRepository
+                    .findCurrentWorkShift(userId, today, now)
+                    .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
+            log.info("User {} is working on schedule: {}", userId, workSchedule);
+
+            boolean isCheckedIn = workShiftLogRepository
+                    .existsByUserIdAndWorkScheduleId(userId, workSchedule.getId());
+
+            log.info("User {} checked in status: {}", userId, isCheckedIn);
+
+            if (!isCheckedIn) {
+                throw new AppException(ErrorCode.USER_NOT_CHECKED_IN);
+            }
+        }
+    }
+
+
     @PreAuthorize("hasAuthority('CREATE_ORDER')")
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
-        log.info("Creating new order for table: {}", request.getTableId());
+        log.info("Creating new order for table: {}, user id: {}", request.getTableId(), request.getUserId());
+        if (request.getUserId() == null) {
+            Integer userId;
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth instanceof JwtAuthenticationToken jwtAuth) {
+                userId = ((Number) jwtAuth.getToken().getClaim("id")).intValue();
+                log.info("Creating order for authenticated user ID: {}", userId);
+                validateUserIsWorking(userId);
+            } else {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+        }
         RestaurantOrder order = orderMapper.toRestaurantOrder(request);
 
         if (request.getUserId() != null) {
@@ -220,6 +294,17 @@ public class RestaurantOrderService {
     @PreAuthorize("hasAuthority('ADD_NEW_ITEMS')")
     @Transactional
     public RestaurantOrderResponse addItemsToOrder(Integer orderId, RestaurantOrderRequest request) {
+        if (request.getUserId() == null) {
+            Integer userId;
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth instanceof JwtAuthenticationToken jwtAuth) {
+                userId = ((Number) jwtAuth.getToken().getClaim("id")).intValue();
+                log.info("Creating order for authenticated user ID: {}", userId);
+                validateUserIsWorking(userId);
+            } else {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+        }
         // 1. Tìm order hiện tại
         RestaurantOrder existingOrder = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
@@ -315,6 +400,16 @@ public class RestaurantOrderService {
     public RestaurantOrderResponse updateOrderStatus(Integer orderId, String newStatus, String note) {
         log.info("Updating order status. Order ID: {}, New Status: {}, note: {}", orderId, newStatus, note);
 
+        Integer userId;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            userId = ((Number) jwtAuth.getToken().getClaim("id")).intValue();
+            log.info("Creating order for authenticated user ID: {}", userId);
+            validateUserIsWorking(userId);
+        } else {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
         // Lock the order to prevent concurrent modifications
         RestaurantOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
@@ -359,11 +454,11 @@ public class RestaurantOrderService {
         order.setUpdatedAt(TimeUtils.getNowInVietNam());
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
-        if(OrderStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
+        if (OrderStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
             order.setNote(note);
         }
         RestaurantOrder savedOrder = orderRepository.save(order);
-        if(newStatus.equals(OrderStatus.READY.name())) {
+        if (newStatus.equals(OrderStatus.READY.name())) {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_READY.name());
         }
         return orderMapper.toRestaurantOrderResponse(savedOrder);
@@ -373,7 +468,15 @@ public class RestaurantOrderService {
     @Transactional
     public RestaurantOrderResponse updateOrderItemStatus(Integer orderItemId, String newStatus, String note) {
         log.info("Updating order item status. Order Item ID: {}, New Status: {}", orderItemId, newStatus);
-
+        Integer userId;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            userId = ((Number) jwtAuth.getToken().getClaim("id")).intValue();
+            log.info("Creating order for authenticated user ID: {}", userId);
+            validateUserIsWorking(userId);
+        } else {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
         // Lock the order to prevent concurrent modifications
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_ITEM_NOT_EXISTED));
@@ -383,7 +486,7 @@ public class RestaurantOrderService {
         // Validate status transition for the order item
         validateStatusTransition(orderItem.getStatus(), newStatus);
         orderItem.setStatus(newStatus);
-        if(OrderItemStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
+        if (OrderItemStatus.CANCELLED.name().equals(newStatus) && note != null && !note.isEmpty()) {
             orderItem.setNote(note);
         }
         orderItemRepository.save(orderItem);
@@ -395,7 +498,7 @@ public class RestaurantOrderService {
         // Update order status based on order items
         updateOrderStatusBasedOnItems(order);
         RestaurantOrder savedOrder = orderRepository.save(order);
-        if(newStatus.equals(OrderStatus.READY.name())) {
+        if (newStatus.equals(OrderStatus.READY.name())) {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_READY.name());
         }
         return orderMapper.toRestaurantOrderResponse(savedOrder);

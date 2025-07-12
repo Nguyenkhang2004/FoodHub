@@ -1,7 +1,6 @@
 package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.ChatMessageRequest;
-import com.example.FoodHub.dto.request.ChatRequest;
 import com.example.FoodHub.dto.response.ChatMessageResponse;
 import com.example.FoodHub.service.ChatService;
 import lombok.RequiredArgsConstructor;

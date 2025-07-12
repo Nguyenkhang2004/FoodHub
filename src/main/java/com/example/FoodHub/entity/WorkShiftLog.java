@@ -28,11 +28,6 @@ public class WorkShiftLog {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "work_schedule_id")
-    private WorkSchedule workSchedule;
-
     @NotNull
     @Column(name = "check_in_time", nullable = false)
     private Instant checkInTime;
@@ -43,5 +38,11 @@ public class WorkShiftLog {
     @ColumnDefault("'ON_TIME'")
     @Column(name = "status")
     private String status;
+
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "work_schedule_id", nullable = false)
+    private WorkSchedule workSchedule;
 
 }

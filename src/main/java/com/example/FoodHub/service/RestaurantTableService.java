@@ -2,11 +2,15 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.RestaurantTableRequest;
 import com.example.FoodHub.dto.response.RestaurantTableResponse;
+import com.example.FoodHub.entity.WorkSchedule;
+import com.example.FoodHub.entity.WorkShiftLog;
 import com.example.FoodHub.enums.TableStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.RestaurantTableMapper;
 import com.example.FoodHub.repository.RestaurantTableRepository;
+import com.example.FoodHub.repository.WorkScheduleRepository;
+import com.example.FoodHub.repository.WorkShiftLogRepository;
 import com.example.FoodHub.specification.TableSpecifications;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +21,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +33,8 @@ import java.util.List;
 public class RestaurantTableService {
     RestaurantTableRepository tableRepository;
     RestaurantTableMapper tableMapper;
+    WorkShiftLogRepository workShiftLogRepository;
+    WorkScheduleRepository workScheduleRepository;
 
     public List<RestaurantTableResponse> getAllTables(
             String tableNumber, String status, String area, String orderBy, String sort) {
@@ -70,5 +78,19 @@ public class RestaurantTableService {
         table.setStatus(status);
         tableRepository.save(table);
         return tableMapper.toRestaurantTableResponse(table);
+    }
+
+    public List<RestaurantTableResponse> getTablesByWaiterId(Integer waiterId) {
+        log.info("Fetching tables assigned to waiter with ID: {}", waiterId);
+        WorkSchedule currentSchedule = workScheduleRepository.findCurrentWorkShift(waiterId, LocalDate.now(), LocalTime.now())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
+        WorkShiftLog currentShiftLog = workShiftLogRepository.findByWorkScheduleId(currentSchedule.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORK_SHIFT_LOG_NOT_FOUND));
+        if(currentShiftLog.getCheckInTime() == null) {
+            throw new AppException(ErrorCode.USER_NOT_CHECKED_IN);
+        }
+        return tableRepository.findByArea(currentSchedule.getArea()).stream()
+                .map(tableMapper::toRestaurantTableResponse)
+                .toList();
     }
 }

@@ -35,6 +35,15 @@ public class TableController {
         return ResponseEntity.ok().body(response);
     }
 
+    @GetMapping("waiter/{waiterId}")
+    public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getTablesByWaiterId(@PathVariable Integer waiterId) {
+        List<RestaurantTableResponse> tables = tableService.getTablesByWaiterId(waiterId);
+        ApiResponse<List<RestaurantTableResponse>> response = ApiResponse.<List<RestaurantTableResponse>>builder()
+                .result(tables)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
     @GetMapping("/status/{status}")
     public ResponseEntity<ApiResponse<List<RestaurantTableResponse>>> getTablesByStatus(@PathVariable String status) {
         List<RestaurantTableResponse> tables = tableService.getTablesByStatus(status);

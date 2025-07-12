@@ -32,4 +32,6 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Inte
 
     List<WorkSchedule> findAllByWorkDateAndShiftType(LocalDate workDate, String shiftType);
 
+    List<WorkSchedule> findByUserIdAndWorkDate(Integer userId, LocalDate workDate);
+
 }

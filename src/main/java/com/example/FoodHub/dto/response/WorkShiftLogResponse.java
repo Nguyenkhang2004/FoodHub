@@ -14,6 +14,7 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WorkShiftLogResponse {
     Integer id;
+    Instant workScheduleDate;
     Instant checkInTime;
     Instant checkOutTime;
     String status; // ON_TIME, LATE, LEFT_EARLY, ABSENT, UNSCHEDULED
