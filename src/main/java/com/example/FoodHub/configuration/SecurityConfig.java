@@ -43,7 +43,10 @@ public class SecurityConfig {
                                 "/menu", "/menu/**",
                                 "/restaurants", "/restaurants/**",
                                 "/dishes", "/dishes/**",
-                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**"
+                                "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
+                                "/invoices/**" // ✅ Thêm dòng này
+
+
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST,

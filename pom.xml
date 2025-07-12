@@ -159,15 +159,15 @@
 			<version>2.2.0</version>
 		</dependency>
 
-		<!-- iText 7 Core dependencies -->
+
+
+<!--	===================================================	-->
+		<!-- duy thêm 3 cái <dependency> này iText 7 Core dependencies -->
 		<dependency>
 			<groupId>com.itextpdf</groupId>
 			<artifactId>kernel</artifactId>
 			<version>7.2.5</version>
 		</dependency>
-
-
-
 
 		<dependency>
 			<groupId>com.itextpdf</groupId>
@@ -180,7 +180,7 @@
 			<artifactId>io</artifactId>
 			<version>7.2.5</version>
 		</dependency>
-
+<!--=========================================================-->
 
 
 
