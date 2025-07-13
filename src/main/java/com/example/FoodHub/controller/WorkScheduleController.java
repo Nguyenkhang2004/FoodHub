@@ -1,20 +1,24 @@
 package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.ShiftRequest;
+import com.example.FoodHub.dto.request.WorkShiftLogRequest;
 import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.ShiftResponse;
 import com.example.FoodHub.dto.response.EmployeeWorkResponse;
+import com.example.FoodHub.dto.response.WorkShiftLogResponse;
 import com.example.FoodHub.service.WorkScheduleService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+@Slf4j
 @CrossOrigin(origins = "http://127.0.0.1:5500")
 @RestController
 @RequestMapping("/shifts")
@@ -80,14 +84,71 @@ public class WorkScheduleController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/my-work-shift/today")
+    public ResponseEntity<ApiResponse<List<ShiftResponse>>> getMyWorkShiftToday() {
+        List<ShiftResponse> shifts = workScheduleService.getMyWorkShiftToday();
+        ApiResponse<List<ShiftResponse>> response = ApiResponse.<List<ShiftResponse>>builder()
+                .code(1000)
+                .message("Lấy ca làm việc hôm nay thành công")
+                .result(shifts)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/my-work-schedule")
     public ResponseEntity<ApiResponse<List<ShiftResponse>>> getMyWorkSchedule(
             @RequestParam(required = false) String date) {
         List<ShiftResponse> shifts = workScheduleService.getMyWorkSchedule();
         ApiResponse<List<ShiftResponse>> response = ApiResponse.<List<ShiftResponse>>builder()
                 .code(1000)
-                .message("Work schedule retrieved successfully")
+                .message("Lấy ca làm việc thành công")
                 .result(shifts)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/check-in")
+    public ResponseEntity<ApiResponse<WorkShiftLogResponse>> checkIn(@RequestBody WorkShiftLogRequest request) {
+        log.info("Processing check-in request: {}", request);
+        WorkShiftLogResponse workShiftLogResponse = workScheduleService.checkIn(request);
+        ApiResponse<WorkShiftLogResponse> response = ApiResponse.<WorkShiftLogResponse>builder()
+                .code(1000)
+                .message("Check-in thành công")
+                .result(workShiftLogResponse)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/check-out")
+    public ResponseEntity<ApiResponse<WorkShiftLogResponse>> checkOut(@RequestBody WorkShiftLogRequest request) {
+        WorkShiftLogResponse workShiftLogResponse = workScheduleService.checkOut(request);
+        ApiResponse<WorkShiftLogResponse> response = ApiResponse.<WorkShiftLogResponse>builder()
+                .code(1000)
+                .message("Check-out thành công")
+                .result(workShiftLogResponse)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/work-shift-log/work-schedule/{workScheduleId}")
+    public ResponseEntity<ApiResponse<WorkShiftLogResponse>> getWorkShiftLogsByScheduleId(
+            @PathVariable Integer workScheduleId) {
+        WorkShiftLogResponse log = workScheduleService.getWorkShiftLogByWorkScheduleId(workScheduleId);
+        ApiResponse<WorkShiftLogResponse> response = ApiResponse.<WorkShiftLogResponse>builder()
+                .code(1000)
+                .message("Lấy nhật ký ca làm việc thành công")
+                .result(log)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/my-work-shift-log")
+    public ResponseEntity<ApiResponse<List<WorkShiftLogResponse>>> getMyWorkShiftLogs() {
+        List<WorkShiftLogResponse> logs = workScheduleService.getMyWorkShiftLogs();
+        ApiResponse<List<WorkShiftLogResponse>> response = ApiResponse.<List<WorkShiftLogResponse>>builder()
+                .code(1000)
+                .message("Lấy nhật ký ca làm việc thành công")
+                .result(logs)
                 .build();
         return ResponseEntity.ok(response);
     }

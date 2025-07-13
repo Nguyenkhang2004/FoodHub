@@ -25,7 +25,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
@@ -96,6 +98,8 @@ public class PaymentService {
 //        return mapToPaymentResponse(payment);
 //    }
 
+    @PreAuthorize("hasAuthority('PROCESS_PAYMENT')")
+    @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
         log.info("Creating payment for order ID: {}", request.getOrderId());
 
@@ -117,7 +121,7 @@ public class PaymentService {
             if (PaymentStatus.PENDING.name().equals(payment.getStatus()) &&
                     request.getPaymentMethod().equals(PaymentMethod.BANKING.name()) &&
                     payment.getCreatedAt() != null &&
-                    Duration.between(payment.getCreatedAt(), Instant.now()).toMinutes() < 10) {
+                    Duration.between(payment.getCreatedAt(), TimeUtils.getNowInVietNam()).toMinutes() < 10) {
                 // Re-use existing paymentUrl if still within 10-minute window
                 log.info("Re-using existing payment for order ID: {}", request.getOrderId());
                 return paymentMapper.toPaymentResponse(payment);
@@ -135,7 +139,7 @@ public class PaymentService {
         payment.setStatus(request.getPaymentMethod().equals(PaymentMethod.BANKING.name())
                 ? PaymentStatus.PENDING.name()
                 : PaymentStatus.UNPAID.name());
-        payment.setCreatedAt(Instant.now());
+        payment.setCreatedAt(TimeUtils.getNowInVietNam());
 
         if (request.getPaymentMethod().equals(PaymentMethod.BANKING.name())) {
             String paymentUrl = payOSUtils.generatePaymentUrl(payment);
@@ -156,7 +160,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(newStatus);
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(TimeUtils.getNowInVietNam());
         paymentRepository.save(payment);
         return paymentMapper.toPaymentResponse(payment);
     }
@@ -171,7 +175,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(request.getOrderCode())
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(finalStatus);
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(TimeUtils.getNowInVietNam());
         paymentRepository.save(payment);
         if(PaymentStatus.PAID.name().equals(finalStatus)) {
             notificationService.notifyOrderEvent(payment.getOrder(), NotificationType.BANKING_COMPLETED.name());

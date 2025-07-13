@@ -28,5 +28,19 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Inte
             @Param("today") LocalDate today,
             @Param("now") LocalTime now);
 
+    @Query("SELECT w FROM WorkSchedule w " +
+            "WHERE w.user.id = :userId " +
+            "AND w.workDate = :today " +
+            "ORDER BY w.startTime ASC")
+    List<WorkSchedule> findAllTodaySchedules(
+            @Param("userId") Integer userId,
+            @Param("today") LocalDate today);
+
+
     List<WorkSchedule> findByUserId(Integer userId);
+
+    List<WorkSchedule> findAllByWorkDateAndShiftType(LocalDate workDate, String shiftType);
+
+    List<WorkSchedule> findByUserIdAndWorkDate(Integer userId, LocalDate workDate);
+
 }

@@ -115,7 +115,15 @@ public enum ErrorCode {
     CHAT_MESSAGES_NOT_FOUND(1044, "Chat messages not found for the given table", HttpStatus.NOT_FOUND),
     ORDER_NOT_MODIFIABLE(1060, "Order cannot be modified in its current state", HttpStatus.BAD_REQUEST),
     TOKEN_INVALIDATION_FAILED(1066, "Error when token invalidated, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
-    TABLE_ALREADY_IN_USE(1067, "Table is already in use by another guest", HttpStatus.BAD_REQUEST);
+    TABLE_ALREADY_IN_USE(1067, "Table is already in use by another guest", HttpStatus.BAD_REQUEST),
+    WORK_SHIFT_LOG_NOT_FOUND(1045, "Work shift log not found", HttpStatus.NOT_FOUND),
+    CHECKIN_TOO_EARLY(1046, "Không được check-in sớm quá 30 phút", HttpStatus.BAD_REQUEST),
+    CHECKIN_TOO_LATE(1047, "Không thể check-in khi ca làm đã kết thúc", HttpStatus.BAD_REQUEST),
+    USER_NOT_CHECKED_IN(1048, "Bạn chưa chấm công vào ca", HttpStatus.BAD_REQUEST),
+    WORK_SHIFT_LOG_ALREADY_CHECK_IN(1049, "Bạn đã chấm công vào ca làm này rồi", HttpStatus.BAD_REQUEST),
+    WORK_SHIFT_LOG_ALREADY_CHECK_OUT(1050, "Bạn đã chấm công ra khỏi ca làm này rồi", HttpStatus.BAD_REQUEST),
+    ;
+
     private int code;
     private String message;
     private HttpStatusCode statusCode;

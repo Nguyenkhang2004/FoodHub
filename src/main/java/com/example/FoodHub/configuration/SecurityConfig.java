@@ -16,6 +16,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -46,8 +51,8 @@ public class SecurityConfig {
             "/menu", "/menu/**",
             "/restaurants", "/restaurants/**",
             "/dishes", "/dishes/**",
-            "/menu-items", "/menu-items/**", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
-            "/images/**","/users/my-info"
+            "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
+            "/images/**"
     };
 
 
@@ -60,12 +65,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
-                        .requestMatchers("/oauth2/**", "/ws/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())
-                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()) // 👈 Xử lý lỗi 401
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
@@ -73,19 +78,6 @@ public class SecurityConfig {
                 );
         return http.build();
     }
-
-
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                .authorizeHttpRequests(auth -> auth
-//                        .anyRequest().permitAll() // Cho phép tất cả các request
-//                )
-//                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF nếu là REST API
-//                .oauth2ResourceServer(AbstractHttpConfigurer::disable); // Vô hiệu hóa OAuth2 Resource Server nếu không dùng
-//
-//        return http.build();
-//    }
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {

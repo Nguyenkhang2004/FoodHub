@@ -5,6 +5,7 @@ import com.example.FoodHub.enums.OrderStatus;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
@@ -12,8 +13,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-public final class OrderSpecifications {
+@Slf4j
+public class OrderSpecifications {
     public static Specification<RestaurantOrder> filterOrders(
             String status, Integer tableId) {
         return (root, query, cb) -> {
@@ -47,7 +48,7 @@ public final class OrderSpecifications {
 
     // Hàm base - giữ nguyên
     public static Specification<RestaurantOrder> filterWorkShiftOrders(
-            String status, String tableNumber, Instant startTime) {
+            String status, String tableNumber, Instant startTime, Instant endTime) {
 
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -61,30 +62,47 @@ public final class OrderSpecifications {
             }
 
             if (startTime != null) {
-                // createdAt >= startTime OR updatedAt >= startTime
-                Predicate afterStartTimeCondition = cb.or(
-                        cb.greaterThanOrEqualTo(root.get("createdAt"), startTime),
-                        cb.greaterThanOrEqualTo(root.get("updatedAt"), startTime)
-                );
-
-                // createdAt < startTime AND updatedAt < startTime
-                Predicate beforeStartTimeCondition = cb.and(
+                // Điều kiện 1: Đơn hàng chưa hoàn thành có thời gian tạo hoặc update trước startTime
+                Predicate beforeStartTimeCondition = cb.or(
                         cb.lessThan(root.get("createdAt"), startTime),
                         cb.lessThan(root.get("updatedAt"), startTime)
                 );
 
-                // status NOT IN ('CANCELLED', 'COMPLETED')
                 Predicate unfinishedCondition = cb.not(root.get("status").in(
                         OrderStatus.CANCELLED.name(),
                         OrderStatus.COMPLETED.name()
                 ));
 
-                // unfinished orders that were last updated before the shift
                 Predicate unfinishedBeforeStartTime = cb.and(beforeStartTimeCondition, unfinishedCondition);
 
-                predicates.add(cb.or(afterStartTimeCondition, unfinishedBeforeStartTime));
+                // Điều kiện 2: Tất cả đơn hàng có thời gian tạo hoặc update trong khoảng startTime - endTime
+                Predicate withinTimeRangeCondition;
+                if (endTime != null) {
+                    // Có endTime: lấy đơn hàng trong khoảng [startTime, endTime]
+                    withinTimeRangeCondition = cb.or(
+                            cb.and(
+                                    cb.greaterThanOrEqualTo(root.get("createdAt"), startTime),
+                                    cb.lessThanOrEqualTo(root.get("createdAt"), endTime)
+                            ),
+                            cb.and(
+                                    cb.greaterThanOrEqualTo(root.get("updatedAt"), startTime),
+                                    cb.lessThanOrEqualTo(root.get("updatedAt"), endTime)
+                            )
+                    );
+                } else {
+                    // Không có endTime: lấy đơn hàng từ startTime trở đi
+                    withinTimeRangeCondition = cb.or(
+                            cb.greaterThanOrEqualTo(root.get("createdAt"), startTime),
+                            cb.greaterThanOrEqualTo(root.get("updatedAt"), startTime)
+                    );
+                }
+
+                // Kết hợp 2 điều kiện: (đơn chưa hoàn thành trước startTime) HOẶC (đơn trong khoảng thời gian)
+                predicates.add(cb.or(unfinishedBeforeStartTime, withinTimeRangeCondition));
+
             } else {
-                // No startTime provided => only get unfinished orders
+                // Không có startTime => chỉ lấy các đơn hàng chưa hoàn thành
+                log.info("No startTime provided, filtering unfinished orders only");
                 predicates.add(cb.not(root.get("status").in(
                         OrderStatus.CANCELLED.name(),
                         OrderStatus.COMPLETED.name()
@@ -95,13 +113,12 @@ public final class OrderSpecifications {
         };
     }
 
-
     // Hàm lọc order cho waiter - sử dụng base và thêm area filter
     public static Specification<RestaurantOrder> filterWaiterOrders(
-            String status, String tableNumber, String area, Instant startTime) {
+            String status, String tableNumber, String area, Instant startTime, Instant endTime) {
 
         // Sử dụng base specification
-        Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime);
+        Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime, endTime);
 
         // Thêm điều kiện area nếu có
         if (area != null) {
@@ -116,10 +133,10 @@ public final class OrderSpecifications {
 
     // Hàm lọc order cho chef - sử dụng base và thêm payment check
     public static Specification<RestaurantOrder> filterChefOrders(
-            String status, String tableNumber, Instant startTime) {
+            String status, String tableNumber, Instant startTime, Instant endTime) {
 
         // Sử dụng base specification
-        Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime);
+        Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime, endTime);
 
         // Thêm điều kiện payment cho TAKEAWAY/DELIVERY
         Specification<RestaurantOrder> paymentSpec = (root, query, cb) -> {

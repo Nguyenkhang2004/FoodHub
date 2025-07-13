@@ -1,4 +1,4 @@
-package com.example.FoodHub.util;
+package com.example.FoodHub.utils;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

@@ -89,37 +89,36 @@ public class OrderController {
         return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/waiter/work-shift-orders")
+    @GetMapping("/waiter/work-shift-orders/{userId}")
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getWaiterWorkShiftOrders(
-            @RequestParam String area,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tableNumber,
-            @RequestParam Instant startTime,
+            @PathVariable Integer userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
-        Page<RestaurantOrderResponse> orderResponses = orderService.getWaiterWorkShiftOrders(area, status, tableNumber, startTime, pageable);
+        Page<RestaurantOrderResponse> orderResponses = orderService.getWaiterWorkShiftOrders(status, tableNumber, userId, pageable);
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)
                 .build();
         return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/chef/work-shift-orders")
+    @GetMapping("/chef/work-shift-orders/{userId}")
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getChefWorkShiftOrders(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tableNumber,
-            @RequestParam Instant startTime,
+            @PathVariable Integer userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
-        Page<RestaurantOrderResponse> orderResponses = orderService.getChefWorkShiftOrders(status, tableNumber, startTime, pageable);
+        Page<RestaurantOrderResponse> orderResponses = orderService.getChefWorkShiftOrders(status, tableNumber, userId, pageable);
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)
                 .build();

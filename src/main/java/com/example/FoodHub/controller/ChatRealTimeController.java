@@ -1,7 +1,6 @@
 package com.example.FoodHub.controller;
 
 import com.example.FoodHub.dto.request.ChatMessageRequest;
-import com.example.FoodHub.dto.request.ChatRequest;
 import com.example.FoodHub.dto.response.ChatMessageResponse;
 import com.example.FoodHub.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +24,13 @@ public class ChatRealTimeController {
 
     @MessageMapping("/chat/table/{tableNumber}")
     public void chat(@DestinationVariable String tableNumber, @Payload ChatMessageRequest request) {
+        log.info("Received chat message for table in controller: {}, sender: {}, message: {}", tableNumber, request.getSender(), request.getMessage());
         chatService.sendMessage(tableNumber, request);
     }
 
     @GetMapping("/chat/messages/table/{tableNumber}")
     public ResponseEntity<List<ChatMessageResponse>> getChatMessages(@PathVariable String tableNumber) {
+        log.info("Fetching chat messages for table: {}", tableNumber);
         List<ChatMessageResponse> messages = chatService.getChatMessagesByTableNumber(tableNumber);
         return ResponseEntity.ok(messages);
     }
