@@ -161,10 +161,33 @@ public class WorkScheduleService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        WorkSchedule schedule = workScheduleRepository.findCurrentWorkShift(user.getId(), LocalDate.now(), LocalTime.now())
-                .orElseThrow(() -> new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND));
+        List<WorkSchedule> schedules = workScheduleRepository.findAllTodaySchedules(user.getId(), LocalDate.now());
+        if(schedules.isEmpty()) {
+            throw new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND);
+        }
+        if (schedules.size() == 1) {
+            return workScheduleMapper.toShiftResponse(schedules.get(0), schedules.get(0).getWorkDate());
+        }
+        WorkSchedule currentSchedule = null;
+        for (WorkSchedule schedule : schedules) {
+            currentSchedule = schedule;
+            WorkShiftLog existingLog = workShiftLogRepository
+                    .findByWorkScheduleId(schedule.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.WORK_SHIFT_LOG_NOT_FOUND));
+            if(existingLog.getStatus().equals(ShiftStatus.ABSENT.name())) {
+                continue; // Bỏ qua nếu đã đánh dấu vắng
+            }
 
-        return workScheduleMapper.toShiftResponse(schedule, schedule.getWorkDate());
+            if(existingLog.getStatus().equals(ShiftStatus.UNSCHEDULED.name())) {
+                break;
+            }
+
+            if( existingLog.getCheckInTime() != null && existingLog.getCheckOutTime() == null) {
+                break;
+            }
+        }
+        return workScheduleMapper.toShiftResponse(currentSchedule, currentSchedule.getWorkDate());
+
     }
 
     @PreAuthorize("hasAuthority('VIEW_WORK_SCHEDULE')")

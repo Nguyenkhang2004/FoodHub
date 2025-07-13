@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 @Slf4j
-public final class OrderSpecifications {
+public class OrderSpecifications {
     public static Specification<RestaurantOrder> filterOrders(
             String status, Integer tableId) {
         return (root, query, cb) -> {

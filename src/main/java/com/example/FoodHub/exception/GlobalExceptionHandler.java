@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ApiResponse> handleAccessDeniedException(AccessDeniedException e) {
         ApiResponse apiResponse = new ApiResponse<>();
-        apiResponse.setMessage(ErrorCode.UNAUTHORIZED.getMessage() + " : " + e.getMessage());
+        apiResponse.setMessage(ErrorCode.UNAUTHORIZED.getMessage());
         apiResponse.setCode(ErrorCode.UNAUTHORIZED.getCode());
         return ResponseEntity.status(ErrorCode.UNAUTHORIZED.getStatusCode()).body(apiResponse);
     }
