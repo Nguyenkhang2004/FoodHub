@@ -75,7 +75,7 @@ public class WorkScheduleController {
 
     @GetMapping("/my-work-schedule/today")
     public ResponseEntity<ApiResponse<ShiftResponse>> getMyWorkScheduleToday() {
-        ShiftResponse shifts = workScheduleService.getMyCurrentWorkScheduleToday();
+        ShiftResponse shifts = workScheduleService.getMyWorkScheduleToday();
         ApiResponse<ShiftResponse> response = ApiResponse.<ShiftResponse>builder()
                 .code(1000)
                 .message("Today's work schedule retrieved successfully")
