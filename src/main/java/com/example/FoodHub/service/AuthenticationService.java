@@ -65,6 +65,7 @@ public class AuthenticationService {
                 .claim("scope", buildScope(user))
                 .claim("id", user.getId())
                 .claim("username", user.getUsername()) // Thêm username
+                .claim("type", "ACCESS_TOKEN")
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
@@ -169,7 +170,7 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        String token = generateToken(user); // ✅ Gọi lại chính method của class này
+        String token = generateToken(user);
 
         return AuthenticationResponse.builder()
                 .token(token)

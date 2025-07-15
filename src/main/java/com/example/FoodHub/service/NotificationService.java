@@ -48,7 +48,7 @@ public class NotificationService {
         } else if (messageType.equals(NotificationType.BANKING_COMPLETED.name())) {
             baseMessage = tableInfo + " đã thanh toán chuyển khoản thành công, vui lòng đến chụp lại thông tin thanh toán của khách hàng";
         } else if (messageType.equals(NotificationType.CUSTOMER_CALL_WAITER.name())) {
-            baseMessage = "Khách hàng tại " + tableInfo + " đã gọi phục vụ";
+            baseMessage = "Khách hàng tại " + tableInfo + " gọi phục vụ";
         }
 
         // Chỉ gửi thông báo đến waiter cho DINE_IN hoặc các trường hợp phù hợp

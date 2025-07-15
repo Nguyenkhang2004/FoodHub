@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-<<<<<<< HEAD
-    <data-source source="LOCAL" name="foodhub_management@localhost" uuid="e3ed4bc3-253a-478a-9dac-f89b64d9f27d">
-=======
-    <data-source source="LOCAL" name="foodhub_management@localhost" uuid="ca578e61-becf-4495-8848-a66391a5eeb1">
->>>>>>> order2
+    <data-source source="LOCAL" name="foodhub_management@localhost" uuid="855419bd-54ae-4e85-aaf4-72dea6388dc1">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>

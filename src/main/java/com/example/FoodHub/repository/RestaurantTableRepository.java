@@ -19,9 +19,6 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
     List<RestaurantTable> findByStatus(String status);
     Optional<RestaurantTable> findByTableNumber(String tableNumber);
     List<RestaurantTable> findByArea(String area);
-    List<RestaurantTable> findByAreaAndStatus(String area, String status);
-    Optional<RestaurantTable> findByQrCode(String qrCode);
-    Optional<RestaurantTable> findByCurrentToken(String token);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM RestaurantTable t WHERE t.qrCode = :qrCode")

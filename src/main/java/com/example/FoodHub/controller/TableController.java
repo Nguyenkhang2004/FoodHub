@@ -54,15 +54,15 @@ public class TableController {
         return ResponseEntity.ok().body(response);
     }
 
-    @PutMapping("/{tableId}")
-    public ResponseEntity<ApiResponse<RestaurantTableResponse>> updateTableStatus(
-            @PathVariable Integer tableId, @Valid @RequestBody RestaurantTableRequest request) {
-        RestaurantTableResponse updatedTable = tableService.updateTable(tableId, request);
-        ApiResponse<RestaurantTableResponse> response = ApiResponse.<RestaurantTableResponse>builder()
-                .result(updatedTable)
-                .build();
-        return ResponseEntity.ok().body(response);
-    }
+//    @PutMapping("/{tableId}")
+//    public ResponseEntity<ApiResponse<RestaurantTableResponse>> updateTableStatus(
+//            @PathVariable Integer tableId, @Valid @RequestBody RestaurantTableRequest request) {
+//        RestaurantTableResponse updatedTable = tableService.updateTable(tableId, request);
+//        ApiResponse<RestaurantTableResponse> response = ApiResponse.<RestaurantTableResponse>builder()
+//                .result(updatedTable)
+//                .build();
+//        return ResponseEntity.ok().body(response);
+//    }
 
     @PutMapping("/status/{tableId}")
     public ResponseEntity<ApiResponse<RestaurantTableResponse>> updateTableStatus(

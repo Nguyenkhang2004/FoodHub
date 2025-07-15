@@ -15,8 +15,10 @@ import com.example.FoodHub.mapper.PaymentMapper;
 import com.example.FoodHub.mapper.RestaurantOrderMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.specification.OrderSpecifications;
+import com.example.FoodHub.utils.JwtUtil;
 import com.example.FoodHub.utils.PayOSUtils;
 import com.example.FoodHub.utils.TimeUtils;
+import com.nimbusds.jwt.SignedJWT;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -206,7 +208,7 @@ public class RestaurantOrderService {
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
         log.info("Creating new order for table: {}, user id: {}", request.getTableId(), request.getUserId());
-        if (request.getUserId() == null) {
+        if (request.getToken() == null && request.getUserId() == null) {
             Integer userId;
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth instanceof JwtAuthenticationToken jwtAuth) {
@@ -465,7 +467,6 @@ public class RestaurantOrderService {
             }
         }
 
-
         // Update status of order items, excluding those in CANCELLED or COMPLETED status
         List<OrderItem> updatedItems = order.getOrderItems().stream()
                 .filter(item -> !OrderItemStatus.CANCELLED.name().equals(item.getStatus()) &&
@@ -492,17 +493,18 @@ public class RestaurantOrderService {
         if (newStatus.equals(OrderStatus.READY.name())) {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_READY.name());
         }
-
+        RestaurantOrderResponse response = orderMapper.toRestaurantOrderResponse(savedOrder);
         if (order.getUser() != null) {
             Integer customerId = order.getUser().getId();
-            RestaurantOrderResponse response = orderMapper.toRestaurantOrderResponse(savedOrder);
+
             log.info("Sending WebSocket message to /topic/orders/{} for order {}", customerId, orderId);
             messagingTemplate.convertAndSend("/topic/orders/" + customerId, response);
-        } else {
-            log.warn("User is null for order {}, no WebSocket message sent", orderId);
+        }else {
+            log.info("User is null. Sending WebSocket message to /topic/orders/order-{} for anonymous customer", orderId);
+            messagingTemplate.convertAndSend("/topic/orders/order-" + orderId, response);
         }
 
-        return orderMapper.toRestaurantOrderResponse(savedOrder);
+        return response;
     }
 
     @PreAuthorize("hasAuthority('UPDATE_ORDER_STATUS')")
