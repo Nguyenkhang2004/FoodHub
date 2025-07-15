@@ -19,7 +19,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 
     // Find by status
     List<Payment> findByStatus(String status);
-    boolean existsByOrderIdAndStatus(Integer orderId, String status);
 
     // Find by multiple statuses
     List<Payment> findByStatusIn(List<String> statuses);
@@ -29,8 +28,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 
     // Find by order ID and status
     Optional<Payment> findByOrderIdAndStatus(Integer orderId, String status);
-    @Query("SELECT p FROM Payment p WHERE p.createdAt BETWEEN :start AND :end")
 
+    // Find by createdAt between start and end
+    @Query("SELECT p FROM Payment p WHERE p.createdAt BETWEEN :start AND :end")
     List<Payment> findByCreatedAtBetween(Instant start, Instant end);
 
     // Find by createdAt between start and end with status filter
@@ -52,7 +52,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
             @Param("transactionId") String transactionId,
             Pageable pageable);
     Optional<Payment> findByTransactionId(String transactionId);
-
+    boolean existsByOrderIdAndStatus(Integer orderId, String status);
     // Thống kê theo thời gian thanh toán thay vì thời gian đặt hàng
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'PAID' AND p.createdAt BETWEEN :start AND :end")
     Optional<BigDecimal> findTotalRevenueByPeriod(@Param("start") Instant start, @Param("end") Instant end);
@@ -84,14 +84,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     // Search by transaction ID containing a substring
     List<Payment> findByTransactionIdContaining(String transactionId);
 
-    // Autocomplete suggestions for order ID
-    @Query("SELECT DISTINCT p FROM Payment p WHERE CAST(p.order.id AS string) LIKE %:query%")
-    List<Payment> findSuggestionsByOrderId(@Param("query") String query);
+//========================================================================================
 
-    // Autocomplete suggestions for transaction ID
-    @Query("SELECT DISTINCT p FROM Payment p WHERE p.transactionId LIKE %:query%")
-    List<Payment> findSuggestionsByTransactionId(@Param("query") String query);
-
-    List<Payment> findByStatusAndCreatedAtAfter(String status, Instant createdAt);
+    @Query("SELECT p FROM Payment p WHERE p.transactionId LIKE %:transactionId% AND p.createdAt BETWEEN :start AND :end")
+    List<Payment> findByTransactionIdContainingAndCreatedAtBetween(String transactionId, Instant start, Instant end);
 
 }

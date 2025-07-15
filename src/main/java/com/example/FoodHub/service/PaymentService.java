@@ -2,9 +2,9 @@ package com.example.FoodHub.service;
 
 import com.example.FoodHub.dto.request.PayOSRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
+import com.example.FoodHub.dto.response.ApiResponse;
 import com.example.FoodHub.dto.response.InvoiceResponse;
 import com.example.FoodHub.dto.response.PaymentResponse;
-import com.example.FoodHub.dto.response.RestaurantOrderResponse;
 import com.example.FoodHub.dto.response.RevenueStatsResponseForCashier;
 import com.example.FoodHub.entity.*;
 import com.example.FoodHub.enums.NotificationType;
@@ -14,45 +14,63 @@ import com.example.FoodHub.enums.PaymentStatus;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.PaymentMapper;
-import com.example.FoodHub.mapper.RestaurantOrderMapper;
-import com.example.FoodHub.mapper.UserMapper;
 import com.example.FoodHub.repository.*;
 import com.example.FoodHub.utils.PayOSUtils;
 import com.example.FoodHub.utils.TimeUtils;
-import jakarta.validation.constraints.NotNull;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.element.Text;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.time.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentService {
-    private final UserMapper userMapper;
 
     PaymentRepository paymentRepository;
     RestaurantOrderRepository orderRepository;
     OrderItemRepository orderItemRepository;
+    NotificationService notificationService;
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
-    RestaurantOrderMapper restaurantOrderMapper;
-    NotificationService notificationService;
 
 
 
+    @PreAuthorize("hasAuthority('PROCESS_PAYMENT')")
+    @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
         log.info("Creating payment for order ID: {}", request.getOrderId());
 
@@ -74,7 +92,7 @@ public class PaymentService {
             if (PaymentStatus.PENDING.name().equals(payment.getStatus()) &&
                     request.getPaymentMethod().equals(PaymentMethod.BANKING.name()) &&
                     payment.getCreatedAt() != null &&
-                    Duration.between(payment.getCreatedAt(), Instant.now()).toMinutes() < 10) {
+                    Duration.between(payment.getCreatedAt(), TimeUtils.getNowInVietNam()).toMinutes() < 10) {
                 // Re-use existing paymentUrl if still within 10-minute window
                 log.info("Re-using existing payment for order ID: {}", request.getOrderId());
                 return paymentMapper.toPaymentResponse(payment);
@@ -92,7 +110,7 @@ public class PaymentService {
         payment.setStatus(request.getPaymentMethod().equals(PaymentMethod.BANKING.name())
                 ? PaymentStatus.PENDING.name()
                 : PaymentStatus.UNPAID.name());
-        payment.setCreatedAt(Instant.now());
+        payment.setCreatedAt(TimeUtils.getNowInVietNam());
 
         if (request.getPaymentMethod().equals(PaymentMethod.BANKING.name())) {
             String paymentUrl = payOSUtils.generatePaymentUrl(payment);
@@ -113,7 +131,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(newStatus);
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(TimeUtils.getNowInVietNam());
         paymentRepository.save(payment);
         return paymentMapper.toPaymentResponse(payment);
     }
@@ -128,7 +146,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(request.getOrderCode())
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.setStatus(finalStatus);
-        payment.setUpdatedAt(Instant.now());
+        payment.setUpdatedAt(TimeUtils.getNowInVietNam());
         paymentRepository.save(payment);
         if(PaymentStatus.PAID.name().equals(finalStatus)) {
             notificationService.notifyOrderEvent(payment.getOrder(), NotificationType.BANKING_COMPLETED.name());
@@ -142,12 +160,15 @@ public class PaymentService {
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         return paymentMapper.toPaymentResponse(payment);
     }
-// trên này là của khứa khang làm cmm, bố đéo đụng
+//========================================================================================
+//========================================================================================
+//biên giới
+//========================================================================================
+//========================================================================================
 
 
 
-
-
+//========================================================================================
 
     // Process payment for an order
 
@@ -196,6 +217,8 @@ public class PaymentService {
 
         return mapToPaymentResponse(payment);
     }
+//========================================================================================
+
 
     // Cancel or refund an order
     @Transactional
@@ -238,6 +261,7 @@ public class PaymentService {
             orderItemRepository.save(item);
         });
     }
+//========================================================================================
 
     // Get transactions by date range
     public List<PaymentResponse> getTransactionsByDate(Instant start, Instant end) {
@@ -251,46 +275,124 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
+//========================================================================================
 
-    // Hàm mới: Lấy giao dịch theo khoảng thời gian và trạng thái
-    public List<PaymentResponse> getTransactionsByDateAndStatus(Instant start, Instant end, String status) {
-        log.info("Fetching transactions from {} to {} with status {}", start, end, status);
+
+
+
+
+    @Transactional(readOnly = true)
+    public ApiResponse<?> searchTransactions(String query) {
         try {
-            List<Payment> payments = paymentRepository.findByCreatedAtBetweenAndStatus(start, end, status);
-            log.info("Found {} transactions with status {}", payments.size(), status);
-            return payments.stream()
-                    .map(this::mapToPaymentResponse)
+            log.info("Searching transactions with query: {}", query);
+
+            // Tính ngày hôm nay theo múi giờ Asia/Ho_Chi_Minh (UTC+7)
+            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+            Instant startOfDay = now.toLocalDate().atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+            Instant endOfDay = now.toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).minusSeconds(1).toInstant();
+
+            List<Payment> payments;
+            if (query.matches("\\d+")) {
+                Integer orderId = Integer.parseInt(query);
+                payments = paymentRepository.findByCreatedAtBetween(startOfDay, endOfDay)
+                        .stream()
+                        .filter(p -> p.getOrder() != null && p.getOrder().getId().equals(orderId))
+                        .collect(Collectors.toList());
+                log.info("Search by orderId: {}, Found: {}", orderId, payments);
+            } else {
+                payments = paymentRepository.findByTransactionIdContainingAndCreatedAtBetween(query, startOfDay, endOfDay);
+                log.info("Search by transactionId containing: {}, Found: {}", query, payments);
+            }
+
+            List<PaymentResponse> result = payments.stream()
+                    .map(payment -> {
+                        PaymentResponse response = paymentMapper.toPaymentResponse(payment);
+                        if (response.getCreatedAt() != null) {
+                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
+                            ZonedDateTime zonedDateTime = response.getCreatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
+                            response.setCreatedAt(zonedDateTime.toInstant()); // Giữ dạng Instant nhưng đã trừ 7 tiếng
+                        }
+                        if (response.getUpdatedAt() != null) {
+                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
+                            ZonedDateTime zonedDateTime = response.getUpdatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
+                            response.setUpdatedAt(zonedDateTime.toInstant()); // Giữ dạng Instant nhưng đã trừ 7 tiếng
+                        }
+                        return response;
+                    })
                     .collect(Collectors.toList());
+            log.info("Mapped search result: {}", result);
+
+            return ApiResponse.builder()
+                    .code(1000)
+                    .message("Success")
+                    .result(result)
+                    .build();
         } catch (Exception e) {
-            log.error("Error fetching transactions by date and status: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to fetch transactions");
+            log.error("Error searching transactions: {}", e.getMessage(), e);
+            return ApiResponse.builder()
+                    .code(9999)
+                    .message("Error: " + e.getMessage())
+                    .result(List.of())
+                    .build();
         }
     }
 
+    @Transactional(readOnly = true)
+    public ApiResponse<?> getSuggestions(String query) {
+        try {
+            log.info("Fetching suggestions with query: {}", query);
 
+            // Tính ngày hôm nay theo múi giờ Asia/Ho_Chi_Minh (UTC+7)
+            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+            Instant startOfDay = now.toLocalDate().atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+            Instant endOfDay = now.toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).minusSeconds(1).toInstant();
 
+            List<Payment> orderIdSuggestions = paymentRepository.findByCreatedAtBetween(startOfDay, endOfDay)
+                    .stream()
+                    .filter(p -> p.getOrder() != null && String.valueOf(p.getOrder().getId()).toLowerCase().contains(query.toLowerCase()))
+                    .collect(Collectors.toList());
+            List<Payment> transactionIdSuggestions = paymentRepository.findByCreatedAtBetween(startOfDay, endOfDay)
+                    .stream()
+                    .filter(p -> p.getTransactionId() != null && p.getTransactionId().toLowerCase().contains(query.toLowerCase()))
+                    .collect(Collectors.toList());
 
-    public List<String> getTransactionSuggestions(Instant start, Instant end, String query) {
-        log.info("Fetching transaction suggestions from {} to {} with query {}", start, end, query);
-        if (end.isBefore(start)) {
-            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+            List<String> suggestions = Stream.concat(orderIdSuggestions.stream(), transactionIdSuggestions.stream())
+                    .map(p -> {
+                        PaymentResponse response = paymentMapper.toPaymentResponse(p);
+                        if (response.getCreatedAt() != null) {
+                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
+                            ZonedDateTime zonedDateTime = response.getCreatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
+                            response.setCreatedAt(zonedDateTime.toInstant());
+                        }
+                        if (response.getUpdatedAt() != null) {
+                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
+                            ZonedDateTime zonedDateTime = response.getUpdatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
+                            response.setUpdatedAt(zonedDateTime.toInstant());
+                        }
+                        return String.valueOf(p.getOrder().getId()) + " - " + (p.getTransactionId() != null ? p.getTransactionId() : "N/A");
+                    })
+                    .distinct()
+                    .limit(5)
+                    .collect(Collectors.toList());
+            log.info("Suggestions result: {}", suggestions);
+
+            return ApiResponse.builder()
+                    .code(1000)
+                    .message("Success")
+                    .result(suggestions)
+                    .build();
+        } catch (Exception e) {
+            log.error("Error fetching suggestions: {}", e.getMessage(), e);
+            return ApiResponse.builder()
+                    .code(9999)
+                    .message("Error: " + e.getMessage())
+                    .result(List.of())
+                    .build();
         }
-        List<Payment> payments = paymentRepository.findByCreatedAtBetween(start, end);
-        return payments.stream()
-                .filter(p -> (String.valueOf(p.getOrder().getId()).toLowerCase().contains(query != null ? query.toLowerCase() : "")) // Sử dụng order.getId()
-                        || (p.getTransactionId() != null && p.getTransactionId().toLowerCase().contains(query != null ? query.toLowerCase() : "")))
-                .map(p -> String.valueOf(p.getOrder().getId()) + " - " + (p.getTransactionId() != null ? p.getTransactionId() : "N/A"))
-                .distinct()
-                .limit(5) // Giới hạn 5 gợi ý
-                .collect(Collectors.toList());
     }
+//========================================================================================
 
-    // Get total revenue by date
-    public BigDecimal getTotalRevenueByDate(Instant date) {
-        log.info("Fetching total revenue for date: {}", date);
-        BigDecimal totalRevenue = paymentRepository.calculateTotalRevenueByDate(date);
-        return totalRevenue != null ? totalRevenue : BigDecimal.ZERO;
-    }
+//======================
 
     // Get revenue stats by date
     public RevenueStatsResponseForCashier getRevenueStatsByDate(Instant date) {
@@ -303,14 +405,6 @@ public class PaymentService {
         return calculateRevenueStats(startOfDay, endOfDay);
     }
 
-    // Get revenue stats by date range
-    public RevenueStatsResponseForCashier getRevenueStatsByDateRange(Instant start, Instant end) {
-        log.info("Fetching revenue stats from {} to {}", start, end);
-        if (end.isBefore(start)) {
-            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
-        }
-        return calculateRevenueStats(start, end);
-    }
 
     // Calculate revenue stats
     private RevenueStatsResponseForCashier calculateRevenueStats(Instant start, Instant end) {
@@ -326,18 +420,18 @@ public class PaymentService {
         for (Payment payment : payments) {
             BigDecimal amount = payment.getAmount() != null ? payment.getAmount() : BigDecimal.ZERO;
 
-            if (PaymentStatus.PAID.name().equals(payment.getStatus())) {
+            if ("PAID".equals(payment.getStatus())) {
                 totalRevenue = totalRevenue.add(amount);
                 paidRevenue = paidRevenue.add(amount);
 
-                if (PaymentMethod.CASH.name().equals(payment.getPaymentMethod())) {
+                if ("CASH".equals(payment.getPaymentMethod())) {
                     cashRevenue = cashRevenue.add(amount);
-                } else if (PaymentMethod.BANKING.name().equals(payment.getPaymentMethod())) {
+                } else if ("VNPAY".equals(payment.getPaymentMethod())) {
                     vnpayRevenue = vnpayRevenue.add(amount);
                 }
-            } else if (PaymentStatus.PENDING.name().equals(payment.getStatus())) {
+            } else if ("PENDING".equals(payment.getStatus())) {
                 pendingRevenue = pendingRevenue.add(amount);
-            } else if (PaymentStatus.CANCELLED.name().equals(payment.getStatus())) {
+            } else if ("CANCELLED".equals(payment.getStatus())) {
                 cancelledRevenue = cancelledRevenue.add(amount);
             }
         }
@@ -358,21 +452,9 @@ public class PaymentService {
         response.setUpdatedAt(payment.getUpdatedAt());
         return response;
     }
+//========================================================================================
+//========================================================================================
 
-    // Existing PaymentService methods
-    public List<Payment> getPendingPayments() {
-        log.info("Fetching pending payments");
-        return paymentRepository.findByStatus(PaymentStatus.PENDING.name());
-    }
-
-    public Payment refundPayment(Integer paymentId) {
-        log.info("Refunding payment with ID: {}", paymentId);
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
-        payment.setStatus(PaymentStatus.REFUNDED.name());
-        payment.setUpdatedAt(TimeUtils.getNowInVietNam());
-        return paymentRepository.save(payment);
-    }
 
     public InvoiceResponse getOrderDetails(Integer orderId) {
         // Lấy thông tin đơn hàng
@@ -383,45 +465,40 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        // Lấy thông tin bàn (truy cập qua quan hệ)
-        RestaurantTable table = order.getTable(); // Sử dụng getTable() thay vì findById
+        // Lấy thông tin bàn
+        RestaurantTable table = order.getTable();
         if (table == null) {
             throw new AppException(ErrorCode.TABLE_NOT_EXISTED);
         }
 
-        // Lấy thông tin khách hàng (truy cập qua quan hệ)
-        User user = order.getUser(); // Sử dụng getUser() thay vì findById
+        // Lấy thông tin khách hàng
+        User user = order.getUser();
         if (user == null) {
             throw new AppException(ErrorCode.TABLE_NOT_EXISTED);
         }
 
         // Lấy danh sách món ăn
-        // Lấy danh sách món ăn
         List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
         List<Map<String, Object>> orderItems = items.stream().map(item -> {
-            MenuItem menuItem = item.getMenuItem(); // vẫn lấy để lấy tên món
-
+            MenuItem menuItem = item.getMenuItem();
             if (menuItem == null) {
                 throw new AppException(ErrorCode.MENU_ITEM_NOT_FOUND);
             }
-
-            BigDecimal unitPrice = menuItem.getPrice(); // ✅ GIÁ GỐC TỪ MENU
+            BigDecimal unitPrice = menuItem.getPrice();
             int quantity = item.getQuantity();
             BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(quantity));
-
             Map<String, Object> itemMap = new HashMap<>();
             itemMap.put("itemName", menuItem.getName());
             itemMap.put("quantity", quantity);
             itemMap.put("price", unitPrice);
-            itemMap.put("total", total); // nếu bạn muốn hiện tổng tiền từng món
+            itemMap.put("total", total);
             return itemMap;
         }).collect(Collectors.toList());
-
 
         // Tạo response
         InvoiceResponse response = new InvoiceResponse();
         response.setOrderId(order.getId());
-//        response.setPaymentDate(payment.getUpdatedAt());
+        response.setPaymentDate(payment.getUpdatedAt());
         response.setTableNumber(table.getTableNumber());
         response.setCustomerName(user.getUsername());
         response.setCustomerEmail(user.getEmail());
@@ -443,115 +520,148 @@ public class PaymentService {
         return response;
     }
 
-    public PaymentResponse getPaymentStatus(Integer orderId) {
-        Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Payment not found for order ID: " + orderId));
-        PaymentResponse response = new PaymentResponse();
-        response.setOrderId(orderId);
-        response.setAmount(payment.getAmount());
-        response.setTransactionId(payment.getTransactionId());
-        response.setStatus(payment.getStatus().toString());
-        response.setCreatedAt(payment.getCreatedAt());
-        response.setUpdatedAt(payment.getUpdatedAt());
-        return response;
-    }
-    public Page<PaymentResponse> getPayments(
-            String period, Instant startDate, Instant endDate, String status, String transactionId, Pageable pageable) {
-        Instant start = getStartDate(period, startDate);
-        Instant end = getEndDate(period, endDate);
 
-        // Xử lý transactionId rỗng
-        if (transactionId != null && transactionId.trim().isEmpty()) {
-            transactionId = null;
-        }
+//========================================================================================
 
-        log.info("Fetching payments with period: {}, start: {}, end: {}, status: {}, transactionId: {}",
-                period, start, end, status, transactionId);
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getNewOrders() {
+        try {
+            List<Payment> payments = paymentRepository.findByStatus("PENDING");
 
-        Page<Payment> payments = paymentRepository.findByStatusAndCreatedAtBetween(start, end, status, transactionId, pageable);
-        log.info("Found {} payments", payments.getTotalElements());
-        return payments.map(paymentMapper::toPaymentResponse);
-    }
 
-    // Phương thức: Xem chi tiết giao dịch
-    public RestaurantOrderResponse getPaymentDetails(String transactionId) {
-        log.info("Fetching payment details for transactionId: {}", transactionId);
-        Payment payment = paymentRepository.findByTransactionId(transactionId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch: " + transactionId));
-        return restaurantOrderMapper.toRestaurantOrderResponse(payment.getOrder());
-    }
 
-    private Instant getStartDate(String period, Instant startDate) {
-        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
-        ZoneId utcZone = ZoneId.of("UTC");
-        LocalDate today = LocalDate.now(zoneId);
-
-        if ("specific".equals(period) && startDate != null) {
-            LocalDateTime localDateTime = startDate.atZone(zoneId).toLocalDateTime();
-            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
-            log.info("Specific period - Received startDate: {}, Adjusted startDate: {}", startDate, adjustedStart);
-            return adjustedStart;
-        }
-
-        switch (period != null ? period.toLowerCase() : "today") {
-            case "today":
-                Instant startToday = today.atStartOfDay(utcZone).toInstant();
-                log.info("Today period - Start: {}", startToday);
-                return startToday;
-            case "week":
-                LocalDate mondayOfCurrentWeek = today.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
-                Instant startWeek = mondayOfCurrentWeek.atStartOfDay(utcZone).toInstant();
-                log.info("Week period - Start: {}", startWeek);
-                return startWeek;
-            case "month":
-                Instant startMonth = today.withDayOfMonth(1).atStartOfDay(utcZone).toInstant();
-                log.info("Month period - Start: {}", startMonth);
-                return startMonth;
-            case "year":
-                Instant startYear = today.withDayOfYear(1).atStartOfDay(utcZone).toInstant();
-                log.info("Year period - Start: {}", startYear);
-                return startYear;
-            default:
-                Instant defaultStart = today.minusDays(30).atStartOfDay(utcZone).toInstant();
-                log.info("Default period - Start: {}", defaultStart);
-                return defaultStart;
+            return payments.stream()
+                    .map(paymentMapper::toPaymentResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to fetch pending orders");
         }
     }
 
-    private Instant getEndDate(String period, Instant endDate) {
-        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
-        ZoneId utcZone = ZoneId.of("UTC");
-        LocalDate today = LocalDate.now(zoneId);
+//========================================================================================
 
-        if ("specific".equals(period) && endDate != null) {
-            LocalDateTime localDateTime = endDate.atZone(zoneId).toLocalDateTime();
-            Instant adjustedStart = localDateTime.toLocalDate().atStartOfDay(utcZone).toInstant();
-            log.info("Specific period - Received enddate: {}, Adjusted enddate: {}", endDate, adjustedStart);
-            return adjustedStart;
+
+    public String generateInvoicePdf(Integer orderId) {
+
+        // Lấy dữ liệu hóa đơn
+        InvoiceResponse invoice = getOrderDetails(orderId);
+
+
+        // Tạo PDF với khổ giấy nhỏ (80mm x 150mm)
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PdfWriter writer = new PdfWriter(baos);
+             PdfDocument pdf = new PdfDocument(writer);
+             Document document = new Document(pdf)) {
+
+            pdf.setDefaultPageSize(new PageSize(226, 425)); // 80mm x 150mm
+            pdf.getDocumentInfo().setTitle("Invoice - FoodHub");
+            document.setMargins(2, 2, 2, 2); // Giảm lề tối đa để vừa khít
+
+            // Màu cam chủ đạo
+            DeviceRgb ORANGE_COLOR = new DeviceRgb(255, 98, 0); // #FF6200
+
+            // Tạo một bảng duy nhất cho toàn bộ nội dung
+            float[] columnWidths = {226};
+            Table table = new Table(UnitValue.createPointArray(columnWidths));
+            table.setWidth(UnitValue.createPercentValue(100));
+            table.setBorder(null);
+
+            // Tiêu đề nhà hàng
+            table.addCell(new Cell().add(new Paragraph(new Text("FoodHub Restaurant").setFontSize(10).setBold().setFontColor(ORANGE_COLOR))
+                    .setTextAlignment(TextAlignment.CENTER)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("68 Nguyen Huu Tho, Da Nang City")
+                    .setFontSize(6)
+                    .setTextAlignment(TextAlignment.CENTER)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Hotline: 1900-1234")
+                    .setFontSize(6)
+                    .setTextAlignment(TextAlignment.CENTER)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Email: contact@foodhub.vn")
+                    .setFontSize(6)
+                    .setTextAlignment(TextAlignment.CENTER)).setBorder(null));
+
+            // Tiêu đề hóa đơn
+            table.addCell(new Cell().add(new Paragraph(new Text("INVOICE").setFontSize(8).setBold().setFontColor(ORANGE_COLOR))
+                    .setTextAlignment(TextAlignment.CENTER)).setBorder(null));
+
+            // Thông tin hóa đơn
+            String paymentTime = invoice.getFormattedPaymentDate() != null ? invoice.getFormattedPaymentDate() : "N/A";
+            table.addCell(new Cell().add(new Paragraph("Invoice No: " + invoice.getOrderId()).setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Date: " + paymentTime).setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Table: " + (invoice.getTableNumber() != null ? invoice.getTableNumber() : "N/A")).setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Customer: " + (invoice.getCustomerName() != null ? invoice.getCustomerName() : "N/A")).setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Email: " + (invoice.getCustomerEmail() != null ? invoice.getCustomerEmail() : "N/A")).setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Payment Method: " + (invoice.getPaymentMethod() != null ? invoice.getPaymentMethod() : "N/A")).setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Status: " + (invoice.getStatus() != null ? invoice.getStatus() : "N/A")).setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Transaction ID: " + (invoice.getTransactionId() != null ? invoice.getTransactionId() : "N/A")).setFontSize(6)).setBorder(null));
+
+            // Bảng chi tiết món ăn
+            float[] itemColumnWidths = {110, 25, 45, 46};
+            Table itemTable = new Table(UnitValue.createPointArray(itemColumnWidths));
+            itemTable.setWidth(UnitValue.createPercentValue(100));
+            itemTable.setBorder(new SolidBorder(ORANGE_COLOR, 0.5f));
+
+            // Tiêu đề chi tiết
+            itemTable.addHeaderCell(new Cell().add(new Paragraph("Item").setBold().setFontColor(ColorConstants.WHITE).setFontSize(5))
+                    .setBackgroundColor(ORANGE_COLOR));
+            itemTable.addHeaderCell(new Cell().add(new Paragraph("Qty").setBold().setFontColor(ColorConstants.WHITE).setFontSize(5))
+                    .setBackgroundColor(ORANGE_COLOR));
+            itemTable.addHeaderCell(new Cell().add(new Paragraph("Price").setBold().setFontColor(ColorConstants.WHITE).setFontSize(5))
+                    .setBackgroundColor(ORANGE_COLOR));
+            itemTable.addHeaderCell(new Cell().add(new Paragraph("Total").setBold().setFontColor(ColorConstants.WHITE).setFontSize(5))
+                    .setBackgroundColor(ORANGE_COLOR));
+
+            // Dữ liệu món ăn
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            List<Map<String, Object>> orderItems = invoice.getOrderItems();
+            for (Map<String, Object> item : orderItems) {
+                String itemName = (String) item.get("itemName");
+                Integer quantity = (Integer) item.get("quantity");
+                BigDecimal price = (BigDecimal) item.get("price");
+                BigDecimal total = price.multiply(new BigDecimal(quantity != null ? quantity : 0));
+
+                itemName = itemName != null ? itemName.replaceAll("[_\\-]", "") : "N/A";
+
+                itemTable.addCell(new Cell().add(new Paragraph(itemName).setFontSize(5)));
+                itemTable.addCell(new Cell().add(new Paragraph(quantity != null ? quantity.toString() : "0").setFontSize(5)));
+                itemTable.addCell(new Cell().add(new Paragraph(price != null ? price.toString() : "0").setFontSize(5)));
+                itemTable.addCell(new Cell().add(new Paragraph(total.toString()).setFontSize(5)));
+
+                totalAmount = totalAmount.add(total);
+            }
+
+            // Hàng tổng cộng
+            itemTable.addCell(new Cell(1, 3).add(new Paragraph("Total").setBold().setFontSize(5).setTextAlignment(TextAlignment.RIGHT)));
+            itemTable.addCell(new Cell().add(new Paragraph(totalAmount.toString() + " VND").setBold().setFontSize(5)));
+            table.addCell(new Cell().add(itemTable));
+
+            // Chân trang
+            table.addCell(new Cell().add(new Paragraph("Thank you for choosing FoodHub!")
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontSize(6)).setBorder(null));
+            table.addCell(new Cell().add(new Paragraph("Please check your invoice before leaving.")
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontSize(5)).setBorder(null));
+
+            document.add(table);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate PDF: " + e.getMessage());
         }
-        switch (period != null ? period.toLowerCase() : "today") {
-            case "today":
-                Instant endToday = today.plusDays(1).atStartOfDay(utcZone).toInstant();
-                log.info("Today period - End: {}", endToday);
-                return endToday;
-            case "week":
-                LocalDate sundayOfCurrentWeek = today.with(TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
-                Instant endWeek = sundayOfCurrentWeek.plusDays(1).atStartOfDay(utcZone).toInstant();
-                log.info("Week period - End: {}", endWeek);
-                return endWeek;
-            case "month":
-                Instant endMonth = today.withDayOfMonth(today.lengthOfMonth()).plusDays(1).atStartOfDay(utcZone).toInstant();
-                log.info("Month period - End: {}", endMonth);
-                return endMonth;
-            case "year":
-                Instant endYear = today.withDayOfYear(today.lengthOfYear()).plusDays(1).atStartOfDay(utcZone).toInstant();
-                log.info("Year period - End: {}", endYear);
-                return endYear;
-            default:
-                Instant defaultEnd = today.plusDays(1).atStartOfDay(utcZone).toInstant();
-                log.info("Default period - End: {}", defaultEnd);
-                return defaultEnd;
+
+        // Lưu file và trả về URL
+        String fileName = "invoice_" + orderId + "_" + Instant.now().toString().replace(":", "-") + ".pdf";
+        String uploadDir = "invoices/";
+        try {
+            Files.createDirectories(Paths.get(uploadDir));
+            Files.write(Paths.get(uploadDir + fileName), baos.toByteArray());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to save PDF: " + e.getMessage());
         }
+
+        String baseUrl = "http://localhost:8080"; // Thay bằng domain thực tế
+        return baseUrl + "/" + uploadDir + fileName;
     }
+
+//========================================================================================
+
+
 }
-
