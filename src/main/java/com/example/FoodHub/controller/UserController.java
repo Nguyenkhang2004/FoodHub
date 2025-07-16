@@ -186,7 +186,7 @@ public class UserController {
             @RequestBody ChangePasswordRequest request,
             Principal principal) {
 
-        String email = principal.getName(); // CHẮC CHẮN là email đã đăng nhập
+        String email = principal.getName();
         userService.changePassword(email, request);
 
         return ResponseEntity.ok(ApiResponse.<String>builder()
