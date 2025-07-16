@@ -24,17 +24,24 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'PAID' AND DATE(p.createdAt) = :date")
     BigDecimal calculateTotalRevenueByDate(Instant date);
     List<Payment> findByStatusAndCreatedAtBefore(String status, Instant createdAt);
+
     @Query("SELECT p FROM Payment p WHERE " +
             "(:status IS NULL OR p.status = :status) AND " +
             "p.createdAt BETWEEN :start AND :end AND " +
-            "(:transactionId IS NULL OR p.transactionId LIKE %:transactionId%)")
+            "(:transactionId IS NULL OR p.transactionId LIKE %:transactionId%) AND " +
+            "(:paymentMethod IS NULL OR p.paymentMethod = :paymentMethod) AND " +
+            "(:minPrice IS NULL OR p.amount >= :minPrice) AND " +
+            "(:maxPrice IS NULL OR p.amount <= :maxPrice)")
     Page<Payment> findByStatusAndCreatedAtBetween(
             @Param("start") Instant start,
             @Param("end") Instant end,
             @Param("status") String status,
             @Param("transactionId") String transactionId,
+            @Param("paymentMethod") String paymentMethod,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
-    Optional<Payment> findByTransactionId(String transactionId);
+    Optional<Payment> findById(Integer id);
 
     // Thống kê theo thời gian thanh toán thay vì thời gian đặt hàng
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'PAID' AND p.createdAt BETWEEN :start AND :end")

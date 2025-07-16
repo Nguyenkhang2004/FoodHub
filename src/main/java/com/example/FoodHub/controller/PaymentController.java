@@ -266,20 +266,30 @@ public class PaymentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String transactionId,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) BigDecimal minPrice,    // THÊM
+            @RequestParam(required = false) BigDecimal maxPrice,    // THÊM
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String orderBy,
             @RequestParam(defaultValue = "ASC") String sort) {
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
-        Page<PaymentResponse> payments = paymentService.getPayments(period, startDate, endDate, status, transactionId, pageable);
+
+        Page<PaymentResponse> payments = paymentService.getPayments(
+                period, startDate, endDate, status, transactionId,
+                paymentMethod, minPrice, maxPrice, // THÊM 2 PARAMETER
+                pageable
+        );
+
         return ResponseEntity.ok(ApiResponse.<Page<PaymentResponse>>builder().result(payments).build());
     }
     @PreAuthorize("hasRole('ADMIN')")
     // Xem chi tiết giao dịch (hóa đơn liên quan) (endpoint mới)
-    @GetMapping("/{transactionId}")
+    @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getPaymentDetails(
-            @PathVariable String transactionId) {
-        RestaurantOrderResponse orderDetails = paymentService.getPaymentDetails(transactionId);
+            @PathVariable Integer id) {
+        RestaurantOrderResponse orderDetails = paymentService.getPaymentDetails(id);
         return ResponseEntity.ok(ApiResponse.<RestaurantOrderResponse>builder().result(orderDetails).build());
     }
 }

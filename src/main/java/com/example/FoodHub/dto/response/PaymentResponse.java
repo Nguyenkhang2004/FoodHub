@@ -10,6 +10,7 @@ import java.time.Instant;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PaymentResponse {
+    private Integer id;
     private Integer orderId;
     private BigDecimal amount;
     private String paymentMethod;

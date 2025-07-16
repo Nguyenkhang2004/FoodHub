@@ -104,7 +104,9 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
         "AND (:orderType IS NULL OR :orderType = '' OR o.orderType = :orderType) " +
         "AND (:minPrice IS NULL OR o.totalAmount >= :minPrice) " +
         "AND (:maxPrice IS NULL OR o.totalAmount <= :maxPrice) " +
-        "AND (:paymentMethod IS NULL OR :paymentMethod = '' OR p.paymentMethod = :paymentMethod) " +
+        "AND (:paymentMethod IS NULL OR :paymentMethod = '' OR " +
+        "     (:paymentMethod = 'NULL' AND (p.paymentMethod IS NULL OR p.paymentMethod = '')) OR " +
+        "     (:paymentMethod != 'NULL' AND p.paymentMethod = :paymentMethod)) " +
         "AND (:search IS NULL OR :search = '' OR " +
         "CAST(o.id AS string) = :search OR " +
         "LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%'))) " +

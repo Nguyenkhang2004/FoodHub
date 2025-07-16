@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class RevenueReportsService {
-    RestaurantOrderRepository orderRepository;
     OrderItemRepository orderItemRepository;
     PaymentRepository paymentRepository;
 

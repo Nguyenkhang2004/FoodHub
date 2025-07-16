@@ -387,7 +387,10 @@ public class PaymentService {
         return response;
     }
     public Page<PaymentResponse> getPayments(
-            String period, Instant startDate, Instant endDate, String status, String transactionId, Pageable pageable) {
+            String period, Instant startDate, Instant endDate, String status, String transactionId,
+            String paymentMethod, BigDecimal minPrice, BigDecimal maxPrice, // THÊM 2 PARAMETER
+            Pageable pageable) {
+
         Instant start = getStartDate(period, startDate);
         Instant end = getEndDate(period, endDate);
 
@@ -396,19 +399,27 @@ public class PaymentService {
             transactionId = null;
         }
 
-        log.info("Fetching payments with period: {}, start: {}, end: {}, status: {}, transactionId: {}",
-                period, start, end, status, transactionId);
+        // Xử lý paymentMethod rỗng
+        if (paymentMethod != null && paymentMethod.trim().isEmpty()) {
+            paymentMethod = null;
+        }
 
-        Page<Payment> payments = paymentRepository.findByStatusAndCreatedAtBetween(start, end, status, transactionId, pageable);
+        log.info("Fetching payments with period: {}, start: {}, end: {}, status: {}, transactionId: {}, paymentMethod: {}, minPrice: {}, maxPrice: {}",
+                period, start, end, status, transactionId, paymentMethod, minPrice, maxPrice);
+
+        Page<Payment> payments = paymentRepository.findByStatusAndCreatedAtBetween(
+                start, end, status, transactionId, paymentMethod, minPrice, maxPrice, // THÊM 2 PARAMETER
+                pageable);
+
         log.info("Found {} payments", payments.getTotalElements());
         return payments.map(paymentMapper::toPaymentResponse);
     }
 
     // Phương thức: Xem chi tiết giao dịch
-    public RestaurantOrderResponse getPaymentDetails(String transactionId) {
-        log.info("Fetching payment details for transactionId: {}", transactionId);
-        Payment payment = paymentRepository.findByTransactionId(transactionId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch: " + transactionId));
+    public RestaurantOrderResponse getPaymentDetails(Integer id) {
+        log.info("Fetching payment details for id: {}", id);
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch: " + id));
         return restaurantOrderMapper.toRestaurantOrderResponse(payment.getOrder());
     }
 
