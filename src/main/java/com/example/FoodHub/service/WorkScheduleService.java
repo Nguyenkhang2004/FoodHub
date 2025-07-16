@@ -75,20 +75,20 @@ public class WorkScheduleService {
             throw new AppException(ErrorCode.PAST_DATE_NOT_ALLOWED);
         }
 
-        // Kiểm tra ca hôm nay đã qua giờ bắt đầu
-        if (shiftDate.isEqual(today)) {
-            switch (shiftRequest.getShift().toLowerCase()) {
-                case "morning":
+        // Kiểm tra ca hôm nay đã qua giờ bắt đầu (chỉ áp dụng cho ca không phải FULL_DAY)
+        if (shiftDate.isEqual(today) && !shiftRequest.getShift().equalsIgnoreCase("FULL_DAY")) {
+            switch (shiftRequest.getShift().toUpperCase()) {
+                case "MORNING":
                     if (currentTime.isAfter(LocalTime.of(8, 30))) {
                         throw new AppException(ErrorCode.PAST_SHIFT_TIME);
                     }
                     break;
-                case "afternoon":
+                case "AFTERNOON":
                     if (currentTime.isAfter(LocalTime.of(12, 30))) {
                         throw new AppException(ErrorCode.PAST_SHIFT_TIME);
                     }
                     break;
-                case "night":
+                case "EVENING":
                     if (currentTime.isAfter(LocalTime.of(17, 30))) {
                         throw new AppException(ErrorCode.PAST_SHIFT_TIME);
                     }
@@ -98,8 +98,29 @@ public class WorkScheduleService {
             }
         }
 
-        // Kiểm tra ca trùng lặp
+        // Kiểm tra ca trùng lặp và logic FULL_DAY
         List<WorkSchedule> existingSchedules = workScheduleRepository.findByDate(shiftDate);
+
+        // Kiểm tra nếu user đã có ca FULL_DAY trong ngày
+        boolean userHasFullDay = existingSchedules.stream()
+                .anyMatch(schedule -> schedule.getUser().getUsername().equals(shiftRequest.getName())
+                        && schedule.getShiftType().equalsIgnoreCase("FULL_DAY"));
+
+        if (userHasFullDay) {
+            throw new AppException(ErrorCode.DUPLICATE_SHIFT); // hoặc tạo error code mới cho trường hợp này
+        }
+
+        // Kiểm tra nếu đang thêm ca FULL_DAY nhưng user đã có ca khác trong ngày
+        if (shiftRequest.getShift().equalsIgnoreCase("FULL_DAY")) {
+            boolean userHasOtherShift = existingSchedules.stream()
+                    .anyMatch(schedule -> schedule.getUser().getUsername().equals(shiftRequest.getName()));
+
+            if (userHasOtherShift) {
+                throw new AppException(ErrorCode.DUPLICATE_SHIFT); // hoặc tạo error code mới
+            }
+        }
+
+        // Kiểm tra ca trùng lặp thông thường
         for (WorkSchedule schedule : existingSchedules) {
             if (schedule.getUser().getUsername().equals(shiftRequest.getName()) &&
                     schedule.getShiftType().equalsIgnoreCase(shiftRequest.getShift().toUpperCase())) {
@@ -112,17 +133,21 @@ public class WorkScheduleService {
         schedule.setUser(user); // Gán user thủ công
 
         // Gán thời gian bắt đầu và kết thúc theo loại ca
-        switch (shiftRequest.getShift().toLowerCase()) {
-            case "morning":
+        switch (shiftRequest.getShift().toUpperCase()) {
+            case "MORNING":
                 schedule.setStartTime(LocalTime.of(8, 30));
                 schedule.setEndTime(LocalTime.of(12, 30));
                 break;
-            case "afternoon":
+            case "AFTERNOON":
                 schedule.setStartTime(LocalTime.of(12, 30));
                 schedule.setEndTime(LocalTime.of(17, 30));
                 break;
-            case "night":
+            case "EVENING":
                 schedule.setStartTime(LocalTime.of(17, 30));
+                schedule.setEndTime(LocalTime.of(22, 30));
+                break;
+            case "FULL_DAY":
+                schedule.setStartTime(LocalTime.of(8, 30));
                 schedule.setEndTime(LocalTime.of(22, 30));
                 break;
             default:

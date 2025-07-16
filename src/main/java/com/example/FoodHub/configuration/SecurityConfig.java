@@ -51,8 +51,8 @@ public class SecurityConfig {
             "/menu", "/menu/**",
             "/restaurants", "/restaurants/**",
             "/dishes", "/dishes/**",
-            "/menu-items", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
-            "/images/**"
+            "/menu-items/**", "/categories", "/api/gemini/**", "/api/feedback/**", "/users/**",
+            "/images/**","/users/my-info", "/invoices/**", "/api/goong/**"
     };
 
 

@@ -2,6 +2,7 @@ package com.example.FoodHub.exception;
 
 import com.example.FoodHub.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.io.IOException;
 import java.util.Map;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
     private static final String MIN_ATTRIBUTE = "min";
@@ -19,6 +21,7 @@ public class GlobalExceptionHandler {
         ApiResponse<String> apiResponse = new ApiResponse<>();
         apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage() + " : " + e.getMessage());
         apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
+        log.error("Unhandled exception: {}", e.getMessage(), e);
         return ResponseEntity.badRequest().body(apiResponse);
     }
 

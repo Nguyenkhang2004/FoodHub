@@ -3,34 +3,30 @@ package com.example.FoodHub.controller;
 import com.example.FoodHub.dto.request.PayOSRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.response.*;
-import com.example.FoodHub.exception.AppException;
-import com.example.FoodHub.exception.ErrorCode;
+
 import com.example.FoodHub.service.EmailService;
 import com.example.FoodHub.service.PaymentService;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ByteArrayResource;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
+
 import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -41,14 +37,50 @@ public class PaymentController {
     PaymentService paymentService;
     EmailService emailService;
 
-    // Thanh toán đơn hàng
-    @PostMapping
+
+
+    @PostMapping("/payment")
     public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
         PaymentResponse response = paymentService.createPayment(request);
         ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
                 .result(response)
                 .build();
         return ResponseEntity.ok().body(apiResponse);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getPayments(
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) BigDecimal minPrice,    // THÊM
+            @RequestParam(required = false) BigDecimal maxPrice,    // THÊM
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String orderBy,
+            @RequestParam(defaultValue = "ASC") String sort) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
+
+        Page<PaymentResponse> payments = paymentService.getPayments(
+                period, startDate, endDate, status, transactionId,
+                paymentMethod, minPrice, maxPrice, // THÊM 2 PARAMETER
+                pageable
+        );
+
+        return ResponseEntity.ok(ApiResponse.<Page<PaymentResponse>>builder().result(payments).build());
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    // Xem chi tiết giao dịch (hóa đơn liên quan) (endpoint mới)
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getPaymentDetails(
+            @PathVariable Integer id) {
+        RestaurantOrderResponse orderDetails = paymentService.getPaymentDetails(id);
+        return ResponseEntity.ok(ApiResponse.<RestaurantOrderResponse>builder().result(orderDetails).build());
     }
 
 
@@ -62,67 +94,78 @@ public class PaymentController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping("/order/{orderId}")
-    public ResponseEntity<ApiResponse<PaymentResponse>> getUncompletedPaymentByOrderId(@PathVariable Integer orderId) {
-        PaymentResponse response = paymentService.getUncompletedPaymentByOrderId(orderId);
+
+
+//trên là của khang
+//==================================//==================================//==================================
+//==================================//==================================//==================================
+
+
+    @GetMapping("/check-new-orders")
+    public ApiResponse<List<PaymentResponse>> checkNewOrders() {
+        log.info("Checking new orders at: {} (UTC+7)", Instant.now().atZone(ZoneId.of("Asia/Ho_Chi_Minh")));
+            List<PaymentResponse> newOrders = paymentService.getNewOrders();
+            return ApiResponse.<List<PaymentResponse>>builder()
+                    .code(1000)
+                    .message("Success")
+                    .result(newOrders)
+                    .build();
+    }
+
+
+    // Thanh toán đơn hàng
+    @PostMapping("/payment2")
+    public ResponseEntity<ApiResponse<PaymentResponse>> processPayment2(@RequestBody PaymentRequest request) {
+        PaymentResponse response = paymentService.processPayment(request);
         ApiResponse<PaymentResponse> apiResponse = ApiResponse.<PaymentResponse>builder()
                 .result(response)
                 .build();
-        return ResponseEntity.ok(apiResponse);
+        return ResponseEntity.ok().body(apiResponse);
     }
+
+
 
 // Hủy/Hoàn tiền đơn hàng
-//    @PostMapping("/cancel-or-refund/{orderId}")
-//    public ResponseEntity<ApiResponse<String>> cancelOrRefundOrder(@PathVariable Integer orderId) {
-//        paymentService.cancelOrRefundOrder(orderId);
-//        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-//                .result("Đơn hàng đã được hủy thành công")
-//                .build();
-//        return ResponseEntity.ok().body(apiResponse);
-//    }
 
-    // Lấy danh sách giao dịch theo ngày
-    @GetMapping("/transactions")
-    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getTransactionsByDate(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant end) {
-        List<PaymentResponse> transactions = paymentService.getTransactionsByDate(start, end);
-        ApiResponse<List<PaymentResponse>> apiResponse = ApiResponse.<List<PaymentResponse>>builder()
-                .result(transactions)
+    @PostMapping("/cancel-or-refund/{orderId}")
+    public ResponseEntity<ApiResponse<String>> cancelOrRefundOrder(@PathVariable Integer orderId) {
+        paymentService.cancelOrRefundOrder(orderId);
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .result("Đơn hàng đã được hủy thành công")
                 .build();
         return ResponseEntity.ok().body(apiResponse);
     }
 
-    // Lấy tổng doanh thu theo ngày
-    @GetMapping("/revenue")
-    public ResponseEntity<ApiResponse<BigDecimal>> getTotalRevenueByDate(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant date) {
-        BigDecimal totalRevenue = paymentService.getTotalRevenueByDate(date);
-        ApiResponse<BigDecimal> apiResponse = ApiResponse.<BigDecimal>builder()
-                .result(totalRevenue)
-                .build();
-        return ResponseEntity.ok().body(apiResponse);
-    }
 
-    // Lấy thống kê doanh thu
-    @GetMapping("/revenue-stats")
-    public ResponseEntity<ApiResponse<RevenueStatsResponseForCashier>> getRevenueStats(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant date,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant start,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant end) {
-        if (date != null) {
+    // Lấy giao dịch hôm nay
+    @GetMapping("/todays-transactions")
+    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getTodaysTransactions() {
+            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+            Instant start = now.toLocalDate().atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+            Instant end = now.toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).minusSeconds(1).toInstant();
+            List<PaymentResponse> transactions = paymentService.getTransactionsByDate(start, end);
+            ApiResponse<List<PaymentResponse>> apiResponse = ApiResponse.<List<PaymentResponse>>builder()
+                    .code(0)
+                    .result(transactions)
+                    .build();
+            return ResponseEntity.ok().body(apiResponse);
+        }
+
+
+    // Lấy thống kê doanh thu hôm nay
+    @GetMapping("/todays-revenue-stats")
+    public ResponseEntity<ApiResponse<RevenueStatsResponseForCashier>> getTodaysRevenueStats() {
+            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+            Instant date = now.toLocalDate().atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
             RevenueStatsResponseForCashier stats = paymentService.getRevenueStatsByDate(date);
             ApiResponse<RevenueStatsResponseForCashier> apiResponse = ApiResponse.<RevenueStatsResponseForCashier>builder()
+                    .code(0)
                     .result(stats)
                     .build();
             return ResponseEntity.ok().body(apiResponse);
         }
-        RevenueStatsResponseForCashier stats = paymentService.getRevenueStatsByDateRange(start, end);
-        ApiResponse<RevenueStatsResponseForCashier> apiResponse = ApiResponse.<RevenueStatsResponseForCashier>builder()
-                .result(stats)
-                .build();
-        return ResponseEntity.ok().body(apiResponse);
-    }
+
+
 
     // Lấy thông tin hóa đơn
     @GetMapping("/invoice/{orderId}")
@@ -133,7 +176,6 @@ public class PaymentController {
                 .build();
         return ResponseEntity.ok().body(apiResponse);
     }
-
 
     // Gửi email hóa đơn
     @PostMapping("/send-invoice-email")
@@ -149,150 +191,26 @@ public class PaymentController {
     }
 
 
-    // Tạo và trả về file PDF hóa đơn
+
     @GetMapping("/invoice/{orderId}/pdf")
-    public ResponseEntity<ByteArrayResource> generateInvoicePdf(@PathVariable Integer orderId) throws IOException, InterruptedException {
-        log.info("Generating PDF invoice for order ID: {}", orderId);
-
-        // Lấy dữ liệu hóa đơn từ API response
-        ApiResponse<InvoiceResponse> apiResponse = getInvoice(orderId).getBody();
-        InvoiceResponse invoice = apiResponse.getResult();
-
-        // Kiểm tra trạng thái PAID
-        if (!"PAID".equals(invoice.getStatus())) {
-            throw new AppException(ErrorCode.ORDER_NOT_FOUND, "Order must be paid to generate invoice.");
-        }
-
-        // Tạo nội dung LaTeX
-        StringBuilder latexContent = new StringBuilder();
-        latexContent.append("\\documentclass[a4paper,12pt]{article}\n");
-        latexContent.append("\\usepackage[utf8]{vietnam}\n"); // Hỗ trợ tiếng Việt
-        latexContent.append("\\usepackage{geometry}\n");
-        latexContent.append("\\geometry{a4paper, margin=1in}\n");
-        latexContent.append("\\usepackage{booktabs}\n"); // Tạo bảng đẹp
-        latexContent.append("\\usepackage{fancyhdr}\n");
-        latexContent.append("\\pagestyle{fancy}\n");
-        latexContent.append("\\fancyhf{}\n");
-        latexContent.append("\\lhead{FoodHub Restaurant}\n");
-        latexContent.append("\\rhead{Invoice}\n");
-        latexContent.append("\\cfoot{Page \\thepage}\n");
-        latexContent.append("\\begin{document}\n");
-
-        // Tiêu đề hóa đơn
-        latexContent.append("\\begin{center}\n");
-        latexContent.append("\\textbf{\\large Invoice}\n");
-        latexContent.append("\\end{center}\n");
-        latexContent.append("\\vspace{1cm}\n");
-
-        // Thông tin hóa đơn
-        latexContent.append("\\textbf{Order ID:} ").append(invoice.getOrderId()).append("\\\\\n");
-
-        // Sử dụng ZonedDateTime và định dạng theo yêu cầu
-        ZonedDateTime nowInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-        String formattedPaymentTime = nowInVietnam.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-        latexContent.append("\\textbf{Date:} ").append(formattedPaymentTime).append("\\\\\n");
-
-        latexContent.append("\\textbf{Table Number:} ").append(invoice.getTableNumber()).append("\\\\\n");
-        latexContent.append("\\textbf{Customer Name:} ").append(invoice.getCustomerName()).append("\\\\\n");
-        latexContent.append("\\textbf{Customer Email:} ").append(invoice.getCustomerEmail()).append("\\\\\n");
-        latexContent.append("\\textbf{Total Amount:} ").append(invoice.getAmount()).append(" VND\\\\\n");
-        latexContent.append("\\textbf{Payment Method:} ").append(invoice.getPaymentMethod()).append("\\\\\n");
-        latexContent.append("\\textbf{Status:} ").append(invoice.getStatus()).append("\\\\\n");
-        latexContent.append("\\textbf{Transaction ID:} ").append(invoice.getTransactionId() != null ? invoice.getTransactionId() : "N/A").append("\\\\\n");
-        latexContent.append("\\vspace{0.5cm}\n");
-
-        // Bảng chi tiết món ăn
-        latexContent.append("\\begin{tabular}{llcc}\n");
-        latexContent.append("\\toprule\n");
-        latexContent.append("Item Name & Quantity & Unit Price (VND) & Total (VND) \\\\\n");
-        latexContent.append("\\midrule\n");
-        for (Map<String, Object> item : invoice.getOrderItems()) {
-            latexContent.append(item.get("itemName")).append(" & ")
-                    .append(item.get("quantity")).append(" & ")
-                    .append(((BigDecimal) item.get("price")).toString()).append(" & ")
-                    .append(((BigDecimal) item.get("total")).toString()).append(" \\\\\n");
-        }
-        latexContent.append("\\bottomrule\n");
-        latexContent.append("\\end{tabular}\n");
-
-        latexContent.append("\\vspace{1cm}\n");
-        latexContent.append("\\textbf{Thank you for your order!}\n");
-        latexContent.append("\\end{document}\n");
-
-        // Tạo file LaTeX
-        File tempLatexFile = File.createTempFile("invoice_" + orderId, ".tex");
-        try (FileWriter writer = new FileWriter(tempLatexFile)) {
-            writer.write(latexContent.toString());
-        } catch (IOException e) {
-            log.error("Failed to write LaTeX file for order ID: {}, error: {}", orderId, e.getMessage());
-            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to create LaTeX file");
-        }
-
-        // Biên dịch LaTeX sang PDF (giả định latexmk đã cài đặt)
-        File tempPdfFile = new File(tempLatexFile.getParent(), "invoice_" + orderId + ".pdf");
-        ProcessBuilder pb = new ProcessBuilder("latexmk", "-pdf", tempLatexFile.getAbsolutePath());
-        pb.redirectErrorStream(true);
-        Process process = pb.start();
-        int exitCode = process.waitFor(); // Chờ quá trình hoàn tất
-        if (exitCode != 0) {
-            log.error("LaTeX compilation failed for order ID: {}, exit code: {}", orderId, exitCode);
-            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate PDF, LaTeX compilation error");
-        }
-
-        // Đọc file PDF thành ByteArrayResource
-        byte[] pdfBytes;
-        try {
-            pdfBytes = Files.readAllBytes(tempPdfFile.toPath());
-        } catch (IOException e) {
-            log.error("Failed to read PDF file for order ID: {}, error: {}", orderId, e.getMessage());
-            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to read generated PDF file");
-        }
-        ByteArrayResource resource = new ByteArrayResource(pdfBytes);
-
-        // Xóa file tạm (chỉ xóa nếu không cần giữ lại)
-        if (tempLatexFile.exists()) tempLatexFile.delete();
-        if (tempPdfFile.exists()) tempPdfFile.delete();
-
-        // Trả về response với file PDF
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=invoice_" + orderId + ".pdf");
-        return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(pdfBytes.length)
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(resource);
+    public ResponseEntity<String> generateInvoicePdf(@PathVariable Integer orderId) {
+        return ResponseEntity.ok(paymentService.generateInvoicePdf(orderId));
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getPayments(
-            @RequestParam(required = false) String period,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String transactionId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String orderBy,
-            @RequestParam(defaultValue = "ASC") String sort) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
-        Page<PaymentResponse> payments = paymentService.getPayments(period, startDate, endDate, status, transactionId, pageable);
-        return ResponseEntity.ok(ApiResponse.<Page<PaymentResponse>>builder().result(payments).build());
+
+
+    @GetMapping("/search-transactions")
+    public ResponseEntity<ApiResponse<?>> searchTransactions(@RequestParam String query) {
+        ApiResponse<?> response = paymentService.searchTransactions(query);
+        return ResponseEntity.ok().body(response);
     }
 
-    // Xem chi tiết giao dịch (hóa đơn liên quan) (endpoint mới)
-    @GetMapping("/{transactionId}")
-    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getPaymentDetails(
-            @PathVariable String transactionId) {
-        RestaurantOrderResponse orderDetails = paymentService.getPaymentDetails(transactionId);
-        return ResponseEntity.ok(ApiResponse.<RestaurantOrderResponse>builder().result(orderDetails).build());
+    @GetMapping("/suggestions")
+    public ResponseEntity<ApiResponse<?>> getSuggestions(@RequestParam String query) {
+        ApiResponse<?> response = paymentService.getSuggestions(query);
+        return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/status/{orderId}")
-    public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentStatus(@PathVariable Integer orderId) {
-        log.info("Fetching payment status for order ID: {}", orderId);
-        PaymentResponse response = paymentService.getPaymentStatus(orderId);
-        ApiResponse<PaymentResponse> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(response);
-        return ResponseEntity.ok(apiResponse);
-    }
+
+
 }

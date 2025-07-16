@@ -274,7 +274,7 @@ public class RestaurantOrderService {
 
         if (OrderType.DELIVERY.name().equals(request.getOrderType())
                 || OrderType.TAKEAWAY.name().equals(request.getOrderType())) {
-
+            log.info("Creating payment for order ID: {}", order.getId());
             Payment payment = createPaymentForOrder(order, request.getPayment());
             order.setPayment(payment);
             log.info("Payment created for order ID: {}, Payment Method: {}, Amount: {}",

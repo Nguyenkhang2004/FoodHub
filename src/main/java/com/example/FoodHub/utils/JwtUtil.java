@@ -45,7 +45,7 @@ public class JwtUtil {
                     .expirationTime(Date.from(Instant.now().plusSeconds(TABLE_TOKEN_DURATION)))
                     .issueTime(new Date())
                     .jwtID(UUID.randomUUID().toString())
-                    .claim("scope", tableNumber + " CREATE_ORDER VIEW_ORDER")
+                    .claim("scope", tableNumber + " CREATE_ORDER VIEW_ORDER PROCESS_PAYMENT")
                     .claim("type", "TABLE_TOKEN")
                     .build();
 
