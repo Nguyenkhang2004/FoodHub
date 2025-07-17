@@ -28,7 +28,6 @@ public class WorkShiftLog {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @NotNull
     @Column(name = "check_in_time", nullable = false)
     private Instant checkInTime;
 

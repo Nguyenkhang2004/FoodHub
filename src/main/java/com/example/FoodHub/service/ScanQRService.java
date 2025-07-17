@@ -111,6 +111,7 @@ public class ScanQRService {
     @Transactional
     public void finishSession(String token) {
         String tableNumber = jwtUtil.getTableNumberFromToken(token);
+        log.info("Finishing session for table: {}, token: {}", tableNumber, token);
         RestaurantTable table = tableRepository.findByTableNumberWithLock(tableNumber)
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
 

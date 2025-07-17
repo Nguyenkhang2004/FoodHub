@@ -153,6 +153,19 @@ public class PaymentService {
         return paymentMapper.toPaymentResponse(payment);
     }
 
+    public PaymentResponse getPaymentStatus(Integer orderId) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Payment not found for order ID: " + orderId));
+        PaymentResponse response = new PaymentResponse();
+        response.setOrderId(orderId);
+        response.setAmount(payment.getAmount());
+        response.setTransactionId(payment.getTransactionId());
+        response.setStatus(payment.getStatus().toString());
+        response.setCreatedAt(payment.getCreatedAt());
+        response.setUpdatedAt(payment.getUpdatedAt());
+        return response;
+    }
+
     public PaymentResponse getUncompletedPaymentByOrderId(Integer orderId) {
         log.info("Fetching payment for order ID: {}", orderId);
         Payment payment = paymentRepository.findByOrderIdAndStatus(orderId, PaymentStatus.PENDING.name())

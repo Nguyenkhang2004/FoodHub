@@ -311,7 +311,7 @@ public class RestaurantOrderService {
             log.warn("Token không hợp lệ: {}", request.getToken());
             throw new AppException(ErrorCode.INVALID_QR_TOKEN);
         }
-        if (request.getUserId() == null) {
+        if (request.getToken() == null && request.getUserId() == null) {
             Integer userId;
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth instanceof JwtAuthenticationToken jwtAuth) {
@@ -778,5 +778,25 @@ public class RestaurantOrderService {
         return orders.map(orderMapper::toRestaurantOrderResponse);
     }
 
+    public RestaurantOrderResponse getOrderForCustomerByToken(Integer tableId, String token) {
+        RestaurantTable table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
+
+        if (!token.equals(table.getCurrentToken())) {
+            throw new AppException(ErrorCode.INVALID_QR_TOKEN);
+        }
+
+        List<String> activeStatuses = List.of(
+                OrderStatus.PENDING.name(),
+                OrderStatus.CONFIRMED.name(),
+                OrderStatus.PREPARING.name(),
+                OrderStatus.READY.name()
+        );
+
+        RestaurantOrder order = orderRepository.findFirstByTableIdAndStatusInOrderByCreatedAtDesc(tableId, activeStatuses)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
+
+        return orderMapper.toRestaurantOrderResponse(order);
+    }
 
 }

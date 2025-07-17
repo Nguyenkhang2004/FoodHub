@@ -144,6 +144,20 @@ public class OrderController {
         return ResponseEntity.ok().body(response);
     }
 
+    @GetMapping("/table/{tableId}/current/customer")
+    public ResponseEntity<ApiResponse<RestaurantOrderResponse>> getCurrentOrderForCustomer(
+            @PathVariable Integer tableId,
+            @RequestHeader("Authorization") String bearerToken) {
+
+        String token = bearerToken.replace("Bearer", "").trim();
+
+        RestaurantOrderResponse response = orderService.getOrderForCustomerByToken(tableId, token);
+
+        return ResponseEntity.ok(ApiResponse.<RestaurantOrderResponse>builder()
+                .result(response)
+                .build());
+    }
+
     @GetMapping("/completed")
     public ResponseEntity<ApiResponse<Page<RestaurantOrderResponse>>> getCompletedOrders(
             @RequestParam(required = false) String period,
