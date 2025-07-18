@@ -151,7 +151,7 @@ public class ScanQRService {
         log.info("Deleted {} expired tokens", deleted);
     }
 
-    private void invalidateToken(String token) {
+    public void invalidateToken(String token) {
         String jwtId = jwtUtil.getJwtIdFromToken(token);
         InvalidateToken invalidToken = InvalidateToken.builder()
                 .token(jwtId)

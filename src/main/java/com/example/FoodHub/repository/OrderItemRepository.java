@@ -14,7 +14,7 @@ import java.util.List;
 public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
     @Query("SELECT oi.menuItem.name, SUM(oi.quantity), SUM(oi.price * oi.quantity) " +
             "FROM OrderItem oi JOIN oi.order o JOIN o.payment p " +
-            "WHERE p.status = 'PAID' AND p.createdAt BETWEEN :start AND :end " +
+            "WHERE p.status = 'PAID' AND oi.status = 'COMPLETED' AND p.createdAt BETWEEN :start AND :end " +
             "GROUP BY oi.menuItem.id, oi.menuItem.name " +
             "ORDER BY SUM(oi.quantity) DESC")
     List<Object[]> findTopDishesByPeriod(@Param("start") Instant start, @Param("end") Instant end);

@@ -191,16 +191,18 @@ public class WorkScheduleService {
             throw new AppException(ErrorCode.WORK_SCHEDULE_NOT_FOUND);
         }
         if (schedules.size() == 1) {
+            log.info("Only one schedule found for today: {}", schedules.get(0).toString());
             return workScheduleMapper.toShiftResponse(schedules.get(0), schedules.get(0).getWorkDate());
         }
         WorkSchedule currentSchedule = null;
         for (WorkSchedule schedule : schedules) {
+            log.info("Checking schedule: {}", schedule.toString());
             currentSchedule = schedule;
             WorkShiftLog existingLog = workShiftLogRepository
                     .findByWorkScheduleId(schedule.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.WORK_SHIFT_LOG_NOT_FOUND));
             if(existingLog.getStatus().equals(ShiftStatus.ABSENT.name())) {
-                continue; // Bỏ qua nếu đã đánh dấu vắng
+                continue;
             }
 
             if(existingLog.getStatus().equals(ShiftStatus.UNSCHEDULED.name())) {
@@ -212,7 +214,6 @@ public class WorkScheduleService {
             }
         }
         return workScheduleMapper.toShiftResponse(currentSchedule, currentSchedule.getWorkDate());
-
     }
 
     @PreAuthorize("hasAuthority('VIEW_WORK_SCHEDULE')")

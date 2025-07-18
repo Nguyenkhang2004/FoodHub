@@ -4,10 +4,7 @@ import com.example.FoodHub.dto.request.PayOSRequest;
 import com.example.FoodHub.dto.request.PaymentRequest;
 import com.example.FoodHub.dto.response.*;
 import com.example.FoodHub.entity.*;
-import com.example.FoodHub.enums.NotificationType;
-import com.example.FoodHub.enums.OrderStatus;
-import com.example.FoodHub.enums.PaymentMethod;
-import com.example.FoodHub.enums.PaymentStatus;
+import com.example.FoodHub.enums.*;
 import com.example.FoodHub.exception.AppException;
 import com.example.FoodHub.exception.ErrorCode;
 import com.example.FoodHub.mapper.PaymentMapper;
@@ -65,8 +62,7 @@ public class PaymentService {
     PaymentMapper paymentMapper;
     PayOSUtils payOSUtils;
     RestaurantOrderMapper restaurantOrderMapper;
-
-
+    ScanQRService scanQRService;
 
     @PreAuthorize("hasAuthority('PROCESS_PAYMENT')")
     @Transactional
@@ -147,6 +143,21 @@ public class PaymentService {
         payment.setStatus(finalStatus);
         payment.setUpdatedAt(TimeUtils.getNowInVietNam());
         paymentRepository.save(payment);
+        RestaurantOrder order = payment.getOrder();
+
+        if(PaymentStatus.PAID.name().equals(finalStatus) &&
+                (!(order.getOrderType().equals(OrderType.DELIVERY.name())
+                        || order.getOrderType().equals(OrderType.TAKEAWAY.name())))) {
+            order.setStatus(OrderStatus.COMPLETED.name());
+            order.setUpdatedAt(TimeUtils.getNowInVietNam());
+
+            orderRepository.save(order);
+            RestaurantTable table = order.getTable();
+            if(table.getCurrentToken() != null) {
+                // Invalidate the current token if it exists
+                scanQRService.finishSession(table.getCurrentToken());
+            }
+        }
         if(PaymentStatus.PAID.name().equals(finalStatus)) {
             notificationService.notifyOrderEvent(payment.getOrder(), NotificationType.BANKING_COMPLETED.name());
         }
