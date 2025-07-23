@@ -92,7 +92,22 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 
 //========================================================================================
 
-    @Query("SELECT p FROM Payment p WHERE p.transactionId LIKE %:transactionId% AND p.createdAt BETWEEN :start AND :end")
-    List<Payment> findByTransactionIdContainingAndCreatedAtBetween(String transactionId, Instant start, Instant end);
+
+    @Query("SELECT p FROM Payment p WHERE p.order.id = :orderId")
+    List<Payment> findByOrderId2(@Param("orderId") Integer orderId);
+
+
+
+    @Query("SELECT p FROM Payment p WHERE CAST(p.order.id AS string) LIKE %:query%")
+    List<Payment> findByOrderIdContaining(@Param("query") String query);
+
+
+    // Thêm phương thức mới để lọc theo orderId và thời gian
+    @Query("SELECT p FROM Payment p WHERE CAST(p.order.id AS string) LIKE %:query% AND p.createdAt BETWEEN :start AND :end")
+    List<Payment> findByOrderIdContainingAndCreatedAtBetween(@Param("query") String query, @Param("start") Instant start, @Param("end") Instant end);
+
+    // Thêm phương thức mới để lọc theo transactionId và thời gian
+    @Query("SELECT p FROM Payment p WHERE p.transactionId LIKE %:query% AND p.createdAt BETWEEN :start AND :end")
+    List<Payment> findByTransactionIdContainingAndCreatedAtBetween(@Param("query") String query, @Param("start") Instant start, @Param("end") Instant end);
 
 }

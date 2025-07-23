@@ -173,6 +173,11 @@ public class PaymentService {
         return paymentMapper.toPaymentResponse(payment);
     }
 
+
+
+
+//    =====================================================
+//dungf cai gtpayment
     public Page<PaymentResponse> getPayments(
             String period, Instant startDate, Instant endDate, String status, String transactionId,
             String paymentMethod, BigDecimal minPrice, BigDecimal maxPrice, // THÊM 2 PARAMETER
@@ -202,6 +207,11 @@ public class PaymentService {
         return payments.map(paymentMapper::toPaymentResponse);
     }
 
+//    =====================================================
+
+
+    //    =====================================================
+
     // Phương thức: Xem chi tiết giao dịch
     public RestaurantOrderResponse getPaymentDetails(Integer id) {
         log.info("Fetching payment details for id: {}", id);
@@ -209,6 +219,7 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch: " + id));
         return restaurantOrderMapper.toRestaurantOrderResponse(payment.getOrder());
     }
+//    =====================================================
 
     private Instant getStartDate(String period, Instant startDate) {
         ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
@@ -409,22 +420,14 @@ public class PaymentService {
     public ApiResponse<?> searchTransactions(String query) {
         try {
             log.info("Searching transactions with query: {}", query);
-
-            // Tính ngày hôm nay theo múi giờ Asia/Ho_Chi_Minh (UTC+7)
-            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-            Instant startOfDay = now.toLocalDate().atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
-            Instant endOfDay = now.toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).minusSeconds(1).toInstant();
-
             List<Payment> payments;
+
             if (query.matches("\\d+")) {
                 Integer orderId = Integer.parseInt(query);
-                payments = paymentRepository.findByCreatedAtBetween(startOfDay, endOfDay)
-                        .stream()
-                        .filter(p -> p.getOrder() != null && p.getOrder().getId().equals(orderId))
-                        .collect(Collectors.toList());
+                payments = paymentRepository.findByOrderId2(orderId);
                 log.info("Search by orderId: {}, Found: {}", orderId, payments);
             } else {
-                payments = paymentRepository.findByTransactionIdContainingAndCreatedAtBetween(query, startOfDay, endOfDay);
+                payments = paymentRepository.findByTransactionIdContaining(query);
                 log.info("Search by transactionId containing: {}, Found: {}", query, payments);
             }
 
@@ -432,14 +435,12 @@ public class PaymentService {
                     .map(payment -> {
                         PaymentResponse response = paymentMapper.toPaymentResponse(payment);
                         if (response.getCreatedAt() != null) {
-                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
-                            ZonedDateTime zonedDateTime = response.getCreatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
-                            response.setCreatedAt(zonedDateTime.toInstant()); // Giữ dạng Instant nhưng đã trừ 7 tiếng
+                            ZonedDateTime zonedDateTime = response.getCreatedAt().atZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+                            response.setCreatedAt(zonedDateTime.toInstant());
                         }
                         if (response.getUpdatedAt() != null) {
-                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
-                            ZonedDateTime zonedDateTime = response.getUpdatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
-                            response.setUpdatedAt(zonedDateTime.toInstant()); // Giữ dạng Instant nhưng đã trừ 7 tiếng
+                            ZonedDateTime zonedDateTime = response.getUpdatedAt().atZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+                            response.setUpdatedAt(zonedDateTime.toInstant());
                         }
                         return response;
                     })
@@ -462,37 +463,21 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<?> getSuggestions(String query) {
+    public ApiResponse<?> getSuggestions(String query, String period) {
         try {
-            log.info("Fetching suggestions with query: {}", query);
+            log.info("Fetching suggestions with query: {}, period: {}", query, period);
 
-            // Tính ngày hôm nay theo múi giờ Asia/Ho_Chi_Minh (UTC+7)
-            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-            Instant startOfDay = now.toLocalDate().atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
-            Instant endOfDay = now.toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).minusSeconds(1).toInstant();
+            // Xác định khoảng thời gian dựa trên period
+            Instant start = getStartDate(period, null);
+            Instant end = getEndDate(period, null);
 
-            List<Payment> orderIdSuggestions = paymentRepository.findByCreatedAtBetween(startOfDay, endOfDay)
-                    .stream()
-                    .filter(p -> p.getOrder() != null && String.valueOf(p.getOrder().getId()).toLowerCase().contains(query.toLowerCase()))
-                    .collect(Collectors.toList());
-            List<Payment> transactionIdSuggestions = paymentRepository.findByCreatedAtBetween(startOfDay, endOfDay)
-                    .stream()
-                    .filter(p -> p.getTransactionId() != null && p.getTransactionId().toLowerCase().contains(query.toLowerCase()))
-                    .collect(Collectors.toList());
+            // Lọc giao dịch theo orderId hoặc transactionId và thời gian
+            List<Payment> orderIdSuggestions = paymentRepository.findByOrderIdContainingAndCreatedAtBetween(query, start, end);
+            List<Payment> transactionIdSuggestions = paymentRepository.findByTransactionIdContainingAndCreatedAtBetween(query, start, end);
 
             List<String> suggestions = Stream.concat(orderIdSuggestions.stream(), transactionIdSuggestions.stream())
                     .map(p -> {
                         PaymentResponse response = paymentMapper.toPaymentResponse(p);
-                        if (response.getCreatedAt() != null) {
-                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
-                            ZonedDateTime zonedDateTime = response.getCreatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
-                            response.setCreatedAt(zonedDateTime.toInstant());
-                        }
-                        if (response.getUpdatedAt() != null) {
-                            // Giữ nguyên logic trừ 7 tiếng từ UTC sang UTC-7
-                            ZonedDateTime zonedDateTime = response.getUpdatedAt().atZone(ZoneId.of("UTC")).minusHours(7);
-                            response.setUpdatedAt(zonedDateTime.toInstant());
-                        }
                         return String.valueOf(p.getOrder().getId()) + " - " + (p.getTransactionId() != null ? p.getTransactionId() : "N/A");
                     })
                     .distinct()
@@ -514,25 +499,28 @@ public class PaymentService {
                     .build();
         }
     }
+
 //========================================================================================
 
 //======================
 
-    // Get revenue stats by date
     public RevenueStatsResponseForCashier getRevenueStatsByDate(Instant date) {
         log.info("Fetching revenue stats for date: {}", date);
-        Instant startOfDay = date.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate()
-                .atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
-        Instant endOfDay = date.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate()
-                .plusDays(1).atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).minusSeconds(1).toInstant();
-
+        ZonedDateTime zonedDate = date.atZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+        Instant startOfDay = zonedDate.toLocalDate().atStartOfDay(ZoneId.of("UTC")).toInstant();
+        Instant endOfDay = zonedDate.toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("UTC")).minusSeconds(1).toInstant();
+        log.info("Query range: startOfDay={}, endOfDay={}", startOfDay, endOfDay);
         return calculateRevenueStats(startOfDay, endOfDay);
     }
 
-
-    // Calculate revenue stats
     private RevenueStatsResponseForCashier calculateRevenueStats(Instant start, Instant end) {
         List<Payment> payments = paymentRepository.findByCreatedAtBetween(start, end);
+        log.info("Found {} payments between {} and {}", payments.size(), start, end);
+        for (Payment payment : payments) {
+            log.info("Payment: id={}, order_id={}, status={}, amount={}, created_at={}",
+                    payment.getId(), payment.getOrder().getId(), payment.getStatus(),
+                    payment.getAmount(), payment.getCreatedAt());
+        }
 
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal cashRevenue = BigDecimal.ZERO;
@@ -543,22 +531,23 @@ public class PaymentService {
 
         for (Payment payment : payments) {
             BigDecimal amount = payment.getAmount() != null ? payment.getAmount() : BigDecimal.ZERO;
-
             if ("PAID".equals(payment.getStatus())) {
                 totalRevenue = totalRevenue.add(amount);
                 paidRevenue = paidRevenue.add(amount);
-
                 if ("CASH".equals(payment.getPaymentMethod())) {
                     cashRevenue = cashRevenue.add(amount);
                 } else if ("VNPAY".equals(payment.getPaymentMethod())) {
                     vnpayRevenue = vnpayRevenue.add(amount);
                 }
-            } else if ("PENDING".equals(payment.getStatus())) {
+            } else if ("PENDING".equals(payment.getStatus()) || "UNPAID".equals(payment.getStatus())) {
                 pendingRevenue = pendingRevenue.add(amount);
             } else if ("CANCELLED".equals(payment.getStatus())) {
                 cancelledRevenue = cancelledRevenue.add(amount);
             }
         }
+
+        log.info("Revenue stats: totalRevenue={}, cashRevenue={}, vnpayRevenue={}, pendingRevenue={}, paidRevenue={}, cancelledRevenue={}",
+                totalRevenue, cashRevenue, vnpayRevenue, pendingRevenue, paidRevenue, cancelledRevenue);
 
         return new RevenueStatsResponseForCashier(totalRevenue, cashRevenue, vnpayRevenue,
                 pendingRevenue, paidRevenue, cancelledRevenue);
@@ -580,6 +569,28 @@ public class PaymentService {
 //========================================================================================
 
 
+
+
+//========================================================================================
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getNewOrders() {
+        try {
+            List<Payment> payments = paymentRepository.findByStatus("PENDING");
+
+
+
+            return payments.stream()
+                    .map(paymentMapper::toPaymentResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to fetch pending orders");
+        }
+    }
+
+//========================================================================================
+
+
     public InvoiceResponse getOrderDetails(Integer orderId) {
         // Lấy thông tin đơn hàng
         RestaurantOrder order = orderRepository.findById(orderId)
@@ -589,17 +600,14 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        // Lấy thông tin bàn
+        // Lấy thông tin bàn (cho phép null)
         RestaurantTable table = order.getTable();
-        if (table == null) {
-            throw new AppException(ErrorCode.TABLE_NOT_EXISTED);
-        }
+        String tableNumber = table != null ? table.getTableNumber() : "N/A";
 
-        // Lấy thông tin khách hàng
+        // Lấy thông tin khách hàng (cho phép null)
         User user = order.getUser();
-        if (user == null) {
-            throw new AppException(ErrorCode.TABLE_NOT_EXISTED);
-        }
+        String customerName = user != null ? user.getUsername() : "N/A";
+        String customerEmail = user != null ? user.getEmail() : "N/A";
 
         // Lấy danh sách món ăn
         List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
@@ -623,53 +631,33 @@ public class PaymentService {
         InvoiceResponse response = new InvoiceResponse();
         response.setOrderId(order.getId());
         response.setPaymentDate(payment.getUpdatedAt());
-        response.setTableNumber(table.getTableNumber());
-        response.setCustomerName(user.getUsername());
-        response.setCustomerEmail(user.getEmail());
+        response.setTableNumber(tableNumber);
+        response.setCustomerName(customerName);
+        response.setCustomerEmail(customerEmail);
         response.setAmount(payment.getAmount());
-        response.setPaymentMethod(payment.getPaymentMethod().toString());
-        response.setStatus(payment.getStatus().toString());
+        response.setPaymentMethod(payment.getPaymentMethod() != null ? payment.getPaymentMethod().toString() : "N/A");
+        response.setStatus(payment.getStatus() != null ? payment.getStatus().toString() : "N/A");
         response.setTransactionId(payment.getTransactionId());
         response.setOrderItems(orderItems);
 
-        // Định dạng paymentDate thành formattedPaymentDate
+        // Định dạng paymentDate, bù 7 tiếng vì TimeUtils.getNowInVietNam() trả về UTC
         String formattedPaymentDate = payment.getUpdatedAt() != null
                 ? DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
-                .withZone(ZoneId.of("UTC"))
-                .format(payment.getUpdatedAt())
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"))
+                .format(payment.getUpdatedAt().plusSeconds(7 * 3600)) // Bù 7 tiếng (7 * 3600 giây)
                 : "N/A";
-
         response.setFormattedPaymentDate(formattedPaymentDate);
 
         return response;
     }
 
 
-//========================================================================================
 
-    @Transactional(readOnly = true)
-    public List<PaymentResponse> getNewOrders() {
-        try {
-            List<Payment> payments = paymentRepository.findByStatus("PENDING");
-
-
-
-            return payments.stream()
-                    .map(paymentMapper::toPaymentResponse)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to fetch pending orders");
-        }
-    }
-
-//========================================================================================
 
 
     public String generateInvoicePdf(Integer orderId) {
-
         // Lấy dữ liệu hóa đơn
         InvoiceResponse invoice = getOrderDetails(orderId);
-
 
         // Tạo PDF với khổ giấy nhỏ (80mm x 150mm)
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -708,7 +696,24 @@ public class PaymentService {
                     .setTextAlignment(TextAlignment.CENTER)).setBorder(null));
 
             // Thông tin hóa đơn
-            String paymentTime = invoice.getFormattedPaymentDate() != null ? invoice.getFormattedPaymentDate() : "N/A";
+            String paymentTime = "N/A";
+            if (invoice.getPaymentDate() != null) {
+                // Log để debug
+                System.out.println("Server TimeZone: " + ZoneId.systemDefault());
+                System.out.println("Raw paymentDate: " + invoice.getPaymentDate());
+                // Format paymentDate với múi giờ UTC, bao gồm ngày tháng năm
+                paymentTime = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                        .withZone(ZoneId.of("UTC"))
+                        .format(invoice.getPaymentDate());
+                System.out.println("Formatted paymentTime (UTC): " + paymentTime);
+            } else {
+                // Fallback: Dùng thời gian hiện tại (UTC)
+                paymentTime = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                        .withZone(ZoneId.of("UTC"))
+                        .format(Instant.now());
+                System.out.println("Fallback paymentTime (UTC): " + paymentTime);
+            }
+
             table.addCell(new Cell().add(new Paragraph("Invoice No: " + invoice.getOrderId()).setFontSize(6)).setBorder(null));
             table.addCell(new Cell().add(new Paragraph("Date: " + paymentTime).setFontSize(6)).setBorder(null));
             table.addCell(new Cell().add(new Paragraph("Table: " + (invoice.getTableNumber() != null ? invoice.getTableNumber() : "N/A")).setFontSize(6)).setBorder(null));
@@ -784,6 +789,7 @@ public class PaymentService {
         String baseUrl = "http://localhost:8080"; // Thay bằng domain thực tế
         return baseUrl + "/" + uploadDir + fileName;
     }
+
 
 //========================================================================================
 
