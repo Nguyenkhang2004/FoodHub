@@ -25,6 +25,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -93,24 +94,43 @@ public class RestaurantOrderService {
             Integer userId,
             Pageable pageable) {
 
-        log.info("Fetching orders for status: {}, tableId: {}, userId: {}",
-                status, tableNumber, userId);
+        log.info("Fetching orders for status: {}, tableId: {}, userId: {}", status, tableNumber, userId);
+
         WorkShiftLog existingWorkShiftLog = validateUserCheckedInToday(userId);
         Instant startTime = existingWorkShiftLog.getCheckInTime();
         Instant endTime = existingWorkShiftLog.getCheckOutTime();
-        log.info("Waiter work shift time range: startTime: {}, endTime: {}",
-                startTime, endTime);
         String area = existingWorkShiftLog.getWorkSchedule().getArea();
-        // Use OrderSpecifications to filter orders
-        Page<RestaurantOrder> orders = orderRepository.findAll(
-                OrderSpecifications.filterWaiterOrders(
-                        status, tableNumber, area, startTime, endTime
-                ),
+
+        log.info("Waiter work shift time range: startTime: {}, endTime: {}, area: {}", startTime, endTime, area);
+
+        // Lấy tất cả đơn hàng (bao gồm cả DELIVERY và TAKEAWAY)
+        Page<RestaurantOrder> allOrders = orderRepository.findAll(
+                OrderSpecifications.filterWorkShiftOrders(status, tableNumber, startTime, endTime),
                 pageable
         );
 
-        return orders.map(orderMapper::toRestaurantOrderResponse);
+        // Lọc lại: chỉ giữ DINE_IN nếu thuộc đúng khu vực
+        List<RestaurantOrder> filteredOrders = allOrders
+                .stream()
+                .filter(order -> {
+                    if (order.getOrderType().equals("DINE_IN")) {
+                        return order.getTable() != null &&
+                                order.getTable().getArea() != null &&
+                                order.getTable().getArea().equals(area);
+                    }
+                    // TAKEAWAY, DELIVERY giữ nguyên
+                    return true;
+                })
+                .toList();
+
+        // Ánh xạ lại sang response
+        return new PageImpl<>(
+                filteredOrders.stream().map(orderMapper::toRestaurantOrderResponse).toList(),
+                pageable,
+                filteredOrders.size()
+        );
     }
+
 
     private WorkShiftLog validateUserCheckedInToday(Integer userId) {
         WorkSchedule workSchedule = workScheduleRepository.findCurrentWorkShift(userId, LocalDate.now(), LocalTime.now())
@@ -140,7 +160,7 @@ public class RestaurantOrderService {
                 startTime, endTime);
         // Use OrderSpecifications to filter orders
         Page<RestaurantOrder> orders = orderRepository.findAll(
-                OrderSpecifications.filterChefOrders(
+                OrderSpecifications.filterWorkShiftOrders(
                         status, tableNumber, startTime, endTime
                 ),
                 pageable
@@ -167,7 +187,7 @@ public class RestaurantOrderService {
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
-    @PreAuthorize("hasAuthority('VIEW_ORDER')")
+    @PreAuthorize("hasAuthority('VIEW_ORDER') or hasRole('CUSTOMER')")
     public RestaurantOrderResponse getOrdersByOrderId(Integer id) {
         log.info("Fetching orders for order ID: {}", id);
         return orderRepository.findById(id)
@@ -770,7 +790,7 @@ public class RestaurantOrderService {
                 return defaultEnd;
         }
     }
-
+    @PreAuthorize("hasAuthority('VIEW_ORDER') or hasRole('CUSTOMER')")
     public Page<RestaurantOrderResponse> getAllOrdersByUserId(Integer userId, Pageable pageable) {
         log.info("Fetching all orders for user ID: {}", userId);
         userRepository.findById(userId)

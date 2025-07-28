@@ -127,45 +127,45 @@ public class OrderSpecifications {
 
 
 
-    // Hàm lọc order cho waiter - sử dụng base và thêm area filter
-    public static Specification<RestaurantOrder> filterWaiterOrders(
-            String status, String tableNumber, String area, Instant startTime, Instant endTime) {
-        log.info("Filtering waiter orders with status: {}, tableNumber: {}, area: {}, startTime: {}, endTime: {}",
-                status, tableNumber, area, startTime, endTime);
-
-        // Sử dụng base specification (đã bao gồm payment filtering)
-        Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime, endTime);
-
-        // Nếu area là null hoặc rỗng, chỉ trả về baseSpec (bao gồm tất cả order types)
-        if (area == null || area.isEmpty()) {
-            return baseSpec;
-        }
-
-        // Specification cho đơn DINE_IN trong khu vực cụ thể
-        Specification<RestaurantOrder> dineInAreaSpec = (root, query, cb) -> {
-            Predicate isDineIn = cb.equal(root.get("orderType"), "DINE_IN");
-            Predicate tableNotNull = cb.isNotNull(root.get("table"));
-            Predicate isInArea = cb.equal(root.get("table").get("area"), area);
-            return cb.and(isDineIn, tableNotNull, isInArea);
-        };
-
-        // Specification cho đơn TAKEAWAY/DELIVERY (không phân biệt area)
-        Specification<RestaurantOrder> takeawayDeliverySpec = (root, query, cb) -> {
-            return root.get("orderType").in("TAKEAWAY", "DELIVERY");
-        };
-
-        // Kết hợp: (đơn DINE_IN trong khu vực) OR (đơn TAKEAWAY/DELIVERY)
-        return baseSpec.and(dineInAreaSpec.or(takeawayDeliverySpec));
-    }
-
-    // Hàm lọc order cho chef - sử dụng base và thêm payment check
-    public static Specification<RestaurantOrder> filterChefOrders(
-            String status, String tableNumber, Instant startTime, Instant endTime) {
-        log.info("Filtering chef orders with status: {}, tableNumber: {}, startTime: {}, endTime: {}",
-                status, tableNumber, startTime, endTime);
-
-
-        return filterWorkShiftOrders(status, tableNumber, startTime, endTime);
-    }
+//    // Hàm lọc order cho waiter - sử dụng base và thêm area filter
+//    public static Specification<RestaurantOrder> filterWaiterOrders(
+//            String status, String tableNumber, String area, Instant startTime, Instant endTime) {
+//
+//        log.info("Filtering waiter orders with status: {}, tableNumber: {}, area: {}, startTime: {}, endTime: {}",
+//                status, tableNumber, area, startTime, endTime);
+//
+//        // Bộ lọc cơ bản (status, bàn, thời gian)
+//        Specification<RestaurantOrder> baseSpec = filterWorkShiftOrders(status, tableNumber, startTime, endTime);
+//
+//        return (root, query, cb) -> {
+//            Predicate basePredicate = baseSpec.toPredicate(root, query, cb);
+//
+//            // Lọc DINE_IN theo area nếu có
+//            Predicate dineInFilter = cb.and(
+//                    cb.equal(root.get("orderType"), "DINE_IN"),
+//                    cb.isNotNull(root.get("table")),
+//                    (area == null || area.isEmpty())
+//                            ? cb.conjunction() // không lọc theo area
+//                            : cb.equal(root.get("table").get("area"), area)
+//            );
+//
+//            // TAKEAWAY/DELIVERY không cần lọc theo khu vực
+//            Predicate otherTypes = root.get("orderType").in("TAKEAWAY", "DELIVERY");
+//
+//            // Combine điều kiện
+//            return cb.and(basePredicate, cb.or(dineInFilter, otherTypes));
+//        };
+//    }
+//
+//
+//    // Hàm lọc order cho chef - sử dụng base và thêm payment check
+//    public static Specification<RestaurantOrder> filterChefOrders(
+//            String status, String tableNumber, Instant startTime, Instant endTime) {
+//        log.info("Filtering chef orders with status: {}, tableNumber: {}, startTime: {}, endTime: {}",
+//                status, tableNumber, startTime, endTime);
+//
+//
+//        return filterWorkShiftOrders(status, tableNumber, startTime, endTime);
+//    }
 
 }

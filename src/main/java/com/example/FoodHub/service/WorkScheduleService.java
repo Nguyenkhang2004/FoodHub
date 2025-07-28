@@ -79,17 +79,17 @@ public class WorkScheduleService {
         if (shiftDate.isEqual(today) && !shiftRequest.getShift().equalsIgnoreCase("FULL_DAY")) {
             switch (shiftRequest.getShift().toUpperCase()) {
                 case "MORNING":
-                    if (currentTime.isAfter(LocalTime.of(8, 30))) {
+                    if (currentTime.isAfter(LocalTime.of(8, 45))) {
                         throw new AppException(ErrorCode.PAST_SHIFT_TIME);
                     }
                     break;
                 case "AFTERNOON":
-                    if (currentTime.isAfter(LocalTime.of(12, 30))) {
+                    if (currentTime.isAfter(LocalTime.of(12, 45))) {
                         throw new AppException(ErrorCode.PAST_SHIFT_TIME);
                     }
                     break;
                 case "EVENING":
-                    if (currentTime.isAfter(LocalTime.of(17, 30))) {
+                    if (currentTime.isAfter(LocalTime.of(17, 45))) {
                         throw new AppException(ErrorCode.PAST_SHIFT_TIME);
                     }
                     break;

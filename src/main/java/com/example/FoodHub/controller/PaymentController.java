@@ -48,9 +48,9 @@ public class PaymentController {
         return ResponseEntity.ok().body(apiResponse);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CASHIER')")
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getPayments(
+    public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getPayments( // tao dùng cái này
             @RequestParam(required = false) String period,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -74,6 +74,8 @@ public class PaymentController {
 
         return ResponseEntity.ok(ApiResponse.<Page<PaymentResponse>>builder().result(payments).build());
     }
+
+
     @PreAuthorize("hasRole('ADMIN')")
     // Xem chi tiết giao dịch (hóa đơn liên quan) (endpoint mới)
     @GetMapping("/{id}")
@@ -206,8 +208,10 @@ public class PaymentController {
     }
 
     @GetMapping("/suggestions")
-    public ResponseEntity<ApiResponse<?>> getSuggestions(@RequestParam String query) {
-        ApiResponse<?> response = paymentService.getSuggestions(query);
+    public ResponseEntity<ApiResponse<?>> getSuggestions(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "today") String period) {
+        ApiResponse<?> response = paymentService.getSuggestions(query, period);
         return ResponseEntity.ok().body(response);
     }
 
