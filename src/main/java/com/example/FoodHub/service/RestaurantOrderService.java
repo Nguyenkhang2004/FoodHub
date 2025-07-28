@@ -167,7 +167,7 @@ public class RestaurantOrderService {
         return orderMapper.toRestaurantOrderResponse(order);
     }
 
-    @PreAuthorize("hasAuthority('VIEW_ORDER')")
+    @PreAuthorize("hasAuthority('VIEW_ORDER') or hasRole('CUSTOMER')")
     public RestaurantOrderResponse getOrdersByOrderId(Integer id) {
         log.info("Fetching orders for order ID: {}", id);
         return orderRepository.findById(id)
@@ -770,7 +770,7 @@ public class RestaurantOrderService {
                 return defaultEnd;
         }
     }
-
+    @PreAuthorize("hasAuthority('VIEW_ORDER') or hasRole('CUSTOMER')")
     public Page<RestaurantOrderResponse> getAllOrdersByUserId(Integer userId, Pageable pageable) {
         log.info("Fetching all orders for user ID: {}", userId);
         userRepository.findById(userId)
