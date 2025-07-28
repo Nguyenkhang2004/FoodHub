@@ -376,7 +376,7 @@ public class RestaurantOrderService {
                 existingItem.setQuantity(newQuantity);
                 // Tính lại price cho item hiện tại
                 existingItem.setPrice(menuItem.getPrice().multiply(BigDecimal.valueOf(newQuantity)));
-
+                existingItem.setNote(itemRequest.getNote());
                 // Update status nếu có
                 if (itemRequest.getStatus() != null) {
                     existingItem.setStatus(itemRequest.getStatus());
@@ -545,13 +545,17 @@ public class RestaurantOrderService {
             notificationService.notifyOrderEvent(savedOrder, NotificationType.ORDER_ITEM_READY.name());
         }
 
+        RestaurantOrderResponse response = orderMapper.toRestaurantOrderResponse(savedOrder);
+
         // Gửi thông điệp WebSocket đến client
         if (order.getUser() != null) {
-            messagingTemplate.convertAndSend("/topic/orders/" + order.getUser().getId(),
-                    orderMapper.toRestaurantOrderResponse(savedOrder));
+            messagingTemplate.convertAndSend("/topic/orders/" + order.getUser().getId(), response);
+        }else {
+            log.info("User is null. Sending WebSocket message to /topic/orders/order-{} for anonymous customer", order.getId());
+            messagingTemplate.convertAndSend("/topic/orders/order-" + order.getId(), response);
         }
 
-        return orderMapper.toRestaurantOrderResponse(savedOrder);
+        return response;
     }
 
     private void updateOrderStatusBasedOnItems(RestaurantOrder order) {

@@ -55,7 +55,6 @@ public class SecurityConfig {
             "/images/**","/users/my-info", "/invoices/**", "/api/goong/**"
     };
 
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http

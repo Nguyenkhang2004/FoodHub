@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -51,18 +52,21 @@ public class ScanQRService {
                 .orElseThrow(() -> new AppException(ErrorCode.QR_CODE_INVALID));
 
         Instant now = LocalDateTime.now().toInstant(ZoneOffset.UTC);
-        boolean tokenExpired = table.getTokenExpiry() == null ||
-                (table.getCurrentToken() != null && !jwtUtil.isTokenValid(table.getCurrentToken())) ||
-                table.getTokenExpiry().isBefore(now);
 
-//        Integer activeOrderId = orderRepository.findActiveOrderIdByTable(table.getId());
-//
-//        boolean isCompleted = activeOrderId != null &&
-//                orderRepository.findById(activeOrderId)
-//                        .map(order -> order.getStatus().equals(OrderStatus.COMPLETED.name()))
-//                        .orElse(false);
+        boolean isAvailable = TableStatus.AVAILABLE.name().equals(table.getStatus());
 
-        if (table.getStatus().equals(TableStatus.AVAILABLE.name()) || tokenExpired) {
+        // Chỉ lấy activeOrderId khi bàn KHÔNG AVAILABLE
+        Integer activeOrderId = isAvailable ? null
+                : orderRepository.findActiveOrderIdByTable(table.getId());
+
+        boolean tokenExpired =
+                table.getTokenExpiry() == null ||
+                        table.getCurrentToken() == null ||
+                        !jwtUtil.isTokenValid(table.getCurrentToken()) ||
+                        table.getTokenExpiry().isBefore(now);
+
+        // Nếu AVAILABLE hoặc tokenExpired -> cấp token mới
+        if (isAvailable || tokenExpired) {
             if (table.getCurrentToken() != null) {
                 invalidateToken(table.getCurrentToken());
             }
@@ -72,17 +76,17 @@ public class ScanQRService {
 
             table.setCurrentToken(newToken);
             table.setTokenExpiry(expiry);
-//            table.setStatus(TableStatus.OCCUPIED.name());
             tableRepository.save(table);
 
             return ScanQRResponse.builder()
                     .token(newToken)
                     .tableNumber(table.getTableNumber())
                     .expiryTime(expiry)
-                    .orderId(null) // chưa có đơn
+                    .orderId(isAvailable ? null : activeOrderId) // AVAILABLE => luôn null
                     .build();
         }
 
+        // Token còn hạn nhưng bị revoke
         if (!jwtUtil.isTokenValid(table.getCurrentToken()) || isInvalidated(table.getCurrentToken())) {
             throw new AppException(ErrorCode.INVALID_QR_TOKEN);
         }
@@ -91,9 +95,12 @@ public class ScanQRService {
                 .token(table.getCurrentToken())
                 .tableNumber(table.getTableNumber())
                 .expiryTime(table.getTokenExpiry())
-                .orderId(orderRepository.findActiveOrderIdByTable(table.getId()))
+                .orderId(activeOrderId) // chỉ khác null nếu table != AVAILABLE
                 .build();
     }
+
+
+
 
     public TokenValidationResponse isValidToken(String token) {
         try {
@@ -126,23 +133,6 @@ public class ScanQRService {
         tableRepository.save(table);
     }
 
-    @Scheduled(fixedRate = 300_000) // every 5 minutes
-    public void cleanupExpiredTokens() {
-        Instant now = LocalDateTime.now().toInstant(ZoneOffset.UTC);
-        List<RestaurantTable> expiredTables = tableRepository.findByTokenExpiryBefore(now);
-        for (RestaurantTable table : expiredTables) {
-            boolean hasActiveOrder = orderRepository.hasActiveOrder(table.getId());
-            if (!hasActiveOrder) {
-                if (table.getCurrentToken() != null) {
-                    invalidateToken(table.getCurrentToken());
-                }
-                table.setCurrentToken(null);
-                table.setTokenExpiry(null);
-                table.setStatus(TableStatus.AVAILABLE.name());
-            }
-        }
-        tableRepository.saveAll(expiredTables);
-    }
 
     @Scheduled(cron = "0 0 2 * * *")
     public void cleanupInvalidTokens() {

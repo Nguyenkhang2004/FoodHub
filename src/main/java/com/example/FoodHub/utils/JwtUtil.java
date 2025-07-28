@@ -45,7 +45,8 @@ public class JwtUtil {
                     .expirationTime(Date.from(Instant.now().plusSeconds(TABLE_TOKEN_DURATION)))
                     .issueTime(new Date())
                     .jwtID(UUID.randomUUID().toString())
-                    .claim("scope", tableNumber + " CREATE_ORDER ADD_NEW_ITEMS VIEW_ORDER PROCESS_PAYMENT")
+                    .claim("tableNumber", tableNumber)
+                    .claim("scope", "CREATE_ORDER ADD_NEW_ITEMS VIEW_ORDER PROCESS_PAYMENT")
                     .claim("type", "TABLE_TOKEN")
                     .build();
 
@@ -62,17 +63,9 @@ public class JwtUtil {
         }
     }
 
-    public static String getTypeFromToken(String token) {
-        try {
-            return SignedJWT.parse(token).getJWTClaimsSet().getStringClaim("type");
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.INVALID_QR_TOKEN);
-        }
-    }
-
     public String getTableNumberFromToken(String token) {
         try {
-            return SignedJWT.parse(token).getJWTClaimsSet().getStringClaim("scope");
+            return SignedJWT.parse(token).getJWTClaimsSet().getStringClaim("tableNumber");
         } catch (Exception e) {
             throw new AppException(ErrorCode.INVALID_QR_TOKEN);
         }
