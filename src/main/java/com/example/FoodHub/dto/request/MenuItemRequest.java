@@ -20,6 +20,4 @@ public class MenuItemRequest {
     private BigDecimal price;
     private String imageUrl;
     private List<Integer> categoryIds;
-
-    // Getters and Setters
 }

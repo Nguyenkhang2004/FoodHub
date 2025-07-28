@@ -34,6 +34,11 @@ public class WorkShiftLogScheduler {
         markAbsentForShiftType("EVENING");
     }
 
+    @Scheduled(cron = "0 0 23 * * *") // 23:00 PM mỗi ngày
+    public void markFullDayShiftAbsentees() {
+        markAbsentForShiftType("FULL_DAY");
+    }
+
     @Transactional
     public void markAbsentForShiftType(String shiftType) {
         LocalDate today = LocalDate.now();

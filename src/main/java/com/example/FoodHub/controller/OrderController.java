@@ -96,10 +96,15 @@ public class OrderController {
             @PathVariable Integer userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String orderBy,
-            @RequestParam(defaultValue = "ASC") String sort
+            @RequestParam(defaultValue = "updatedOrCreatedAt") String orderBy,
+            @RequestParam(defaultValue = "DESC") String sort
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
+        Pageable pageable;
+        if (orderBy.equalsIgnoreCase("updatedOrCreatedAt")) {
+            pageable = PageRequest.of(page, size, Sort.unsorted());
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
+        }
         Page<RestaurantOrderResponse> orderResponses = orderService.getWaiterWorkShiftOrders(status, tableNumber, userId, pageable);
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)
@@ -114,10 +119,15 @@ public class OrderController {
             @PathVariable Integer userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String orderBy,
-            @RequestParam(defaultValue = "ASC") String sort
+            @RequestParam(defaultValue = "updatedOrCreatedAt") String orderBy,
+            @RequestParam(defaultValue = "DESC") String sort
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
+        Pageable pageable;
+        if (orderBy.equalsIgnoreCase("updatedOrCreatedAt")) {
+            pageable = PageRequest.of(page, size, Sort.unsorted());
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sort), orderBy));
+        }
         Page<RestaurantOrderResponse> orderResponses = orderService.getChefWorkShiftOrders(status, tableNumber, userId, pageable);
         ApiResponse<Page<RestaurantOrderResponse>> response = ApiResponse.<Page<RestaurantOrderResponse>>builder()
                 .result(orderResponses)

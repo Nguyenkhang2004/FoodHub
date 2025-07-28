@@ -59,7 +59,6 @@ public class RestaurantOrder {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-
     @OneToOne(mappedBy = "order")
     private Payment payment;
 

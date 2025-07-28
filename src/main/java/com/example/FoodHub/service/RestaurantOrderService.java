@@ -204,7 +204,7 @@ public class RestaurantOrderService {
     }
 
 
-    @PreAuthorize("hasAuthority('CREATE_ORDER')")
+    @PreAuthorize("hasAuthority('CREATE_ORDER') or hasRole('CUSTOMER')")
     @Transactional
     public RestaurantOrderResponse createOrder(RestaurantOrderRequest request) {
         log.info("Creating new order for table: {}, user id: {}", request.getTableId(), request.getUserId());
@@ -269,6 +269,7 @@ public class RestaurantOrderService {
         order.setTotalAmount(totalAmount);
 
         order.setCreatedAt(TimeUtils.getNowInVietNam());
+        order.setUpdatedAt(TimeUtils.getNowInVietNam());
         orderRepository.save(order);               // order & id
         orderItems.forEach(orderItemRepository::save);
 

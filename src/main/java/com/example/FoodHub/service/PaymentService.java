@@ -63,6 +63,7 @@ public class PaymentService {
     PayOSUtils payOSUtils;
     RestaurantOrderMapper restaurantOrderMapper;
     ScanQRService scanQRService;
+    ChatMessageRepository chatMessageRepository;
 
     @PreAuthorize("hasAuthority('PROCESS_PAYMENT')")
     @Transactional
@@ -156,6 +157,10 @@ public class PaymentService {
             if(table.getCurrentToken() != null) {
                 // Invalidate the current token if it exists
                 scanQRService.finishSession(table.getCurrentToken());
+                List<ChatMessage> messages = chatMessageRepository.findAllByTableId(table.getId());
+                messages.forEach(message ->
+                    chatMessageRepository.delete(message)
+                );
             }
         }
         if(PaymentStatus.PAID.name().equals(finalStatus)) {
